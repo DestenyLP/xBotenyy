@@ -1,0 +1,637 @@
+PRAGMA
+foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS ticket_guild_settings
+(
+    guild_id
+    TEXT
+    PRIMARY
+    KEY,
+    category_channel_id
+    TEXT,
+    support_role_id
+    TEXT,
+    log_channel_id
+    TEXT,
+    transcript_channel_id
+    TEXT,
+    panel_channel_id
+    TEXT,
+    panel_message_id
+    TEXT,
+    max_open_tickets_per_member
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    auto_close_inactivity_hours
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    ticket_counter
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0
+);
+
+CREATE TABLE IF NOT EXISTS tickets
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    ticket_id
+    TEXT
+    NOT
+    NULL,
+    channel_id
+    TEXT,
+    control_message_id
+    TEXT,
+    author_id
+    TEXT
+    NOT
+    NULL,
+    author_name
+    TEXT,
+    category
+    TEXT
+    NOT
+    NULL,
+    priority
+    TEXT
+    NOT
+    NULL,
+    status
+    TEXT
+    NOT
+    NULL,
+    subject
+    TEXT,
+    description
+    TEXT,
+    created_at
+    INTEGER
+    NOT
+    NULL,
+    updated_at
+    INTEGER
+    NOT
+    NULL,
+    last_activity_at
+    INTEGER
+    NOT
+    NULL,
+    closed_at
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    claimed_by_id
+    TEXT,
+    claimed_by_name
+    TEXT,
+    closed_by_id
+    TEXT,
+    closed_by_name
+    TEXT,
+    close_reason
+    TEXT,
+    transcript_file_name
+    TEXT,
+    log_channel_id
+    TEXT,
+    log_message_id
+    TEXT,
+    rating_score
+    INTEGER,
+    rating_comment
+    TEXT,
+    auto_close_warning_sent
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    ticket_id
+)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_tickets_channel ON tickets (channel_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_author ON tickets (guild_id, author_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets (guild_id, status);
+CREATE INDEX IF NOT EXISTS idx_tickets_closed_at ON tickets (status, closed_at);
+
+CREATE TABLE IF NOT EXISTS ticket_participants
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    ticket_id
+    TEXT
+    NOT
+    NULL,
+    member_id
+    TEXT
+    NOT
+    NULL,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    ticket_id,
+    member_id
+),
+    FOREIGN KEY
+(
+    guild_id,
+    ticket_id
+) REFERENCES tickets
+(
+    guild_id,
+    ticket_id
+) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS giveaway_guild_settings
+(
+    guild_id
+    TEXT
+    PRIMARY
+    KEY,
+    giveaway_counter
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0
+);
+
+CREATE TABLE IF NOT EXISTS giveaways
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    giveaway_id
+    TEXT
+    NOT
+    NULL,
+    channel_id
+    TEXT,
+    message_id
+    TEXT,
+    prize
+    TEXT,
+    description
+    TEXT,
+    winner_count
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    host_id
+    TEXT,
+    host_name
+    TEXT,
+    required_role_id
+    TEXT,
+    status
+    TEXT
+    NOT
+    NULL,
+    created_at
+    INTEGER
+    NOT
+    NULL,
+    end_at
+    INTEGER
+    NOT
+    NULL,
+    ended_at
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    giveaway_id
+)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_giveaways_message ON giveaways (message_id);
+CREATE INDEX IF NOT EXISTS idx_giveaways_status_end ON giveaways (status, end_at);
+CREATE INDEX IF NOT EXISTS idx_giveaways_status_ended ON giveaways (status, ended_at);
+
+CREATE TABLE IF NOT EXISTS giveaway_participants
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    giveaway_id
+    TEXT
+    NOT
+    NULL,
+    member_id
+    TEXT
+    NOT
+    NULL,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    giveaway_id,
+    member_id
+),
+    FOREIGN KEY
+(
+    guild_id,
+    giveaway_id
+) REFERENCES giveaways
+(
+    guild_id,
+    giveaway_id
+) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS giveaway_winners
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    giveaway_id
+    TEXT
+    NOT
+    NULL,
+    member_id
+    TEXT
+    NOT
+    NULL,
+    position
+    INTEGER
+    NOT
+    NULL,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    giveaway_id,
+    member_id
+),
+    FOREIGN KEY
+(
+    guild_id,
+    giveaway_id
+) REFERENCES giveaways
+(
+    guild_id,
+    giveaway_id
+) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS report_guild_settings
+(
+    guild_id
+    TEXT
+    PRIMARY
+    KEY,
+    channel_id
+    TEXT,
+    notify_role_id
+    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS reports
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    report_id
+    TEXT
+    NOT
+    NULL,
+    reporter_id
+    TEXT
+    NOT
+    NULL,
+    reporter_name
+    TEXT,
+    category
+    TEXT
+    NOT
+    NULL,
+    subject
+    TEXT,
+    target
+    TEXT,
+    description
+    TEXT,
+    evidence
+    TEXT,
+    status
+    TEXT
+    NOT
+    NULL,
+    created_at
+    INTEGER
+    NOT
+    NULL,
+    updated_at
+    INTEGER
+    NOT
+    NULL,
+    report_channel_id
+    TEXT,
+    report_message_id
+    TEXT,
+    assigned_mod_id
+    TEXT,
+    assigned_mod_name
+    TEXT,
+    resolution_note
+    TEXT,
+    rejection_reason
+    TEXT,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    report_id
+)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports (guild_id, reporter_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status_updated ON reports (status, updated_at);
+
+CREATE TABLE IF NOT EXISTS reactionrole_messages
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    channel_id
+    TEXT
+    NOT
+    NULL,
+    message_id
+    TEXT
+    NOT
+    NULL,
+    PRIMARY
+    KEY
+(
+    message_id
+)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_rr_messages_guild ON reactionrole_messages (guild_id);
+
+CREATE TABLE IF NOT EXISTS reactionrole_entries
+(
+    message_id
+    TEXT
+    NOT
+    NULL,
+    component_id
+    TEXT
+    NOT
+    NULL,
+    role_id
+    TEXT,
+    type
+    TEXT
+    NOT
+    NULL,
+    emoji
+    TEXT,
+    button_label
+    TEXT,
+    button_style
+    TEXT,
+    PRIMARY
+    KEY
+(
+    message_id,
+    component_id
+),
+    FOREIGN KEY
+(
+    message_id
+) REFERENCES reactionrole_messages
+(
+    message_id
+) ON DELETE CASCADE
+    );
+
+CREATE TABLE IF NOT EXISTS social_accounts
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    account_id
+    TEXT
+    NOT
+    NULL,
+    name
+    TEXT,
+    channel_id
+    TEXT,
+    enabled
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    youtube_channel_id
+    TEXT,
+    last_youtube_video_id
+    TEXT,
+    yt_embed
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    yt_title
+    TEXT,
+    yt_title_url
+    TEXT,
+    yt_author
+    TEXT,
+    yt_content
+    TEXT,
+    yt_color
+    TEXT,
+    yt_image_url
+    TEXT,
+    yt_footer
+    TEXT,
+    yt_timestamp
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    twitch_login
+    TEXT,
+    last_twitch_stream_id
+    TEXT,
+    twitch_currently_live
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    tw_embed
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    tw_title
+    TEXT,
+    tw_title_url
+    TEXT,
+    tw_author
+    TEXT,
+    tw_content
+    TEXT,
+    tw_color
+    TEXT,
+    tw_image_url
+    TEXT,
+    tw_footer
+    TEXT,
+    tw_timestamp
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    account_id
+)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_social_youtube ON social_accounts (enabled, youtube_channel_id);
+CREATE INDEX IF NOT EXISTS idx_social_twitch ON social_accounts (enabled, twitch_login);
+
+CREATE TABLE IF NOT EXISTS welcome_guild_settings
+(
+    guild_id
+    TEXT
+    PRIMARY
+    KEY,
+    channel_id
+    TEXT,
+    enabled
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    dm_enabled
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0
+);
+
+CREATE TABLE IF NOT EXISTS welcome_variants
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    variant_id
+    TEXT
+    NOT
+    NULL,
+    ping
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    embed
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0,
+    title
+    TEXT,
+    content
+    TEXT,
+    color
+    TEXT,
+    image_url
+    TEXT,
+    footer
+    TEXT,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    variant_id
+)
+    );
+
+CREATE TABLE IF NOT EXISTS eventlog_guild_settings
+(
+    guild_id
+    TEXT
+    PRIMARY
+    KEY,
+    default_channel_id
+    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS eventlog_rules
+(
+    guild_id
+    TEXT
+    NOT
+    NULL,
+    event_type
+    TEXT
+    NOT
+    NULL,
+    enabled
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    1,
+    channel_id
+    TEXT,
+    PRIMARY
+    KEY
+(
+    guild_id,
+    event_type
+)
+    );

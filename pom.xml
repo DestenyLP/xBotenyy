@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.destenylp</groupId>
+    <artifactId>xBotenyy-parent</artifactId>
+    <version>3.0-BETA</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>common</module>
+        <module>discordbot</module>
+        <module>twitchbot</module>
+    </modules>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <jda.version>6.5.0</jda.version>
+        <slf4j.version>2.0.18</slf4j.version>
+        <logback.version>1.5.38</logback.version>
+        <gson.version>2.11.0</gson.version>
+        <dotenv.version>5.2.2</dotenv.version>
+        <sqlite.version>3.47.1.0</sqlite.version>
+    </properties>
+
+</project>
