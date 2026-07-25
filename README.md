@@ -241,7 +241,6 @@ Sobald der Launcher läuft, akzeptiert er interaktiv Befehle über die Standard-
 | `set maxrestarts <n>` / `set restartdelay <sekunden>` | Neustart-Verhalten zur Laufzeit ändern (siehe unten)                      |
 | `exit`                                                | Alle Bots geordnet stoppen und den Launcher beenden                       |
 
-Details und Beispiele siehe [`launcher/README.md`](launcher/README.md#konsolen-befehle).
 
 ### Logging im kombinierten Betrieb
 
