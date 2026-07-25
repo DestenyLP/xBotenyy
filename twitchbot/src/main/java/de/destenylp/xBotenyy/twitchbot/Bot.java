@@ -87,7 +87,7 @@ public final class Bot extends AbstractBot {
             return;
         }
 
-        database = Database.open(properties.getDatabaseFile());
+        database = Database.open(properties.getDatabaseFile(), "db/migrations/twitchbot");
         channelRepository = new TwitchChannelRepository(database);
         watchtimeRepository = new TwitchWatchtimeRepository(database);
         eventLogRepository = new TwitchEventLogRepository(database);

@@ -25,7 +25,7 @@ public final class Database implements AutoCloseable {
         this.databaseFile = databaseFile;
     }
 
-    public static Database open(Path databaseFile) {
+    public static Database open(Path databaseFile, String migrationsResourcePath) {
         try {
             if (databaseFile.getParent() != null) {
                 Files.createDirectories(databaseFile.getParent());
@@ -44,7 +44,7 @@ public final class Database implements AutoCloseable {
             }
 
             Database database = new Database(connection, databaseFile);
-            SchemaMigrator.migrate(database);
+            SchemaMigrator.migrate(database, migrationsResourcePath);
             LOGGER.info("SQLite Datenbank geoeffnet: {}", databaseFile.toAbsolutePath());
             return database;
         } catch (IOException | SQLException e) {

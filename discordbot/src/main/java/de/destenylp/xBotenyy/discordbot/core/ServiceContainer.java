@@ -47,7 +47,7 @@ public class ServiceContainer implements AutoCloseable {
     }
 
     public ServiceContainer(BotProperties properties) {
-        this(Database.open(properties.getDatabaseFile()), properties);
+        this(Database.open(properties.getDatabaseFile(), "db/migrations/discordbot"), properties);
     }
 
     private ServiceContainer(Database database, BotProperties properties) {

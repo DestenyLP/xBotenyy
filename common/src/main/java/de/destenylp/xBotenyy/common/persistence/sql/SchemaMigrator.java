@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,16 +24,15 @@ import java.util.stream.Stream;
 
 public final class SchemaMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaMigrator.class);
-    private static final String MIGRATIONS_RESOURCE_PATH = "db/migrations";
     private static final Pattern MIGRATION_FILENAME = Pattern.compile("V(\\d+)__(.+)\\.sql");
 
     private SchemaMigrator() {
     }
 
-    public static void migrate(Database database) {
-        List<Migration> migrations = discoverMigrations();
+    public static void migrate(Database database, String migrationsResourcePath) {
+        List<Migration> migrations = discoverMigrations(migrationsResourcePath);
         if (migrations.isEmpty()) {
-            LOGGER.warn("Keine Migrationsdateien unter {} gefunden.", MIGRATIONS_RESOURCE_PATH);
+            LOGGER.warn("Keine Migrationsdateien unter {} gefunden.", migrationsResourcePath);
             return;
         }
 
@@ -111,16 +111,16 @@ public final class SchemaMigrator {
                 .toList();
     }
 
-    private static List<Migration> discoverMigrations() {
+    private static List<Migration> discoverMigrations(String migrationsResourcePath) {
         try {
-            URL resource = SchemaMigrator.class.getClassLoader().getResource(MIGRATIONS_RESOURCE_PATH);
+            URL resource = SchemaMigrator.class.getClassLoader().getResource(migrationsResourcePath);
             if (resource == null) {
                 return List.of();
             }
 
             List<String> fileNames = new ArrayList<>();
             if ("jar".equals(resource.getProtocol())) {
-                fileNames.addAll(listFromJar(resource));
+                fileNames.addAll(listFromJar(resource, migrationsResourcePath));
             } else {
                 fileNames.addAll(listFromFilesystem(resource));
             }
@@ -133,7 +133,7 @@ public final class SchemaMigrator {
                 }
                 int version = Integer.parseInt(matcher.group(1));
                 String description = matcher.group(2).replace('_', ' ');
-                String sql = readResource(MIGRATIONS_RESOURCE_PATH + "/" + fileName);
+                String sql = readResource(migrationsResourcePath + "/" + fileName);
                 migrations.add(new Migration(version, description, sql));
             }
             migrations.sort(Comparator.comparingInt(Migration::version));
@@ -151,12 +151,28 @@ public final class SchemaMigrator {
         }
     }
 
-    private static List<String> listFromJar(URL resource) throws IOException, URISyntaxException {
+    private static List<String> listFromJar(URL resource, String migrationsResourcePath) throws IOException, URISyntaxException {
         String[] parts = resource.toURI().toString().split("!");
-        try (FileSystem fileSystem = FileSystems.newFileSystem(java.net.URI.create(parts[0]), Map.of())) {
-            Path directory = fileSystem.getPath(MIGRATIONS_RESOURCE_PATH);
+        java.net.URI jarUri = java.net.URI.create(parts[0]);
+
+        FileSystem fileSystem;
+        boolean createdByUs;
+        try {
+            fileSystem = FileSystems.newFileSystem(jarUri, Map.of());
+            createdByUs = true;
+        } catch (FileSystemAlreadyExistsException e) {
+            fileSystem = FileSystems.getFileSystem(jarUri);
+            createdByUs = false;
+        }
+
+        try {
+            Path directory = fileSystem.getPath(migrationsResourcePath);
             try (Stream<Path> files = Files.list(directory)) {
                 return files.map(path -> path.getFileName().toString()).toList();
+            }
+        } finally {
+            if (createdByUs) {
+                fileSystem.close();
             }
         }
     }

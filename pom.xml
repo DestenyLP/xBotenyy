@@ -13,6 +13,7 @@
         <module>common</module>
         <module>discordbot</module>
         <module>twitchbot</module>
+        <module>launcher</module>
     </modules>
 
     <properties>
