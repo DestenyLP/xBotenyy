@@ -15,6 +15,20 @@ public class ReportService implements PrunableGuildService {
         this.manager = manager;
     }
 
+    public static boolean isModerator(Member member, ReportSettings settings) {
+        if (member.hasPermission(Permission.ADMINISTRATOR)
+                || member.hasPermission(Permission.MODERATE_MEMBERS)
+                || member.hasPermission(Permission.MESSAGE_MANAGE)) {
+            return true;
+        }
+
+        if (settings != null && settings.getNotifyRoleId() != null) {
+            return member.getRoles().stream().anyMatch(role -> role.getId().equals(settings.getNotifyRoleId()));
+        }
+
+        return false;
+    }
+
     @Override
     public String getServiceName() {
         return "Reports";
@@ -38,7 +52,7 @@ public class ReportService implements PrunableGuildService {
     }
 
     public Report createReport(String guildId, String reporterId, String reporterName, ReportCategory category,
-                                String subject, String target, String description, String evidence) {
+                               String subject, String target, String description, String evidence) {
         Report draft = new Report(guildId, reporterId, reporterName, category, subject, target, description, evidence);
         return manager.createReport(draft);
     }
@@ -108,20 +122,6 @@ public class ReportService implements PrunableGuildService {
         report.touch();
         manager.save(report);
         return true;
-    }
-
-    public static boolean isModerator(Member member, ReportSettings settings) {
-        if (member.hasPermission(Permission.ADMINISTRATOR)
-                || member.hasPermission(Permission.MODERATE_MEMBERS)
-                || member.hasPermission(Permission.MESSAGE_MANAGE)) {
-            return true;
-        }
-
-        if (settings != null && settings.getNotifyRoleId() != null) {
-            return member.getRoles().stream().anyMatch(role -> role.getId().equals(settings.getNotifyRoleId()));
-        }
-
-        return false;
     }
 
     public int pruneClosedReports(Duration retention) {

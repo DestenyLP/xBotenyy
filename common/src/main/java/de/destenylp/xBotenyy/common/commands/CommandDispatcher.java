@@ -15,8 +15,8 @@ public final class CommandDispatcher<C> {
     private final Function<C, String> cooldownKeyResolver;
 
     public CommandDispatcher(CommandRegistry<C> registry, CooldownManager cooldownManager,
-                              Function<C, CommandPermission> permissionResolver,
-                              Function<C, String> cooldownKeyResolver) {
+                             Function<C, CommandPermission> permissionResolver,
+                             Function<C, String> cooldownKeyResolver) {
         this.registry = registry;
         this.cooldownManager = cooldownManager;
         this.permissionResolver = permissionResolver;

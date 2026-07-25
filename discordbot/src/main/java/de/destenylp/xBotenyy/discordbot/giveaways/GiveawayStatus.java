@@ -2,7 +2,7 @@ package de.destenylp.xBotenyy.discordbot.giveaways;
 
 import de.destenylp.xBotenyy.discordbot.core.EntityStatus;
 
-import java.awt.Color;
+import java.awt.*;
 
 public enum GiveawayStatus implements EntityStatus {
     RUNNING("Läuft", "\uD83C\uDF89", new Color(88, 101, 242)),

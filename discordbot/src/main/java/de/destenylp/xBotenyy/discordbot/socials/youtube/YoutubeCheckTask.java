@@ -13,11 +13,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public final class YoutubeCheckTask implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(YoutubeCheckTask.class);
@@ -30,9 +26,6 @@ public final class YoutubeCheckTask implements Runnable {
         this.jda = jda;
         this.service = service;
         this.feedClient = feedClient;
-    }
-
-    private record GuildAccount(String guildId, SocialAccount account) {
     }
 
     @Override
@@ -110,5 +103,8 @@ public final class YoutubeCheckTask implements Runnable {
                 failure -> LOGGER.warn("Konnte YouTube Ankuendigung fuer Account {} nicht senden: {}",
                         account.getId(), failure.getMessage())));
         LOGGER.info("Neues YouTube Video fuer Account {} in Guild {} angekuendigt: {}", account.getId(), guildId, video.videoId());
+    }
+
+    private record GuildAccount(String guildId, SocialAccount account) {
     }
 }

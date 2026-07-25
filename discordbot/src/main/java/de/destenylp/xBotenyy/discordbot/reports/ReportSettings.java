@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class ReportSettings {
+    private final Supplier<List<Report>> reportsSupplier;
     private String channelId;
     private String notifyRoleId;
-    private final Supplier<List<Report>> reportsSupplier;
 
     public ReportSettings() {
         this(List::of);

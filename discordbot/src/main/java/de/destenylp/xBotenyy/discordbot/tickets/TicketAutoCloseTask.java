@@ -41,7 +41,9 @@ public final class TicketAutoCloseTask implements Runnable {
             }
             channel.sendMessage("\u23F0 Dieses Ticket war längere Zeit inaktiv und wird automatisch geschlossen, " +
                             "falls keine weitere Aktivität stattfindet.")
-                    .queue(success -> { }, failure -> { });
+                    .queue(success -> {
+                    }, failure -> {
+                    });
             service.markAutoCloseWarned(guildId, ticket.getId());
         }));
     }

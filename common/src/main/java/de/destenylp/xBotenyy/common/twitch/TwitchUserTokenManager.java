@@ -44,6 +44,16 @@ public final class TwitchUserTokenManager {
         this.refreshTokenEnvKey = refreshTokenEnvKey;
     }
 
+    public static Optional<TwitchUserTokenManager> create(String clientId, String clientSecret,
+                                                          String initialRefreshToken, Path envFilePath,
+                                                          String refreshTokenEnvKey) {
+        if (clientId == null || clientSecret == null || initialRefreshToken == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new TwitchUserTokenManager(clientId, clientSecret, initialRefreshToken,
+                envFilePath, refreshTokenEnvKey));
+    }
+
     public synchronized String getAccessToken() {
         if (accessToken == null || Instant.now().isAfter(expiresAt.minus(REFRESH_BUFFER))) {
             refreshNow();
@@ -125,15 +135,5 @@ public final class TwitchUserTokenManager {
             LOGGER.warn("Konnte neuen Twitch-Refresh-Token nicht in {} speichern - beim naechsten Neustart "
                     + "muss ggf. der Token in der .env manuell aktualisiert werden: {}", envFilePath, e.getMessage());
         }
-    }
-
-    public static Optional<TwitchUserTokenManager> create(String clientId, String clientSecret,
-                                                          String initialRefreshToken, Path envFilePath,
-                                                          String refreshTokenEnvKey) {
-        if (clientId == null || clientSecret == null || initialRefreshToken == null) {
-            return Optional.empty();
-        }
-        return Optional.of(new TwitchUserTokenManager(clientId, clientSecret, initialRefreshToken,
-                envFilePath, refreshTokenEnvKey));
     }
 }

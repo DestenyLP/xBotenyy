@@ -55,11 +55,11 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
             String id = generateUniqueShortId(connection, "reports", "report_id", "guild_id", draft.getGuildId(), true);
             draft.assignId(id);
             Jdbc.update(connection, """
-                    INSERT INTO reports (guild_id, report_id, reporter_id, reporter_name, category, subject, target,
-                        description, evidence, status, created_at, updated_at, report_channel_id, report_message_id,
-                        assigned_mod_id, assigned_mod_name, resolution_note, rejection_reason)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
+                            INSERT INTO reports (guild_id, report_id, reporter_id, reporter_name, category, subject, target,
+                                description, evidence, status, created_at, updated_at, report_channel_id, report_message_id,
+                                assigned_mod_id, assigned_mod_name, resolution_note, rejection_reason)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
                     draft.getGuildId(), draft.getId(), draft.getReporterId(), draft.getReporterName(),
                     draft.getCategory(), draft.getSubject(), draft.getTarget(), draft.getDescription(),
                     draft.getEvidence(), draft.getStatus(), draft.getCreatedAt(), draft.getUpdatedAt(),
@@ -72,10 +72,10 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
     @Override
     public void save(Report report) {
         database.runInTransaction(connection -> Jdbc.update(connection, """
-                UPDATE reports SET status = ?, updated_at = ?, report_channel_id = ?, report_message_id = ?,
-                    assigned_mod_id = ?, assigned_mod_name = ?, resolution_note = ?, rejection_reason = ?
-                WHERE guild_id = ? AND report_id = ?
-                """,
+                        UPDATE reports SET status = ?, updated_at = ?, report_channel_id = ?, report_message_id = ?,
+                            assigned_mod_id = ?, assigned_mod_name = ?, resolution_note = ?, rejection_reason = ?
+                        WHERE guild_id = ? AND report_id = ?
+                        """,
                 report.getStatus(), report.getUpdatedAt(), report.getReportChannelId(), report.getReportMessageId(),
                 report.getAssignedModId(), report.getAssignedModName(), report.getResolutionNote(),
                 report.getRejectionReason(), report.getGuildId(), report.getId()));

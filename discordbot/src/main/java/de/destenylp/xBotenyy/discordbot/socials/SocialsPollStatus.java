@@ -17,7 +17,7 @@ public final class SocialsPollStatus {
     }
 
     public static void configure(boolean twitchCredentialsConfigured, long youtubePollIntervalMinutes,
-                                  long twitchPollIntervalMinutes) {
+                                 long twitchPollIntervalMinutes) {
         twitchConfigured = twitchCredentialsConfigured;
         youtubeIntervalMinutes = youtubePollIntervalMinutes;
         twitchIntervalMinutes = twitchPollIntervalMinutes;

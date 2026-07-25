@@ -17,6 +17,8 @@ public record CommonConfig(
         String twitchChatOauthToken,
         String twitchModeratorAccessToken,
         String twitchBotRefreshToken,
+        String twitchBroadcasterAccessToken,
+        String twitchBroadcasterRefreshToken,
         java.nio.file.Path envFilePath,
         String groqApiKey) {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
@@ -38,12 +40,15 @@ public record CommonConfig(
         String twitchChatOauthToken = blankToNull(resolve("TWITCH_BOT_OAUTH_TOKEN", dotenv));
         String twitchModeratorAccessToken = blankToNull(resolve("TWITCH_MODERATOR_ACCESS_TOKEN", dotenv));
         String twitchBotRefreshToken = blankToNull(resolve("TWITCH_BOT_REFRESH_TOKEN", dotenv));
+        String twitchBroadcasterAccessToken = blankToNull(resolve("TWITCH_BROADCASTER_ACCESS_TOKEN", dotenv));
+        String twitchBroadcasterRefreshToken = blankToNull(resolve("TWITCH_BROADCASTER_REFRESH_TOKEN", dotenv));
         String groqApiKey = blankToNull(resolve("GROQ_API_KEY", dotenv));
         java.nio.file.Path envFilePath = java.nio.file.Path.of(envDirectory, ENV_FILE_NAME);
 
         return Optional.of(new CommonConfig(discordBotToken, twitchClientId, twitchClientSecret,
                 twitchChatBotUsername, twitchChatOauthToken, twitchModeratorAccessToken,
-                twitchBotRefreshToken, envFilePath, groqApiKey));
+                twitchBotRefreshToken, twitchBroadcasterAccessToken, twitchBroadcasterRefreshToken,
+                envFilePath, groqApiKey));
     }
 
     private static String resolveEnvDirectory() {
@@ -100,6 +105,14 @@ public record CommonConfig(
 
     public boolean hasTwitchBotRefreshToken() {
         return twitchBotRefreshToken != null && twitchClientSecret != null;
+    }
+
+    public boolean hasTwitchBroadcasterAccessToken() {
+        return twitchBroadcasterAccessToken != null;
+    }
+
+    public boolean hasTwitchBroadcasterRefreshToken() {
+        return twitchBroadcasterRefreshToken != null && twitchClientSecret != null;
     }
 
     public boolean hasGroqApiKey() {

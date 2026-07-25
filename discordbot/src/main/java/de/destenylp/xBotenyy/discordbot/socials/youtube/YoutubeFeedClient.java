@@ -1,7 +1,7 @@
 package de.destenylp.xBotenyy.discordbot.socials.youtube;
 
-import de.destenylp.xBotenyy.discordbot.socials.SocialsPollStatus;
 import de.destenylp.xBotenyy.common.core.AbstractHttpApiClient;
+import de.destenylp.xBotenyy.discordbot.socials.SocialsPollStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;

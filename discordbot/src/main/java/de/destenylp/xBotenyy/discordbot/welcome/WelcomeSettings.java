@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class WelcomeSettings {
+    private final Supplier<List<WelcomeVariant>> variantsSupplier;
     private String channelId;
     private boolean enabled;
     private boolean dmEnabled;
-    private final Supplier<List<WelcomeVariant>> variantsSupplier;
 
     public WelcomeSettings() {
         this(List::of);

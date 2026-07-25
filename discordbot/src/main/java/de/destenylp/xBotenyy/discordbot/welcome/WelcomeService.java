@@ -12,6 +12,10 @@ public class WelcomeService implements GuildService {
         this.manager = manager;
     }
 
+    public static boolean isClearValue(String value) {
+        return value != null && (value.equalsIgnoreCase("none") || value.equals("-"));
+    }
+
     @Override
     public String getServiceName() {
         return "Welcome";
@@ -62,9 +66,5 @@ public class WelcomeService implements GuildService {
 
     public Optional<WelcomeVariant> getRandomVariant(String guildId) {
         return manager.getRandomVariant(guildId);
-    }
-
-    public static boolean isClearValue(String value) {
-        return value != null && (value.equalsIgnoreCase("none") || value.equals("-"));
     }
 }

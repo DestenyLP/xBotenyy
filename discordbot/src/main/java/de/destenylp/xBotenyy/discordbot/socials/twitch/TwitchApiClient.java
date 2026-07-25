@@ -4,10 +4,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import de.destenylp.xBotenyy.discordbot.socials.SocialsPollStatus;
 import de.destenylp.xBotenyy.common.core.AbstractHttpApiClient;
 import de.destenylp.xBotenyy.common.twitch.TwitchAppAccessTokenManager;
 import de.destenylp.xBotenyy.common.util.JsonUtil;
+import de.destenylp.xBotenyy.discordbot.socials.SocialsPollStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

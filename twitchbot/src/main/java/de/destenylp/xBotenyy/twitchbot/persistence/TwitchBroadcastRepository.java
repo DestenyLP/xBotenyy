@@ -14,8 +14,21 @@ public class TwitchBroadcastRepository extends AbstractSqlManager {
         super(database);
     }
 
+    private static TwitchBroadcastMessage mapRow(java.sql.ResultSet resultSet) throws java.sql.SQLException {
+        return new TwitchBroadcastMessage(
+                resultSet.getLong("id"),
+                resultSet.getString("channel_login"),
+                resultSet.getString("message"),
+                resultSet.getLong("interval_seconds"),
+                resultSet.getInt("min_messages"),
+                Jdbc.getBoolean(resultSet, "enabled"),
+                resultSet.getString("created_by"),
+                resultSet.getLong("created_at"),
+                resultSet.getLong("last_sent_at"));
+    }
+
     public TwitchBroadcastMessage add(String channelLogin, String message, long intervalSeconds,
-                                       int minMessages, String createdBy) {
+                                      int minMessages, String createdBy) {
         long now = Instant.now().toEpochMilli();
         long id = database.withConnection(connection -> {
             Jdbc.update(connection,
@@ -60,18 +73,5 @@ public class TwitchBroadcastRepository extends AbstractSqlManager {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM twitch_broadcasts WHERE channel_login = ? AND enabled = 1 ORDER BY id ASC",
                 TwitchBroadcastRepository::mapRow, channelLogin));
-    }
-
-    private static TwitchBroadcastMessage mapRow(java.sql.ResultSet resultSet) throws java.sql.SQLException {
-        return new TwitchBroadcastMessage(
-                resultSet.getLong("id"),
-                resultSet.getString("channel_login"),
-                resultSet.getString("message"),
-                resultSet.getLong("interval_seconds"),
-                resultSet.getInt("min_messages"),
-                Jdbc.getBoolean(resultSet, "enabled"),
-                resultSet.getString("created_by"),
-                resultSet.getLong("created_at"),
-                resultSet.getLong("last_sent_at"));
     }
 }

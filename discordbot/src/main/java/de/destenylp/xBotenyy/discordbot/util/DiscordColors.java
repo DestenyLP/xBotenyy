@@ -1,6 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.util;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Optional;
 
 public final class DiscordColors {

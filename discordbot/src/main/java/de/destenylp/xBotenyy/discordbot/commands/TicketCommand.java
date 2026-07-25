@@ -1,13 +1,8 @@
 package de.destenylp.xBotenyy.discordbot.commands;
 
-import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
-import de.destenylp.xBotenyy.discordbot.tickets.Ticket;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketCloseCoordinator;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketEmbedFactory;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketPriority;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketService;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketSettings;
 import de.destenylp.xBotenyy.common.util.AuditLog;
+import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
+import de.destenylp.xBotenyy.discordbot.tickets.*;
 import de.destenylp.xBotenyy.discordbot.util.PermissionGuard;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -376,7 +371,8 @@ public class TicketCommand extends AbstractGuildCommand {
         TextChannel channel = event.getChannel().asTextChannel();
         channel.editMessageEmbedsById(ticket.getControlMessageId(), TicketEmbedFactory.buildTicketEmbed(ticket))
                 .setComponents(TicketEmbedFactory.buildTicketComponents(ticket))
-                .queue(success -> { }, failure -> LOGGER.warn("Konnte Ticket-Nachricht {} nicht aktualisieren: {}",
+                .queue(success -> {
+                }, failure -> LOGGER.warn("Konnte Ticket-Nachricht {} nicht aktualisieren: {}",
                         ticket.getControlMessageId(), failure.getMessage()));
     }
 }

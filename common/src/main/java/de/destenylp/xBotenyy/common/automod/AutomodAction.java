@@ -16,18 +16,6 @@ public enum AutomodAction {
         this.label = label;
     }
 
-    public int getSeverity() {
-        return severity;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public boolean deletesMessage() {
-        return this != NONE;
-    }
-
     public static AutomodAction max(AutomodAction first, AutomodAction second) {
         if (first == null) {
             return second;
@@ -47,5 +35,17 @@ public enum AutomodAction {
         } catch (IllegalArgumentException e) {
             return fallback;
         }
+    }
+
+    public int getSeverity() {
+        return severity;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public boolean deletesMessage() {
+        return this != NONE;
     }
 }

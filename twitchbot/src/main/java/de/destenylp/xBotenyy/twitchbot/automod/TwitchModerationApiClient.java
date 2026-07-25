@@ -26,6 +26,8 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
     private final String clientId;
     private final java.util.function.Supplier<String> moderatorAccessTokenSupplier;
     private final Map<String, String> userIdCache = new ConcurrentHashMap<>();
+    private final Map<String, String> gameIdCache = new ConcurrentHashMap<>();
+    private volatile java.util.function.Supplier<String> broadcasterAccessTokenSupplier;
 
     public TwitchModerationApiClient(String clientId, String moderatorAccessToken, Duration requestTimeout) {
         super(requestTimeout);
@@ -45,6 +47,14 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
         super(requestTimeout, maxAttempts, baseRetryDelay);
         this.clientId = clientId;
         this.moderatorAccessTokenSupplier = moderatorAccessTokenSupplier;
+    }
+
+    public void setBroadcasterAccessTokenSupplier(java.util.function.Supplier<String> broadcasterAccessTokenSupplier) {
+        this.broadcasterAccessTokenSupplier = broadcasterAccessTokenSupplier;
+    }
+
+    public boolean hasBroadcasterAccessToken() {
+        return broadcasterAccessTokenSupplier != null;
     }
 
     public Optional<String> resolveUserId(String login) {
@@ -181,12 +191,179 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
         }
     }
 
-    public record ChatterRecord(String userId, String userLogin) {
+    public boolean unbanUser(String broadcasterId, String moderatorId, String targetUserId) {
+        try {
+            URI uri = URI.create(HELIX_BASE + "/moderation/bans?broadcaster_id=" + broadcasterId
+                    + "&moderator_id=" + moderatorId + "&user_id=" + targetUserId);
+            HttpRequest request = authorizedRequest(uri).DELETE().build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Unban fuer " + targetUserId);
+            if (response.statusCode() != 204) {
+                LOGGER.warn("Konnte Twitch-Nutzer {} nicht entbannen (Status {}): {}", targetUserId, response.statusCode(), response.body());
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Entbannen des Twitch-Nutzers {}: {}", targetUserId, e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean clearChat(String broadcasterId, String moderatorId) {
+        try {
+            URI uri = URI.create(HELIX_BASE + "/moderation/chat?broadcaster_id=" + broadcasterId
+                    + "&moderator_id=" + moderatorId);
+            HttpRequest request = authorizedRequest(uri).DELETE().build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Chat leeren fuer " + broadcasterId);
+            if (response.statusCode() != 204) {
+                LOGGER.warn("Konnte Twitch-Chat fuer {} nicht leeren (Status {}): {}", broadcasterId, response.statusCode(), response.body());
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Leeren des Twitch-Chats fuer {}: {}", broadcasterId, e.getMessage());
+            return false;
+        }
+    }
+
+    public Optional<ChannelInfo> getChannelInformation(String broadcasterId) {
+        try {
+            URI uri = URI.create(HELIX_BASE + "/channels?broadcaster_id=" + broadcasterId);
+            HttpRequest request = authorizedRequest(uri).GET().build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Kanalinfo fuer " + broadcasterId);
+            if (response.statusCode() != 200) {
+                LOGGER.warn("Konnte Twitch-Kanalinfo fuer {} nicht abfragen (Status {}): {}",
+                        broadcasterId, response.statusCode(), response.body());
+                return Optional.empty();
+            }
+            JsonArray data = JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
+            if (data.isEmpty()) {
+                return Optional.empty();
+            }
+            JsonObject entry = data.get(0).getAsJsonObject();
+            return Optional.of(new ChannelInfo(broadcasterId, entry.get("title").getAsString(),
+                    entry.get("game_id").getAsString(), entry.get("game_name").getAsString()));
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Abfragen der Twitch-Kanalinfo fuer {}: {}", broadcasterId, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public Optional<String> resolveGameId(String gameName) {
+        String cached = gameIdCache.get(gameName.toLowerCase(java.util.Locale.ROOT));
+        if (cached != null) {
+            return Optional.of(cached);
+        }
+        try {
+            String encoded = java.net.URLEncoder.encode(gameName, StandardCharsets.UTF_8);
+            URI uri = URI.create(HELIX_BASE + "/games?name=" + encoded);
+            HttpRequest request = authorizedRequest(uri).GET().build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Spiel-ID Abfrage fuer " + gameName);
+            if (response.statusCode() != 200) {
+                LOGGER.warn("Konnte Twitch-Spiel-ID fuer {} nicht aufloesen (Status {}): {}",
+                        gameName, response.statusCode(), response.body());
+                return Optional.empty();
+            }
+            JsonArray data = JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
+            if (data.isEmpty()) {
+                return Optional.empty();
+            }
+            String id = data.get(0).getAsJsonObject().get("id").getAsString();
+            gameIdCache.put(gameName.toLowerCase(java.util.Locale.ROOT), id);
+            return Optional.of(id);
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Aufloesen der Twitch-Spiel-ID fuer {}: {}", gameName, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public boolean updateChannelInformation(String broadcasterId, String title, String gameId) {
+        if (broadcasterAccessTokenSupplier == null) {
+            LOGGER.warn("Kein Broadcaster-Token konfiguriert, Kanalinfo fuer {} kann nicht geaendert werden.", broadcasterId);
+            return false;
+        }
+        try {
+            JsonObject body = new JsonObject();
+            if (title != null) {
+                body.addProperty("title", title);
+            }
+            if (gameId != null) {
+                body.addProperty("game_id", gameId);
+            }
+            URI uri = URI.create(HELIX_BASE + "/channels?broadcaster_id=" + broadcasterId);
+            HttpRequest request = requestBuilder(uri)
+                    .header("Client-Id", clientId)
+                    .header("Authorization", "Bearer " + broadcasterAccessTokenSupplier.get())
+                    .header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Kanalinfo aendern fuer " + broadcasterId);
+            if (response.statusCode() != 204) {
+                LOGGER.warn("Konnte Twitch-Kanalinfo fuer {} nicht aendern (Status {}): {}",
+                        broadcasterId, response.statusCode(), response.body());
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Aendern der Twitch-Kanalinfo fuer {}: {}", broadcasterId, e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean sendShoutout(String fromBroadcasterId, String toBroadcasterId, String moderatorId) {
+        try {
+            URI uri = URI.create(HELIX_BASE + "/chat/shoutouts?from_broadcaster_id=" + fromBroadcasterId
+                    + "&to_broadcaster_id=" + toBroadcasterId + "&moderator_id=" + moderatorId);
+            HttpRequest request = authorizedRequest(uri).POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Shoutout fuer " + toBroadcasterId);
+            if (response.statusCode() != 204) {
+                LOGGER.warn("Konnte Twitch-Shoutout fuer {} nicht senden (Status {}): {}",
+                        toBroadcasterId, response.statusCode(), response.body());
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Senden des Twitch-Shoutouts fuer {}: {}", toBroadcasterId, e.getMessage());
+            return false;
+        }
+    }
+
+    public Optional<String> createClip(String broadcasterId) {
+        try {
+            URI uri = URI.create(HELIX_BASE + "/clips?broadcaster_id=" + broadcasterId);
+            HttpRequest request = authorizedRequest(uri).POST(HttpRequest.BodyPublishers.noBody()).build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch Clip erstellen fuer " + broadcasterId);
+            if (response.statusCode() != 202) {
+                LOGGER.warn("Konnte Twitch-Clip fuer {} nicht erstellen (Status {}): {}",
+                        broadcasterId, response.statusCode(), response.body());
+                return Optional.empty();
+            }
+            JsonArray data = JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
+            if (data.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(data.get(0).getAsJsonObject().get("id").getAsString());
+        } catch (Exception e) {
+            LOGGER.warn("Fehler beim Erstellen des Twitch-Clips fuer {}: {}", broadcasterId, e.getMessage());
+            return Optional.empty();
+        }
     }
 
     private HttpRequest.Builder authorizedRequest(URI uri) {
         return requestBuilder(uri)
                 .header("Client-Id", clientId)
                 .header("Authorization", "Bearer " + moderatorAccessTokenSupplier.get());
+    }
+
+    public record ChannelInfo(String broadcasterId, String title, String gameId, String gameName) {
+    }
+
+    public record ChatterRecord(String userId, String userLogin) {
     }
 }

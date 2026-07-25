@@ -1,6 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Optional;
 
 public enum TicketPriority {
@@ -21,6 +21,18 @@ public enum TicketPriority {
         this.color = color;
     }
 
+    public static Optional<TicketPriority> fromKey(String key) {
+        if (key == null) {
+            return Optional.empty();
+        }
+        for (TicketPriority priority : values()) {
+            if (priority.key.equalsIgnoreCase(key)) {
+                return Optional.of(priority);
+            }
+        }
+        return Optional.empty();
+    }
+
     public String getKey() {
         return key;
     }
@@ -35,17 +47,5 @@ public enum TicketPriority {
 
     public Color getColor() {
         return color;
-    }
-
-    public static Optional<TicketPriority> fromKey(String key) {
-        if (key == null) {
-            return Optional.empty();
-        }
-        for (TicketPriority priority : values()) {
-            if (priority.key.equalsIgnoreCase(key)) {
-                return Optional.of(priority);
-            }
-        }
-        return Optional.empty();
     }
 }

@@ -14,7 +14,7 @@ public final class AutomodEmbedFactory extends AbstractEmbedFactory {
     }
 
     public static MessageEmbed buildLogEmbed(Member member, MessageChannel channel, AutomodVerdict verdict,
-                                              AutomodAction finalAction, int strikeCount, String messageContent) {
+                                             AutomodAction finalAction, int strikeCount, String messageContent) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
         eb.setTitle("🛡️ AutoMod: " + verdict.ruleType().getLabel());

@@ -12,11 +12,6 @@ public final class Jdbc {
     private Jdbc() {
     }
 
-    @FunctionalInterface
-    public interface RowMapper<T> {
-        T map(ResultSet resultSet) throws SQLException;
-    }
-
     public static int update(Connection connection, String sql, Object... params) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             bind(statement, params);
@@ -78,5 +73,10 @@ public final class Jdbc {
     public static Integer getNullableInt(ResultSet resultSet, String column) throws SQLException {
         int value = resultSet.getInt(column);
         return resultSet.wasNull() ? null : value;
+    }
+
+    @FunctionalInterface
+    public interface RowMapper<T> {
+        T map(ResultSet resultSet) throws SQLException;
     }
 }

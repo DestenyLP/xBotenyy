@@ -1,11 +1,11 @@
 package de.destenylp.xBotenyy.discordbot.commands;
 
+import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogRule;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogService;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogSettings;
 import de.destenylp.xBotenyy.discordbot.eventlog.LogEventType;
-import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import de.destenylp.xBotenyy.discordbot.util.PermissionGuard;
 import net.dv8tion.jda.api.EmbedBuilder;

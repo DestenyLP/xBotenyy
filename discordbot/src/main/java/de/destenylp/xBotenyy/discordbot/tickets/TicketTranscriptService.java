@@ -20,10 +20,10 @@ import java.util.concurrent.CompletableFuture;
 
 public final class TicketTranscriptService {
     private static final Logger LOGGER = LoggerFactory.getLogger(TicketTranscriptService.class);
-    private static volatile int maxMessages = 1000;
-    private static volatile Path transcriptDir = Paths.get("data", "transcripts");
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
             .withZone(ZoneId.systemDefault());
+    private static volatile int maxMessages = 1000;
+    private static volatile Path transcriptDir = Paths.get("data", "transcripts");
 
     private TicketTranscriptService() {
     }

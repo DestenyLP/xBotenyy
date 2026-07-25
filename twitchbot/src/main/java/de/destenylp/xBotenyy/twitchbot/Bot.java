@@ -18,23 +18,10 @@ import de.destenylp.xBotenyy.twitchbot.broadcast.TwitchBroadcastScheduler;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatClient;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchBotServices;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandManager;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.AutomodStatusCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.BroadcastCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.CommandsCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.CustomCommandManagementCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.EventLogCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.FollowageCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.PingCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.StrikesCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.UptimeCommand;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.WatchtimeCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.*;
 import de.destenylp.xBotenyy.twitchbot.config.TwitchBotProperties;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
-import de.destenylp.xBotenyy.twitchbot.persistence.CustomCommandRepository;
-import de.destenylp.xBotenyy.twitchbot.persistence.TwitchBroadcastRepository;
-import de.destenylp.xBotenyy.twitchbot.persistence.TwitchChannelRepository;
-import de.destenylp.xBotenyy.twitchbot.persistence.TwitchEventLogRepository;
-import de.destenylp.xBotenyy.twitchbot.persistence.TwitchWatchtimeRepository;
+import de.destenylp.xBotenyy.twitchbot.persistence.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,6 +94,21 @@ public final class Bot extends AbstractBot {
                 config.twitchClientId(), accessTokenSupplier, Duration.ofSeconds(10),
                 properties.getRestActionMaxAttempts(), Duration.ofSeconds(properties.getRestActionBaseDelaySeconds()));
 
+        Optional<TwitchUserTokenManager> broadcasterTokenManager = TwitchUserTokenManager.create(
+                config.twitchClientId(), config.twitchClientSecret(), config.twitchBroadcasterRefreshToken(),
+                config.envFilePath(), "TWITCH_BROADCASTER_REFRESH_TOKEN");
+
+        if (broadcasterTokenManager.isPresent()) {
+            LOGGER.info("Twitch-Broadcaster-Refresh-Token gefunden, Kanalinfo-Befehle sind verfuegbar.");
+            broadcasterTokenManager.get().refreshNow();
+            moderationApiClient.setBroadcasterAccessTokenSupplier(broadcasterTokenManager.get()::getAccessToken);
+        } else if (config.hasTwitchBroadcasterAccessToken()) {
+            moderationApiClient.setBroadcasterAccessTokenSupplier(config::twitchBroadcasterAccessToken);
+        } else {
+            LOGGER.warn("Kein TWITCH_BROADCASTER_REFRESH_TOKEN gesetzt - !title und !game sind deaktiviert. "
+                    + "Siehe README fuer das Setup des Broadcaster-Tokens.");
+        }
+
         moderatorUserId = moderationApiClient.resolveUserId(config.twitchChatBotUsername())
                 .orElseThrow(() -> new IllegalStateException(
                         "Konnte die Twitch-Nutzer-ID des Bot-Accounts nicht aufloesen - "
@@ -129,7 +131,7 @@ public final class Bot extends AbstractBot {
         automodAdapter = new TwitchAutomodAdapter(automodSettings, moderationClient, chatClient,
                 moderationApiClient, properties.getWarnMessageTemplate(), moderatorUserId, eventLogService);
 
-        TwitchBotServices services = new TwitchBotServices(chatClient, automodAdapter.getEngine(),
+        TwitchBotServices services = new TwitchBotServices(chatClient, automodAdapter.getEngine(), automodAdapter,
                 customCommandRepository, watchtimeRepository, moderationApiClient, moderatorUserId, startedAt);
         commandManager = new TwitchCommandManager(properties.getCommandPrefix(), customCommandRepository, services,
                 eventLogService);
@@ -177,6 +179,15 @@ public final class Bot extends AbstractBot {
         commandManager.register(new BroadcastCommand(broadcastRepository, eventLogService,
                 properties.getBroadcastDefaultIntervalSeconds(), properties.getBroadcastDefaultMinMessages()));
         commandManager.register(new EventLogCommand(eventLogService));
+        commandManager.register(new ModTimeoutCommand(eventLogService));
+        commandManager.register(new ModBanCommand(eventLogService));
+        commandManager.register(new ModUnbanCommand(eventLogService));
+        commandManager.register(new ModPurgeCommand(eventLogService));
+        commandManager.register(new PermitCommand(eventLogService, properties.getAutomodPermitDefaultSeconds()));
+        commandManager.register(new TitleCommand(eventLogService));
+        commandManager.register(new GameCommand(eventLogService));
+        commandManager.register(new ShoutoutCommand(eventLogService));
+        commandManager.register(new ClipCommand());
         LOGGER.info("{} eingebaute Befehle registriert.", commandManager.getRegistry().size());
     }
 

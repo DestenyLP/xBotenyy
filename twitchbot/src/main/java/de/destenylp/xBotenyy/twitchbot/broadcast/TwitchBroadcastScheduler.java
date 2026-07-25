@@ -27,7 +27,7 @@ public class TwitchBroadcastScheduler {
     private final ConcurrentHashMap<String, AtomicInteger> roundRobinCursor = new ConcurrentHashMap<>();
 
     public TwitchBroadcastScheduler(TwitchBroadcastRepository repository, TwitchChatClient chatClient,
-                                     TwitchEventLogService eventLogService, Set<String> channels) {
+                                    TwitchEventLogService eventLogService, Set<String> channels) {
         this.repository = repository;
         this.chatClient = chatClient;
         this.eventLogService = eventLogService;

@@ -66,7 +66,8 @@ public class MessageCommand extends AbstractGuildCommand {
         switch (subcommand) {
             case "create" -> handleCreate(event);
             case "edit" -> handleEdit(event);
-            case "placeholders" -> event.replyEmbeds(PlaceholderCatalog.buildOverviewEmbed()).setEphemeral(true).queue();
+            case "placeholders" ->
+                    event.replyEmbeds(PlaceholderCatalog.buildOverviewEmbed()).setEphemeral(true).queue();
             default -> replyUnknownSubcommand(event);
         }
     }

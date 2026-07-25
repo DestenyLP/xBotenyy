@@ -33,7 +33,9 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
             case "add" -> handleAdd(context, channel);
             case "remove", "delete" -> handleRemove(context, channel);
             case "list" -> handleList(context, channel);
-            default -> context.reply("Nutzung: " + "!command add <name> <antwort> | !command remove <name> | !command list");
+            case "cooldown" -> handleCooldown(context, channel);
+            default -> context.reply("Nutzung: " + "!command add <name> <antwort> | !command remove <name> | "
+                    + "!command cooldown <name> <sekunden> | !command list");
         }
     }
 
@@ -63,6 +65,29 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
         if (removed) {
             eventLogService.record(channel, context.message().userId(), "CUSTOM_COMMAND_REMOVED", "name=" + name);
             context.reply("Befehl '" + name + "' wurde entfernt.");
+        } else {
+            context.reply("Es gibt keinen Custom-Command mit dem Namen '" + name + "'.");
+        }
+    }
+
+    private void handleCooldown(TwitchCommandContext context, String channel) {
+        if (context.arg(1) == null || context.arg(2) == null) {
+            context.reply("Nutzung: !command cooldown <name> <sekunden>");
+            return;
+        }
+        String name = context.arg(1).toLowerCase(Locale.ROOT).replace("!", "");
+        int cooldownSeconds;
+        try {
+            cooldownSeconds = Integer.parseInt(context.arg(2));
+        } catch (NumberFormatException e) {
+            context.reply("Nutzung: !command cooldown <name> <sekunden>");
+            return;
+        }
+        boolean changed = repository.setCooldownSeconds(channel, name, cooldownSeconds);
+        if (changed) {
+            eventLogService.record(channel, context.message().userId(), "CUSTOM_COMMAND_COOLDOWN_CHANGED",
+                    "name=" + name + " cooldownSeconds=" + cooldownSeconds);
+            context.reply("Cooldown von '" + name + "' wurde auf " + Math.max(cooldownSeconds, 0) + " Sekunden gesetzt.");
         } else {
             context.reply("Es gibt keinen Custom-Command mit dem Namen '" + name + "'.");
         }

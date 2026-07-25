@@ -2,7 +2,7 @@ package de.destenylp.xBotenyy.discordbot.tickets;
 
 import de.destenylp.xBotenyy.discordbot.core.EntityStatus;
 
-import java.awt.Color;
+import java.awt.*;
 
 public enum TicketStatus implements EntityStatus {
     OPEN("Offen", "\uD83D\uDD35", new Color(88, 101, 242)),

@@ -21,7 +21,7 @@ public abstract class AbstractTwitchCommand implements Command<TwitchCommandCont
     }
 
     protected AbstractTwitchCommand(String name, String description, List<String> aliases,
-                                     CommandPermission permission, int cooldownSeconds) {
+                                    CommandPermission permission, int cooldownSeconds) {
         this.name = name;
         this.description = description;
         this.aliases = aliases;

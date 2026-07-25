@@ -2,7 +2,7 @@ package de.destenylp.xBotenyy.discordbot.reports;
 
 import de.destenylp.xBotenyy.discordbot.core.EntityStatus;
 
-import java.awt.Color;
+import java.awt.*;
 
 public enum ReportStatus implements EntityStatus {
     OPEN("Unbearbeitet", "\uD83D\uDD34", new Color(237, 66, 69)),

@@ -1,14 +1,8 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
 
-import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
-import de.destenylp.xBotenyy.discordbot.tickets.Ticket;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketCategory;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketCloseCoordinator;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketEmbedFactory;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketPriority;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketService;
-import de.destenylp.xBotenyy.discordbot.tickets.TicketSettings;
 import de.destenylp.xBotenyy.common.util.AuditLog;
+import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
+import de.destenylp.xBotenyy.discordbot.tickets.*;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.textinput.TextInput;
@@ -16,7 +10,6 @@ import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
@@ -41,7 +34,7 @@ public class TicketListener extends ListenerAdapter {
     private final int closeReasonMaxLength;
 
     public TicketListener(TicketService service, TicketCloseCoordinator closeCoordinator,
-                           int subjectMaxLength, int descriptionMaxLength, int closeReasonMaxLength) {
+                          int subjectMaxLength, int descriptionMaxLength, int closeReasonMaxLength) {
         this.service = service;
         this.closeCoordinator = closeCoordinator;
         this.subjectMaxLength = subjectMaxLength;
@@ -388,7 +381,9 @@ public class TicketListener extends ListenerAdapter {
             return;
         }
         event.editMessage("Danke für deine Bewertung! " + "\u2B50".repeat(score)).setComponents().queue(
-                success2 -> { }, failure -> { });
+                success2 -> {
+                }, failure -> {
+                });
         service.getTicket(guildId, ticketId).ifPresent(ticket -> closeCoordinator.refreshLogMessage(event.getJDA(), ticket));
         LOGGER.info("Ticket {} rated {}/5 by {}", ticketId, score, event.getUser().getId());
         AuditLog.record(guildId, event.getUser().getId(), "TICKET_RATE", "ticketId=" + ticketId + " score=" + score);

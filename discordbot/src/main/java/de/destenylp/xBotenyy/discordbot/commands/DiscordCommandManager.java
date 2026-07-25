@@ -1,10 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.commands;
 
-import de.destenylp.xBotenyy.common.commands.CommandDispatchResult;
-import de.destenylp.xBotenyy.common.commands.CommandDispatcher;
-import de.destenylp.xBotenyy.common.commands.CommandPermission;
-import de.destenylp.xBotenyy.common.commands.CommandRegistry;
-import de.destenylp.xBotenyy.common.commands.CooldownManager;
+import de.destenylp.xBotenyy.common.commands.*;
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import net.dv8tion.jda.api.Permission;
@@ -20,6 +16,29 @@ public class DiscordCommandManager {
             registry, new CooldownManager(),
             DiscordCommandManager::resolvePermission,
             event -> event.getUser().getId());
+
+    private static void replyError(SlashCommandInteractionEvent event) {
+        String message = "Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es erneut.";
+        if (event.isAcknowledged()) {
+            event.getHook().sendMessage(message).queue();
+        } else {
+            event.reply(message).setEphemeral(true).queue();
+        }
+    }
+
+    private static CommandPermission resolvePermission(SlashCommandInteractionEvent event) {
+        Member member = event.getMember();
+        if (member == null) {
+            return CommandPermission.EVERYONE;
+        }
+        if (member.hasPermission(Permission.ADMINISTRATOR)) {
+            return CommandPermission.ADMIN;
+        }
+        if (member.hasPermission(Permission.MANAGE_SERVER)) {
+            return CommandPermission.MODERATOR;
+        }
+        return CommandPermission.EVERYONE;
+    }
 
     public void register(DiscordCommand command) {
         registry.register(command);
@@ -50,28 +69,5 @@ public class DiscordCommandManager {
                 replyError(event);
             }
         }
-    }
-
-    private static void replyError(SlashCommandInteractionEvent event) {
-        String message = "Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es erneut.";
-        if (event.isAcknowledged()) {
-            event.getHook().sendMessage(message).queue();
-        } else {
-            event.reply(message).setEphemeral(true).queue();
-        }
-    }
-
-    private static CommandPermission resolvePermission(SlashCommandInteractionEvent event) {
-        Member member = event.getMember();
-        if (member == null) {
-            return CommandPermission.EVERYONE;
-        }
-        if (member.hasPermission(Permission.ADMINISTRATOR)) {
-            return CommandPermission.ADMIN;
-        }
-        if (member.hasPermission(Permission.MANAGE_SERVER)) {
-            return CommandPermission.MODERATOR;
-        }
-        return CommandPermission.EVERYONE;
     }
 }

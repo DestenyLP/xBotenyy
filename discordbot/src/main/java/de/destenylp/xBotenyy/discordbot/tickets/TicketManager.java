@@ -9,11 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TicketManager extends AbstractSqlManager implements TicketRepository {
@@ -123,13 +119,13 @@ public class TicketManager extends AbstractSqlManager implements TicketRepositor
 
     private void insertTicket(Connection connection, Ticket ticket) throws SQLException {
         Jdbc.update(connection, """
-                INSERT INTO tickets (guild_id, ticket_id, channel_id, control_message_id, author_id, author_name,
-                    category, priority, status, subject, description, created_at, updated_at, last_activity_at,
-                    closed_at, claimed_by_id, claimed_by_name, closed_by_id, closed_by_name, close_reason,
-                    transcript_file_name, log_channel_id, log_message_id, rating_score, rating_comment,
-                    auto_close_warning_sent)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+                        INSERT INTO tickets (guild_id, ticket_id, channel_id, control_message_id, author_id, author_name,
+                            category, priority, status, subject, description, created_at, updated_at, last_activity_at,
+                            closed_at, claimed_by_id, claimed_by_name, closed_by_id, closed_by_name, close_reason,
+                            transcript_file_name, log_channel_id, log_message_id, rating_score, rating_comment,
+                            auto_close_warning_sent)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
                 ticket.getGuildId(), ticket.getId(), ticket.getChannelId(), ticket.getControlMessageId(),
                 ticket.getAuthorId(), ticket.getAuthorName(), ticket.getCategory(), ticket.getPriority(),
                 ticket.getStatus(), ticket.getSubject(), ticket.getDescription(), ticket.getCreatedAt(),
@@ -141,13 +137,13 @@ public class TicketManager extends AbstractSqlManager implements TicketRepositor
 
     private void updateTicketRow(Connection connection, Ticket ticket) throws SQLException {
         Jdbc.update(connection, """
-                UPDATE tickets SET channel_id = ?, control_message_id = ?, priority = ?, status = ?,
-                    updated_at = ?, last_activity_at = ?, closed_at = ?, claimed_by_id = ?, claimed_by_name = ?,
-                    closed_by_id = ?, closed_by_name = ?, close_reason = ?, transcript_file_name = ?,
-                    log_channel_id = ?, log_message_id = ?, rating_score = ?, rating_comment = ?,
-                    auto_close_warning_sent = ?
-                WHERE guild_id = ? AND ticket_id = ?
-                """,
+                        UPDATE tickets SET channel_id = ?, control_message_id = ?, priority = ?, status = ?,
+                            updated_at = ?, last_activity_at = ?, closed_at = ?, claimed_by_id = ?, claimed_by_name = ?,
+                            closed_by_id = ?, closed_by_name = ?, close_reason = ?, transcript_file_name = ?,
+                            log_channel_id = ?, log_message_id = ?, rating_score = ?, rating_comment = ?,
+                            auto_close_warning_sent = ?
+                        WHERE guild_id = ? AND ticket_id = ?
+                        """,
                 ticket.getChannelId(), ticket.getControlMessageId(), ticket.getPriority(), ticket.getStatus(),
                 ticket.getUpdatedAt(), ticket.getLastActivityAt(), ticket.getClosedAt(), ticket.getClaimedById(),
                 ticket.getClaimedByName(), ticket.getClosedById(), ticket.getClosedByName(), ticket.getCloseReason(),
@@ -363,7 +359,7 @@ public class TicketManager extends AbstractSqlManager implements TicketRepositor
     }
 
     private boolean mutateTicket(String guildId, String ticketId, java.util.function.Predicate<Ticket> guard,
-                                  java.util.function.Consumer<Ticket> mutation) {
+                                 java.util.function.Consumer<Ticket> mutation) {
         Optional<Ticket> ticketOpt = getTicket(guildId, ticketId);
         if (ticketOpt.isEmpty() || !guard.test(ticketOpt.get())) {
             return false;

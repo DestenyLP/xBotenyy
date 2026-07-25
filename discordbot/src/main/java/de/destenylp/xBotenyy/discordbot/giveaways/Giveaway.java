@@ -1,32 +1,28 @@
 package de.destenylp.xBotenyy.discordbot.giveaways;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Giveaway {
-    private String id;
     private final String guildId;
-    private String channelId;
-    private String messageId;
     private final String prize;
     private final String description;
     private final int winnerCount;
     private final String hostId;
     private final String hostName;
     private final String requiredRoleId;
-    private GiveawayStatus status;
     private final long createdAt;
     private final long endAt;
-    private long endedAt;
     private final Set<String> participantIds = new LinkedHashSet<>();
+    private String id;
+    private String channelId;
+    private String messageId;
+    private GiveawayStatus status;
+    private long endedAt;
     private List<String> winnerIds = new ArrayList<>();
 
     public Giveaway(String guildId, String prize, String description, int winnerCount, String hostId,
-                     String hostName, String requiredRoleId, long endAt) {
+                    String hostName, String requiredRoleId, long endAt) {
         this.guildId = guildId;
         this.prize = prize;
         this.description = description;

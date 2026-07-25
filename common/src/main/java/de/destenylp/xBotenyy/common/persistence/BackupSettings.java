@@ -24,11 +24,6 @@ public record BackupSettings(boolean enabled, Duration interval, int maxBackupsT
         return values;
     }
 
-    public Path resolveDirectory(Path dataDirectory) {
-        Path path = Path.of(directory);
-        return path.isAbsolute() ? path : dataDirectory.resolve(path);
-    }
-
     private static String string(Function<String, String> resolver, String key, String fallback) {
         String value = resolver.apply(key);
         return value == null || value.isBlank() ? fallback : value.trim();
@@ -55,5 +50,10 @@ public record BackupSettings(boolean enabled, Duration interval, int maxBackupsT
         } catch (NumberFormatException e) {
             return fallback;
         }
+    }
+
+    public Path resolveDirectory(Path dataDirectory) {
+        Path path = Path.of(directory);
+        return path.isAbsolute() ? path : dataDirectory.resolve(path);
     }
 }

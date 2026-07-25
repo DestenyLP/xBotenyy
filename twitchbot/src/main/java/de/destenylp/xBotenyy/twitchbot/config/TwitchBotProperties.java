@@ -9,11 +9,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 public final class TwitchBotProperties {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchBotProperties.class);
@@ -96,6 +92,7 @@ public final class TwitchBotProperties {
         values.put("twitch.broadcast.check.interval.seconds", "30");
         values.put("twitch.broadcast.default.interval.seconds", "1800");
         values.put("twitch.broadcast.default.min.messages", "5");
+        values.put("twitch.automod.permit.default.seconds", "30");
 
         values.putAll(AutomodSettingsFactory.defaultValues());
 
@@ -209,6 +206,10 @@ public final class TwitchBotProperties {
 
     public int getBroadcastDefaultMinMessages() {
         return getInt("twitch.broadcast.default.min.messages", 5, 0);
+    }
+
+    public long getAutomodPermitDefaultSeconds() {
+        return getLong("twitch.automod.permit.default.seconds", 30, 5);
     }
 
     public Path getDataDirectory() {

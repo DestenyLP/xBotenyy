@@ -6,18 +6,19 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class Ticket {
-    private String id;
     private final String guildId;
-    private String channelId;
-    private String controlMessageId;
     private final String authorId;
     private final String authorName;
     private final TicketCategory category;
-    private TicketPriority priority;
-    private TicketStatus status;
     private final String subject;
     private final String description;
     private final long createdAt;
+    private final Set<String> participantIds = new LinkedHashSet<>();
+    private String id;
+    private String channelId;
+    private String controlMessageId;
+    private TicketPriority priority;
+    private TicketStatus status;
     private long updatedAt;
     private long lastActivityAt;
     private long closedAt;
@@ -32,7 +33,6 @@ public class Ticket {
     private Integer ratingScore;
     private String ratingComment;
     private boolean autoCloseWarningSent;
-    private final Set<String> participantIds = new LinkedHashSet<>();
 
     public Ticket(String guildId, String authorId, String authorName, TicketCategory category,
                   String subject, String description) {

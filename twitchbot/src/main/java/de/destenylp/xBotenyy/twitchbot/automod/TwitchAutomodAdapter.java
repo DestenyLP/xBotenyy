@@ -12,6 +12,7 @@ import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +34,7 @@ public class TwitchAutomodAdapter {
     private final String moderatorUserId;
     private final TwitchEventLogService eventLogService;
     private final Map<String, String> broadcasterIdCache = new ConcurrentHashMap<>();
+    private final Map<String, Long> permittedUntilMillis = new ConcurrentHashMap<>();
     private final ExecutorService moderationExecutor = Executors.newFixedThreadPool(2, runnable -> {
         Thread thread = new Thread(runnable, "twitch-automod");
         thread.setDaemon(true);
@@ -40,18 +42,22 @@ public class TwitchAutomodAdapter {
     });
 
     public TwitchAutomodAdapter(AutomodSettings settings,
-                                 GroqSafeguardClient moderationClient,
-                                 TwitchChatClient chatClient,
-                                 TwitchModerationApiClient moderationApiClient,
-                                 String warnMessageTemplate,
-                                 String moderatorUserId,
-                                 TwitchEventLogService eventLogService) {
+                                GroqSafeguardClient moderationClient,
+                                TwitchChatClient chatClient,
+                                TwitchModerationApiClient moderationApiClient,
+                                String warnMessageTemplate,
+                                String moderatorUserId,
+                                TwitchEventLogService eventLogService) {
         this.engine = new AutomodEngine(settings, moderationClient);
         this.chatClient = chatClient;
         this.moderationApiClient = moderationApiClient;
         this.warnMessageTemplate = warnMessageTemplate;
         this.moderatorUserId = moderatorUserId;
         this.eventLogService = eventLogService;
+    }
+
+    private static String permitKey(String channelLogin, String userLogin) {
+        return channelLogin + ":" + userLogin.toLowerCase(java.util.Locale.ROOT);
     }
 
     public AutomodEngine getEngine() {
@@ -61,6 +67,24 @@ public class TwitchAutomodAdapter {
     public void shutdown() {
         engine.shutdown();
         moderationExecutor.shutdownNow();
+    }
+
+    public void permit(String channelLogin, String userLogin, long durationSeconds) {
+        String key = permitKey(channelLogin, userLogin);
+        permittedUntilMillis.put(key, System.currentTimeMillis() + Duration.ofSeconds(durationSeconds).toMillis());
+    }
+
+    private boolean isPermitted(String channelLogin, String userLogin) {
+        String key = permitKey(channelLogin, userLogin);
+        Long until = permittedUntilMillis.get(key);
+        if (until == null) {
+            return false;
+        }
+        if (System.currentTimeMillis() >= until) {
+            permittedUntilMillis.remove(key);
+            return false;
+        }
+        return true;
     }
 
     public boolean handleMessage(TwitchChatMessage message) {
@@ -76,6 +100,9 @@ public class TwitchAutomodAdapter {
             return false;
         }
         if (engine.isExempt(List.of(message.userLogin()))) {
+            return false;
+        }
+        if (isPermitted(message.channelLogin(), message.userLogin())) {
             return false;
         }
 

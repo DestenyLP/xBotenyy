@@ -47,10 +47,10 @@ public class ReactionRoleManager extends AbstractSqlManager implements ReactionR
             return false;
         }
         database.runInTransaction(connection -> Jdbc.update(connection, """
-                INSERT INTO reactionrole_entries (message_id, component_id, role_id, type, emoji, button_label,
-                    button_style)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, messageId, componentKey(entry), entry.getRoleId(), entry.getType(), entry.getEmoji(),
+                        INSERT INTO reactionrole_entries (message_id, component_id, role_id, type, emoji, button_label,
+                            button_style)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, messageId, componentKey(entry), entry.getRoleId(), entry.getType(), entry.getEmoji(),
                 entry.getButtonLabel(), entry.getButtonStyle()));
         return true;
     }

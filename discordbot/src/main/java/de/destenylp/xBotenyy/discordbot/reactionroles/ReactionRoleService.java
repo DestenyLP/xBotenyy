@@ -13,6 +13,11 @@ import java.util.function.Function;
 
 public class ReactionRoleService implements GuildService {
     private static volatile int maxButtonsPerMessage = 25;
+    private final ReactionRoleRepository manager;
+
+    public ReactionRoleService(ReactionRoleRepository manager) {
+        this.manager = manager;
+    }
 
     public static void configureMaxButtonsPerMessage(int value) {
         maxButtonsPerMessage = Math.max(1, Math.min(25, value));
@@ -20,12 +25,6 @@ public class ReactionRoleService implements GuildService {
 
     public static int getMaxButtonsPerMessage() {
         return maxButtonsPerMessage;
-    }
-
-    private final ReactionRoleRepository manager;
-
-    public ReactionRoleService(ReactionRoleRepository manager) {
-        this.manager = manager;
     }
 
     @Override
@@ -90,7 +89,7 @@ public class ReactionRoleService implements GuildService {
     }
 
     public ReactionRoleEntry recordButtonEntry(String guildId, String messageId, String componentId, String roleId,
-                                                String emojiFormatted, String label, ButtonStyle style) {
+                                               String emojiFormatted, String label, ButtonStyle style) {
         ReactionRoleEntry entry = ReactionRoleEntry.builder()
                 .componentId(componentId)
                 .roleId(roleId)

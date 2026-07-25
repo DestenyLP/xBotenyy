@@ -18,12 +18,14 @@ public class GiveawayEndCoordinator {
         if (giveaway.getMessageId() != null) {
             channel.editMessageEmbedsById(giveaway.getMessageId(), GiveawayEmbedFactory.buildEndedEmbed(giveaway))
                     .setComponents(GiveawayEmbedFactory.buildEnterComponents(giveaway))
-                    .queue(success -> { }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
+                    .queue(success -> {
+                    }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
                             giveaway.getMessageId(), failure.getMessage()));
         }
 
         channel.sendMessage(GiveawayEmbedFactory.buildWinnerAnnouncementContent(giveaway))
-                .queue(success -> { }, failure -> LOGGER.warn("Gewinner-Ankündigung für Gewinnspiel {} konnte nicht gepostet werden: {}",
+                .queue(success -> {
+                }, failure -> LOGGER.warn("Gewinner-Ankündigung für Gewinnspiel {} konnte nicht gepostet werden: {}",
                         giveaway.getId(), failure.getMessage()));
 
         LOGGER.info("Giveaway {} in guild {} ended with {} winner(s)", giveaway.getId(), giveaway.getGuildId(), giveaway.getWinnerIds().size());
@@ -39,12 +41,14 @@ public class GiveawayEndCoordinator {
         if (giveaway.getMessageId() != null) {
             channel.editMessageEmbedsById(giveaway.getMessageId(), GiveawayEmbedFactory.buildEndedEmbed(giveaway))
                     .setComponents(GiveawayEmbedFactory.buildEnterComponents(giveaway))
-                    .queue(success -> { }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
+                    .queue(success -> {
+                    }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
                             giveaway.getMessageId(), failure.getMessage()));
         }
 
         channel.sendMessage("\uD83D\uDD01 Neuauslosung: " + GiveawayEmbedFactory.buildWinnerAnnouncementContent(giveaway))
-                .queue(success -> { }, failure -> LOGGER.warn("Neuauslosung für Gewinnspiel {} konnte nicht gepostet werden: {}",
+                .queue(success -> {
+                }, failure -> LOGGER.warn("Neuauslosung für Gewinnspiel {} konnte nicht gepostet werden: {}",
                         giveaway.getId(), failure.getMessage()));
 
         LOGGER.info("Giveaway {} in guild {} rerolled with {} winner(s)", giveaway.getId(), giveaway.getGuildId(), giveaway.getWinnerIds().size());
@@ -59,7 +63,8 @@ public class GiveawayEndCoordinator {
         if (giveaway.getMessageId() != null) {
             channel.editMessageEmbedsById(giveaway.getMessageId(), GiveawayEmbedFactory.buildCancelledEmbed(giveaway))
                     .setComponents(GiveawayEmbedFactory.buildEnterComponents(giveaway))
-                    .queue(success -> { }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
+                    .queue(success -> {
+                    }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
                             giveaway.getMessageId(), failure.getMessage()));
         }
 

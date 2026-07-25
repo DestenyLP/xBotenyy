@@ -12,6 +12,13 @@ public class TwitchWatchtimeRepository extends AbstractSqlManager {
         super(database);
     }
 
+    private static WatchtimeRecord mapRow(java.sql.ResultSet resultSet) throws java.sql.SQLException {
+        return new WatchtimeRecord(
+                resultSet.getString("user_id"),
+                resultSet.getString("user_login"),
+                resultSet.getLong("seconds"));
+    }
+
     public void addSeconds(String channelLogin, String userId, String userLogin, long seconds) {
         long now = Instant.now().toEpochMilli();
         database.useConnection(connection -> Jdbc.update(connection,
@@ -34,13 +41,6 @@ public class TwitchWatchtimeRepository extends AbstractSqlManager {
                 "SELECT user_id, user_login, seconds FROM twitch_watchtime WHERE channel_login = ? "
                         + "ORDER BY seconds DESC LIMIT ?",
                 TwitchWatchtimeRepository::mapRow, channelLogin, limit));
-    }
-
-    private static WatchtimeRecord mapRow(java.sql.ResultSet resultSet) throws java.sql.SQLException {
-        return new WatchtimeRecord(
-                resultSet.getString("user_id"),
-                resultSet.getString("user_login"),
-                resultSet.getLong("seconds"));
     }
 
     public record WatchtimeRecord(String userId, String userLogin, long seconds) {

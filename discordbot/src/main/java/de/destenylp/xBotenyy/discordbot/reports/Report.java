@@ -3,7 +3,6 @@ package de.destenylp.xBotenyy.discordbot.reports;
 import java.time.Instant;
 
 public class Report {
-    private String id;
     private final String guildId;
     private final String reporterId;
     private final String reporterName;
@@ -12,8 +11,9 @@ public class Report {
     private final String target;
     private final String description;
     private final String evidence;
-    private ReportStatus status;
     private final long createdAt;
+    private String id;
+    private ReportStatus status;
     private long updatedAt;
     private String reportChannelId;
     private String reportMessageId;

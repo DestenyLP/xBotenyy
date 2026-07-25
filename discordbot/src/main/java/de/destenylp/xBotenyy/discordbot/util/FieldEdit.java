@@ -3,15 +3,6 @@ package de.destenylp.xBotenyy.discordbot.util;
 import java.util.function.Consumer;
 
 public sealed interface FieldEdit<T> {
-    record NotProvided<T>() implements FieldEdit<T> {
-    }
-
-    record Clear<T>() implements FieldEdit<T> {
-    }
-
-    record Value<T>(T value) implements FieldEdit<T> {
-    }
-
     static <T> FieldEdit<T> notProvided() {
         return new NotProvided<>();
     }
@@ -31,5 +22,14 @@ public sealed interface FieldEdit<T> {
             case Clear<T> ignored -> setter.accept(null);
             case Value<T> provided -> setter.accept(provided.value());
         }
+    }
+
+    record NotProvided<T>() implements FieldEdit<T> {
+    }
+
+    record Clear<T>() implements FieldEdit<T> {
+    }
+
+    record Value<T>(T value) implements FieldEdit<T> {
     }
 }

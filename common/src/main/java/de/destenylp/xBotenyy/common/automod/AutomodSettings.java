@@ -1,10 +1,6 @@
 package de.destenylp.xBotenyy.common.automod;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,12 +22,12 @@ public final class AutomodSettings {
     private final StrikeConfig strikeConfig;
 
     public AutomodSettings(boolean enabled, Set<String> exemptRoleIds, Set<String> exemptChannelIds,
-                            boolean bypassManageServer, boolean bypassAdministrator, String logChannelId,
-                            WordFilterConfig wordFilter,
-                            InviteFilterConfig inviteFilter, MentionFilterConfig mentionFilter,
-                            CapsFilterConfig capsFilter, SpamFilterConfig spamFilter,
-                            DuplicateFilterConfig duplicateFilter, LinkFilterConfig linkFilter,
-                            AiFilterConfig aiFilter, StrikeConfig strikeConfig) {
+                           boolean bypassManageServer, boolean bypassAdministrator, String logChannelId,
+                           WordFilterConfig wordFilter,
+                           InviteFilterConfig inviteFilter, MentionFilterConfig mentionFilter,
+                           CapsFilterConfig capsFilter, SpamFilterConfig spamFilter,
+                           DuplicateFilterConfig duplicateFilter, LinkFilterConfig linkFilter,
+                           AiFilterConfig aiFilter, StrikeConfig strikeConfig) {
         this.enabled = enabled;
         this.exemptRoleIds = Set.copyOf(exemptRoleIds);
         this.exemptChannelIds = Set.copyOf(exemptChannelIds);
@@ -187,6 +183,6 @@ public final class AutomodSettings {
     }
 
     public record StrikeConfig(boolean enabled, int expiryMinutes, int timeoutThreshold, int timeoutDurationMinutes,
-                                int kickThreshold, int banThreshold) {
+                               int kickThreshold, int banThreshold) {
     }
 }

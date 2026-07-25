@@ -14,42 +14,6 @@ public class CustomCommandRepository extends AbstractSqlManager {
         super(database);
     }
 
-    public void upsert(String channelLogin, String name, String response, String createdBy) {
-        long now = Instant.now().toEpochMilli();
-        String normalizedName = normalize(name);
-        database.useConnection(connection -> Jdbc.update(connection,
-                "INSERT INTO twitch_custom_commands (channel_login, name, response, created_by, created_at, updated_at, uses) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, 0) "
-                        + "ON CONFLICT(channel_login, name) DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at",
-                channelLogin, normalizedName, response, createdBy, now, now));
-    }
-
-    public boolean remove(String channelLogin, String name) {
-        return database.withConnection(connection -> Jdbc.update(connection,
-                "DELETE FROM twitch_custom_commands WHERE channel_login = ? AND name = ?",
-                channelLogin, normalize(name))) > 0;
-    }
-
-    public Optional<CustomCommandRecord> find(String channelLogin, String name) {
-        return database.withConnection(connection -> Jdbc.queryOne(connection,
-                "SELECT name, response, created_by, created_at, uses FROM twitch_custom_commands "
-                        + "WHERE channel_login = ? AND name = ?",
-                CustomCommandRepository::mapRow, channelLogin, normalize(name)));
-    }
-
-    public List<CustomCommandRecord> list(String channelLogin) {
-        return database.withConnection(connection -> Jdbc.query(connection,
-                "SELECT name, response, created_by, created_at, uses FROM twitch_custom_commands "
-                        + "WHERE channel_login = ? ORDER BY name ASC",
-                CustomCommandRepository::mapRow, channelLogin));
-    }
-
-    public void incrementUses(String channelLogin, String name) {
-        database.useConnection(connection -> Jdbc.update(connection,
-                "UPDATE twitch_custom_commands SET uses = uses + 1 WHERE channel_login = ? AND name = ?",
-                channelLogin, normalize(name)));
-    }
-
     private static String normalize(String name) {
         return name.trim().toLowerCase(Locale.ROOT);
     }
@@ -60,9 +24,53 @@ public class CustomCommandRepository extends AbstractSqlManager {
                 resultSet.getString("response"),
                 resultSet.getString("created_by"),
                 resultSet.getLong("created_at"),
-                resultSet.getLong("uses"));
+                resultSet.getLong("uses"),
+                resultSet.getInt("cooldown_seconds"));
     }
 
-    public record CustomCommandRecord(String name, String response, String createdBy, long createdAtEpochMillis, long uses) {
+    public void upsert(String channelLogin, String name, String response, String createdBy) {
+        long now = Instant.now().toEpochMilli();
+        String normalizedName = normalize(name);
+        database.useConnection(connection -> Jdbc.update(connection,
+                "INSERT INTO twitch_custom_commands (channel_login, name, response, created_by, created_at, updated_at, uses, cooldown_seconds) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, 0, 5) "
+                        + "ON CONFLICT(channel_login, name) DO UPDATE SET response = excluded.response, updated_at = excluded.updated_at",
+                channelLogin, normalizedName, response, createdBy, now, now));
+    }
+
+    public boolean setCooldownSeconds(String channelLogin, String name, int cooldownSeconds) {
+        return database.withConnection(connection -> Jdbc.update(connection,
+                "UPDATE twitch_custom_commands SET cooldown_seconds = ? WHERE channel_login = ? AND name = ?",
+                Math.max(cooldownSeconds, 0), channelLogin, normalize(name))) > 0;
+    }
+
+    public boolean remove(String channelLogin, String name) {
+        return database.withConnection(connection -> Jdbc.update(connection,
+                "DELETE FROM twitch_custom_commands WHERE channel_login = ? AND name = ?",
+                channelLogin, normalize(name))) > 0;
+    }
+
+    public Optional<CustomCommandRecord> find(String channelLogin, String name) {
+        return database.withConnection(connection -> Jdbc.queryOne(connection,
+                "SELECT name, response, created_by, created_at, uses, cooldown_seconds FROM twitch_custom_commands "
+                        + "WHERE channel_login = ? AND name = ?",
+                CustomCommandRepository::mapRow, channelLogin, normalize(name)));
+    }
+
+    public List<CustomCommandRecord> list(String channelLogin) {
+        return database.withConnection(connection -> Jdbc.query(connection,
+                "SELECT name, response, created_by, created_at, uses, cooldown_seconds FROM twitch_custom_commands "
+                        + "WHERE channel_login = ? ORDER BY name ASC",
+                CustomCommandRepository::mapRow, channelLogin));
+    }
+
+    public void incrementUses(String channelLogin, String name) {
+        database.useConnection(connection -> Jdbc.update(connection,
+                "UPDATE twitch_custom_commands SET uses = uses + 1 WHERE channel_login = ? AND name = ?",
+                channelLogin, normalize(name)));
+    }
+
+    public record CustomCommandRecord(String name, String response, String createdBy, long createdAtEpochMillis,
+                                      long uses, int cooldownSeconds) {
     }
 }

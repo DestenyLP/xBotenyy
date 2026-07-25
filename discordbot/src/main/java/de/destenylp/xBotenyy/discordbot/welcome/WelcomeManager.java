@@ -1,9 +1,9 @@
 package de.destenylp.xBotenyy.discordbot.welcome;
 
-import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
 import de.destenylp.xBotenyy.common.persistence.sql.AbstractSqlManager;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import de.destenylp.xBotenyy.common.persistence.sql.Jdbc;
+import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -73,10 +73,10 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
     private void insertVariant(Connection connection, String guildId, WelcomeVariant variant) throws SQLException {
         MessageTemplate template = variant.getTemplate();
         Jdbc.update(connection, """
-                INSERT INTO welcome_variants (guild_id, variant_id, ping, embed, title, content, color, image_url,
-                    footer)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, guildId, variant.getId(), variant.isPing(), template.isEmbed(), template.getTitle(),
+                        INSERT INTO welcome_variants (guild_id, variant_id, ping, embed, title, content, color, image_url,
+                            footer)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, guildId, variant.getId(), variant.isPing(), template.isEmbed(), template.getTitle(),
                 template.getContent(), template.getColor(), template.getImageUrl(), template.getFooter());
     }
 
@@ -84,10 +84,10 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
     public void save(String guildId, WelcomeVariant variant) {
         MessageTemplate template = variant.getTemplate();
         database.runInTransaction(connection -> Jdbc.update(connection, """
-                UPDATE welcome_variants SET ping = ?, embed = ?, title = ?, content = ?, color = ?, image_url = ?,
-                    footer = ?
-                WHERE guild_id = ? AND variant_id = ?
-                """, variant.isPing(), template.isEmbed(), template.getTitle(), template.getContent(),
+                        UPDATE welcome_variants SET ping = ?, embed = ?, title = ?, content = ?, color = ?, image_url = ?,
+                            footer = ?
+                        WHERE guild_id = ? AND variant_id = ?
+                        """, variant.isPing(), template.isEmbed(), template.getTitle(), template.getContent(),
                 template.getColor(), template.getImageUrl(), template.getFooter(), guildId, variant.getId()));
     }
 

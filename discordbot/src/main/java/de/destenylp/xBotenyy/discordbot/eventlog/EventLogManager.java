@@ -85,12 +85,12 @@ public class EventLogManager extends AbstractSqlManager implements EventLogRepos
         return settings;
     }
 
-    private record RuleRow(LogEventType type, EventLogRule rule) {
-    }
-
     private RuleRow mapRuleRow(ResultSet resultSet) throws SQLException {
         LogEventType type = LogEventType.valueOf(resultSet.getString("event_type"));
         EventLogRule rule = new EventLogRule(Jdbc.getBoolean(resultSet, "enabled"), resultSet.getString("channel_id"));
         return new RuleRow(type, rule);
+    }
+
+    private record RuleRow(LogEventType type, EventLogRule rule) {
     }
 }

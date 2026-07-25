@@ -1,6 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.core;
 
-import de.destenylp.xBotenyy.discordbot.automod.AutomodService;
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodSettingsFactory;
 import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
@@ -8,6 +7,7 @@ import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.common.persistence.BackupService;
 import de.destenylp.xBotenyy.common.persistence.BackupSettings;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
+import de.destenylp.xBotenyy.discordbot.automod.AutomodService;
 import de.destenylp.xBotenyy.discordbot.config.BotProperties;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogManager;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogService;
@@ -63,8 +63,8 @@ public class ServiceContainer implements AutoCloseable {
     }
 
     ServiceContainer(Database database, ReactionRoleManager reactionRoleManager, WelcomeManager welcomeManager,
-                      ReportManager reportManager, TicketManager ticketManager, GiveawayManager giveawayManager,
-                      EventLogManager eventLogManager, SocialManager socialManager, BotProperties properties) {
+                     ReportManager reportManager, TicketManager ticketManager, GiveawayManager giveawayManager,
+                     EventLogManager eventLogManager, SocialManager socialManager, BotProperties properties) {
         this.database = database;
         this.reactionRoleService = new ReactionRoleService(reactionRoleManager);
         this.welcomeService = new WelcomeService(welcomeManager);

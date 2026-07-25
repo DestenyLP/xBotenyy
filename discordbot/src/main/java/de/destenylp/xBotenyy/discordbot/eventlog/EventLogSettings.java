@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class EventLogSettings {
-    private String defaultChannelId;
     private final Map<LogEventType, EventLogRule> rules = new ConcurrentHashMap<>();
+    private String defaultChannelId;
 
     public String getDefaultChannelId() {
         return defaultChannelId;

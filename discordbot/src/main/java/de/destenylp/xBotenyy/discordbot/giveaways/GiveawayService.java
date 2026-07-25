@@ -3,12 +3,7 @@ package de.destenylp.xBotenyy.discordbot.giveaways;
 import de.destenylp.xBotenyy.discordbot.core.PrunableGuildService;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -83,7 +78,7 @@ public class GiveawayService implements PrunableGuildService {
     }
 
     public Giveaway createGiveaway(String guildId, String prize, String description, int winnerCount,
-                                    String hostId, String hostName, String requiredRoleId, long endAt) {
+                                   String hostId, String hostName, String requiredRoleId, long endAt) {
         Giveaway draft = new Giveaway(guildId, prize, description, winnerCount, hostId, hostName, requiredRoleId, endAt);
         return manager.createGiveaway(draft);
     }
@@ -106,10 +101,6 @@ public class GiveawayService implements PrunableGuildService {
 
     public List<Giveaway> getRunningGiveaways(String guildId) {
         return manager.getRunningGiveaways(guildId);
-    }
-
-    public enum ToggleResult {
-        JOINED, LEFT
     }
 
     public ToggleResult toggleParticipation(Giveaway giveaway, String memberId) {
@@ -181,5 +172,9 @@ public class GiveawayService implements PrunableGuildService {
 
     public int pruneFinishedGiveaways(Duration retention) {
         return manager.pruneFinishedGiveaways(retention);
+    }
+
+    public enum ToggleResult {
+        JOINED, LEFT
     }
 }

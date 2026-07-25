@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
 public final class ImageUrlValidator {
     private static final List<String> ALLOWED_SCHEMES = List.of("http", "https");

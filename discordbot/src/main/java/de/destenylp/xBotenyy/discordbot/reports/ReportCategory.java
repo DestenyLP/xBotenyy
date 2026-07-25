@@ -20,6 +20,18 @@ public enum ReportCategory {
         this.description = description;
     }
 
+    public static Optional<ReportCategory> fromKey(String key) {
+        if (key == null) {
+            return Optional.empty();
+        }
+        for (ReportCategory category : values()) {
+            if (category.key.equalsIgnoreCase(key)) {
+                return Optional.of(category);
+            }
+        }
+        return Optional.empty();
+    }
+
     public String getKey() {
         return key;
     }
@@ -34,17 +46,5 @@ public enum ReportCategory {
 
     public String getDescription() {
         return description;
-    }
-
-    public static Optional<ReportCategory> fromKey(String key) {
-        if (key == null) {
-            return Optional.empty();
-        }
-        for (ReportCategory category : values()) {
-            if (category.key.equalsIgnoreCase(key)) {
-                return Optional.of(category);
-            }
-        }
-        return Optional.empty();
     }
 }

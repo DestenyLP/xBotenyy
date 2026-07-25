@@ -3,7 +3,10 @@ package de.destenylp.xBotenyy.discordbot.socials.twitch;
 import de.destenylp.xBotenyy.discordbot.messaging.MessageDispatcher;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
-import de.destenylp.xBotenyy.discordbot.socials.*;
+import de.destenylp.xBotenyy.discordbot.socials.SocialAccount;
+import de.destenylp.xBotenyy.discordbot.socials.SocialMessageFactory;
+import de.destenylp.xBotenyy.discordbot.socials.SocialService;
+import de.destenylp.xBotenyy.discordbot.socials.SocialsPollStatus;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -27,9 +30,6 @@ public final class TwitchCheckTask implements Runnable {
         this.jda = jda;
         this.service = service;
         this.apiClient = apiClient;
-    }
-
-    private record GuildAccount(String guildId, SocialAccount account) {
     }
 
     @Override
@@ -112,5 +112,8 @@ public final class TwitchCheckTask implements Runnable {
                 failure -> LOGGER.warn("Konnte Twitch Ankuendigung fuer Account {} nicht senden: {}",
                         account.getId(), failure.getMessage())));
         LOGGER.info("Twitch Livestream fuer Account {} in Guild {} angekuendigt: {}", account.getId(), guildId, stream.id());
+    }
+
+    private record GuildAccount(String guildId, SocialAccount account) {
     }
 }

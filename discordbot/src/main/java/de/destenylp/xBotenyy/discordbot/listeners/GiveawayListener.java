@@ -82,7 +82,8 @@ public class GiveawayListener extends ListenerAdapter {
 
         event.getMessage().editMessageEmbeds(GiveawayEmbedFactory.buildAnnouncementEmbed(giveaway))
                 .setComponents(GiveawayEmbedFactory.buildEnterComponents(giveaway))
-                .queue(success -> { }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
+                .queue(success -> {
+                }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
                         giveaway.getMessageId(), failure.getMessage()));
     }
 }

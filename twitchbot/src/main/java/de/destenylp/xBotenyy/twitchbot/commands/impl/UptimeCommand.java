@@ -11,12 +11,6 @@ public class UptimeCommand extends AbstractTwitchCommand {
         super("uptime", "Zeigt, wie lange der Bot schon laeuft.");
     }
 
-    @Override
-    public void execute(TwitchCommandContext context) {
-        Duration uptime = Duration.between(context.services().startedAt(), Instant.now());
-        context.reply("Ich laufe seit " + format(uptime) + ".");
-    }
-
     private static String format(Duration duration) {
         long days = duration.toDays();
         long hours = duration.toHoursPart();
@@ -30,5 +24,11 @@ public class UptimeCommand extends AbstractTwitchCommand {
         }
         builder.append(minutes).append("m");
         return builder.toString();
+    }
+
+    @Override
+    public void execute(TwitchCommandContext context) {
+        Duration uptime = Duration.between(context.services().startedAt(), Instant.now());
+        context.reply("Ich laufe seit " + format(uptime) + ".");
     }
 }

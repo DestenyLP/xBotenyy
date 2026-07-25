@@ -7,11 +7,7 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public abstract class AbstractBot {
     protected final Logger logger;
@@ -53,7 +49,7 @@ public abstract class AbstractBot {
     protected abstract String heartbeatSummary();
 
     protected final void scheduleDataRetention(long initialDelayMinutes, long intervalMinutes, Duration retention,
-                                                List<PrunableResource> resources) {
+                                               List<PrunableResource> resources) {
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 StringBuilder summary = new StringBuilder();

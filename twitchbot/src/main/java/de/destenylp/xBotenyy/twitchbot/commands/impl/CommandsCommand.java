@@ -15,7 +15,7 @@ public class CommandsCommand extends AbstractTwitchCommand {
     private final String prefix;
 
     public CommandsCommand(TwitchCommandManager commandManager, CustomCommandRepository customCommandRepository,
-                            String prefix) {
+                           String prefix) {
         super("commands", "Listet alle verfuegbaren Befehle auf.", List.of("help"),
                 de.destenylp.xBotenyy.common.commands.CommandPermission.EVERYONE, 15);
         this.commandManager = commandManager;

@@ -26,6 +26,18 @@ public enum TicketCategory {
         this.defaultPriorityWeight = defaultPriorityWeight;
     }
 
+    public static Optional<TicketCategory> fromKey(String key) {
+        if (key == null) {
+            return Optional.empty();
+        }
+        for (TicketCategory category : values()) {
+            if (category.key.equalsIgnoreCase(key)) {
+                return Optional.of(category);
+            }
+        }
+        return Optional.empty();
+    }
+
     public String getKey() {
         return key;
     }
@@ -50,17 +62,5 @@ public enum TicketCategory {
             return TicketPriority.HIGH;
         }
         return TicketPriority.MEDIUM;
-    }
-
-    public static Optional<TicketCategory> fromKey(String key) {
-        if (key == null) {
-            return Optional.empty();
-        }
-        for (TicketCategory category : values()) {
-            if (category.key.equalsIgnoreCase(key)) {
-                return Optional.of(category);
-            }
-        }
-        return Optional.empty();
     }
 }

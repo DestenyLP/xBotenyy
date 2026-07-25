@@ -21,13 +21,29 @@ public class BroadcastCommand extends AbstractTwitchCommand {
     private final int defaultMinMessages;
 
     public BroadcastCommand(TwitchBroadcastRepository repository, TwitchEventLogService eventLogService,
-                             long defaultIntervalSeconds, int defaultMinMessages) {
+                            long defaultIntervalSeconds, int defaultMinMessages) {
         super("broadcast", "Verwaltet wiederkehrende Chat-Ansagen.", List.of("ansage"),
                 CommandPermission.MODERATOR, 2);
         this.repository = repository;
         this.eventLogService = eventLogService;
         this.defaultIntervalSeconds = defaultIntervalSeconds;
         this.defaultMinMessages = defaultMinMessages;
+    }
+
+    private static Long parseId(String raw) {
+        try {
+            return raw == null ? null : Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static long parseLong(String raw, long fallback) {
+        try {
+            return raw == null ? fallback : Long.parseLong(raw);
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 
     @Override
@@ -103,21 +119,5 @@ public class BroadcastCommand extends AbstractTwitchCommand {
                 .map(broadcast -> "#" + broadcast.id() + (broadcast.enabled() ? "" : " (pausiert)"))
                 .collect(Collectors.joining(", "));
         context.reply("Broadcasts: " + joined);
-    }
-
-    private static Long parseId(String raw) {
-        try {
-            return raw == null ? null : Long.parseLong(raw);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static long parseLong(String raw, long fallback) {
-        try {
-            return raw == null ? fallback : Long.parseLong(raw);
-        } catch (NumberFormatException e) {
-            return fallback;
-        }
     }
 }

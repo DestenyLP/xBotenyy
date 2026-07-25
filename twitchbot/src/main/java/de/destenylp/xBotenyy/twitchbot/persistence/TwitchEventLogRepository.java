@@ -14,6 +14,16 @@ public class TwitchEventLogRepository extends AbstractSqlManager implements Prun
         super(database);
     }
 
+    private static TwitchEventLogEntry mapRow(java.sql.ResultSet resultSet) throws java.sql.SQLException {
+        return new TwitchEventLogEntry(
+                resultSet.getLong("id"),
+                resultSet.getString("channel_login"),
+                resultSet.getString("event_type"),
+                resultSet.getString("actor_id"),
+                resultSet.getString("detail"),
+                resultSet.getLong("created_at"));
+    }
+
     public void insert(String channelLogin, String eventType, String actorId, String detail) {
         database.useConnection(connection -> Jdbc.update(connection,
                 "INSERT INTO twitch_event_log (channel_login, event_type, actor_id, detail, created_at) "
@@ -34,17 +44,7 @@ public class TwitchEventLogRepository extends AbstractSqlManager implements Prun
                 "DELETE FROM twitch_event_log WHERE created_at < ?", threshold));
     }
 
-    private static TwitchEventLogEntry mapRow(java.sql.ResultSet resultSet) throws java.sql.SQLException {
-        return new TwitchEventLogEntry(
-                resultSet.getLong("id"),
-                resultSet.getString("channel_login"),
-                resultSet.getString("event_type"),
-                resultSet.getString("actor_id"),
-                resultSet.getString("detail"),
-                resultSet.getLong("created_at"));
-    }
-
     public record TwitchEventLogEntry(long id, String channelLogin, String eventType, String actorId,
-                                       String detail, long createdAtEpochMillis) {
+                                      String detail, long createdAtEpochMillis) {
     }
 }

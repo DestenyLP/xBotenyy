@@ -16,18 +16,17 @@ public class SocialAccount {
     private static final String TWITCH_IMAGE = "{stream.thumbnail}";
     private static final String TWITCH_FOOTER = "Live auf Twitch:";
     private static final String TWITCH_COLOR = "#9146FF";
-
+    private final MessageTemplate youtubeTemplate;
+    private final MessageTemplate twitchTemplate;
     private String id;
     private String name;
     private String channelId;
     private boolean enabled;
     private String youtubeChannelId;
     private String lastYoutubeVideoId;
-    private final MessageTemplate youtubeTemplate;
     private String twitchLogin;
     private String lastTwitchStreamId;
     private boolean twitchCurrentlyLive;
-    private final MessageTemplate twitchTemplate;
 
     private SocialAccount(Builder builder) {
         this.name = builder.name;

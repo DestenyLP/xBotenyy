@@ -13,10 +13,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class RetryingRestAction {
+    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(retryThreadFactory());
     private static volatile int maxAttempts = 3;
     private static volatile long baseDelaySeconds = 2;
-
-    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(retryThreadFactory());
 
     private RetryingRestAction() {
     }
@@ -35,12 +34,12 @@ public final class RetryingRestAction {
     }
 
     public static <T> void queueWithRetry(Supplier<RestAction<T>> actionSupplier, Consumer<T> onSuccess,
-                                           Consumer<Throwable> onFailure, Logger logger, String description) {
+                                          Consumer<Throwable> onFailure, Logger logger, String description) {
         attempt(actionSupplier, onSuccess, onFailure, logger, description, 1);
     }
 
     private static <T> void attempt(Supplier<RestAction<T>> actionSupplier, Consumer<T> onSuccess,
-                                     Consumer<Throwable> onFailure, Logger logger, String description, int attemptNumber) {
+                                    Consumer<Throwable> onFailure, Logger logger, String description, int attemptNumber) {
         actionSupplier.get().queue(onSuccess, failure -> {
             if (isRetryable(failure) && attemptNumber < maxAttempts) {
                 long delay = baseDelaySeconds * (1L << (attemptNumber - 1));

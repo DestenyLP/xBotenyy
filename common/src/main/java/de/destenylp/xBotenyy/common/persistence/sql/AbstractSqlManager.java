@@ -27,7 +27,7 @@ public abstract class AbstractSqlManager {
     }
 
     protected static String generateUniqueShortId(Connection connection, String table, String idColumn,
-            String guildIdColumn, String guildId, boolean uppercase) throws SQLException {
+                                                  String guildIdColumn, String guildId, boolean uppercase) throws SQLException {
         String candidate;
         do {
             candidate = UUID.randomUUID().toString().substring(0, 6);

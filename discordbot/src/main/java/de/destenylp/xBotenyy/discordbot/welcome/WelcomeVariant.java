@@ -3,9 +3,9 @@ package de.destenylp.xBotenyy.discordbot.welcome;
 import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
 
 public class WelcomeVariant {
+    private final MessageTemplate template;
     private String id;
     private boolean ping;
-    private final MessageTemplate template;
 
     private WelcomeVariant(Builder builder) {
         this.id = builder.id;

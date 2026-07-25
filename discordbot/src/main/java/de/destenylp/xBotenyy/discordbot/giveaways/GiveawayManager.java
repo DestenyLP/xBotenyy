@@ -9,12 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GiveawayManager extends AbstractSqlManager implements GiveawayRepository {
@@ -29,10 +24,10 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
             String id = nextSequentialId(connection, "giveaway_guild_settings", "giveaway_counter", draft.getGuildId());
             draft.assignId(id);
             Jdbc.update(connection, """
-                    INSERT INTO giveaways (guild_id, giveaway_id, channel_id, message_id, prize, description,
-                        winner_count, host_id, host_name, required_role_id, status, created_at, end_at, ended_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
+                            INSERT INTO giveaways (guild_id, giveaway_id, channel_id, message_id, prize, description,
+                                winner_count, host_id, host_name, required_role_id, status, created_at, end_at, ended_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
                     draft.getGuildId(), draft.getId(), draft.getChannelId(), draft.getMessageId(), draft.getPrize(),
                     draft.getDescription(), draft.getWinnerCount(), draft.getHostId(), draft.getHostName(),
                     draft.getRequiredRoleId(), draft.getStatus(), draft.getCreatedAt(), draft.getEndAt(),
@@ -45,9 +40,9 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
     public void save(Giveaway giveaway) {
         database.runInTransaction(connection -> {
             Jdbc.update(connection, """
-                    UPDATE giveaways SET channel_id = ?, message_id = ?, status = ?, ended_at = ?
-                    WHERE guild_id = ? AND giveaway_id = ?
-                    """, giveaway.getChannelId(), giveaway.getMessageId(), giveaway.getStatus(),
+                            UPDATE giveaways SET channel_id = ?, message_id = ?, status = ?, ended_at = ?
+                            WHERE guild_id = ? AND giveaway_id = ?
+                            """, giveaway.getChannelId(), giveaway.getMessageId(), giveaway.getStatus(),
                     giveaway.getEndedAt(), giveaway.getGuildId(), giveaway.getId());
             Jdbc.update(connection, "DELETE FROM giveaway_winners WHERE guild_id = ? AND giveaway_id = ?",
                     giveaway.getGuildId(), giveaway.getId());

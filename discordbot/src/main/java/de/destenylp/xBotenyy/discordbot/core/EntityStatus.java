@@ -1,6 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.core;
 
-import java.awt.Color;
+import java.awt.*;
 
 public interface EntityStatus {
     String getLabel();

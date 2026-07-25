@@ -1,11 +1,11 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
 
+import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleEntry;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleMessage;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleService;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleType;
 import de.destenylp.xBotenyy.discordbot.util.RetryingRestAction;
-import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;

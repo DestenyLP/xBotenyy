@@ -1,17 +1,13 @@
 package de.destenylp.xBotenyy.discordbot.socials;
 
-import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
 import de.destenylp.xBotenyy.common.persistence.sql.AbstractSqlManager;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import de.destenylp.xBotenyy.common.persistence.sql.Jdbc;
+import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class SocialManager extends AbstractSqlManager implements SocialRepository {
     public SocialManager(Database database) {
@@ -53,13 +49,13 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         MessageTemplate tw = account.getTwitchTemplate();
         if (insert) {
             Jdbc.update(connection, """
-                    INSERT INTO social_accounts (guild_id, account_id, name, channel_id, enabled,
-                        youtube_channel_id, last_youtube_video_id, yt_embed, yt_title, yt_title_url, yt_author,
-                        yt_content, yt_color, yt_image_url, yt_footer, yt_timestamp,
-                        twitch_login, last_twitch_stream_id, twitch_currently_live, tw_embed, tw_title,
-                        tw_title_url, tw_author, tw_content, tw_color, tw_image_url, tw_footer, tw_timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
+                            INSERT INTO social_accounts (guild_id, account_id, name, channel_id, enabled,
+                                youtube_channel_id, last_youtube_video_id, yt_embed, yt_title, yt_title_url, yt_author,
+                                yt_content, yt_color, yt_image_url, yt_footer, yt_timestamp,
+                                twitch_login, last_twitch_stream_id, twitch_currently_live, tw_embed, tw_title,
+                                tw_title_url, tw_author, tw_content, tw_color, tw_image_url, tw_footer, tw_timestamp)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
                     guildId, account.getId(), account.getName(), account.getChannelId(), account.isEnabled(),
                     account.getYoutubeChannelId(), account.getLastYoutubeVideoId(), yt.isEmbed(), yt.getTitle(),
                     yt.getTitleUrl(), yt.getAuthor(), yt.getContent(), yt.getColor(), yt.getImageUrl(),
@@ -68,14 +64,14 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
                     tw.getContent(), tw.getColor(), tw.getImageUrl(), tw.getFooter(), tw.isTimestamp());
         } else {
             Jdbc.update(connection, """
-                    UPDATE social_accounts SET name = ?, channel_id = ?, enabled = ?, youtube_channel_id = ?,
-                        last_youtube_video_id = ?, yt_embed = ?, yt_title = ?, yt_title_url = ?, yt_author = ?,
-                        yt_content = ?, yt_color = ?, yt_image_url = ?, yt_footer = ?, yt_timestamp = ?,
-                        twitch_login = ?, last_twitch_stream_id = ?, twitch_currently_live = ?, tw_embed = ?,
-                        tw_title = ?, tw_title_url = ?, tw_author = ?, tw_content = ?, tw_color = ?,
-                        tw_image_url = ?, tw_footer = ?, tw_timestamp = ?
-                    WHERE guild_id = ? AND account_id = ?
-                    """,
+                            UPDATE social_accounts SET name = ?, channel_id = ?, enabled = ?, youtube_channel_id = ?,
+                                last_youtube_video_id = ?, yt_embed = ?, yt_title = ?, yt_title_url = ?, yt_author = ?,
+                                yt_content = ?, yt_color = ?, yt_image_url = ?, yt_footer = ?, yt_timestamp = ?,
+                                twitch_login = ?, last_twitch_stream_id = ?, twitch_currently_live = ?, tw_embed = ?,
+                                tw_title = ?, tw_title_url = ?, tw_author = ?, tw_content = ?, tw_color = ?,
+                                tw_image_url = ?, tw_footer = ?, tw_timestamp = ?
+                            WHERE guild_id = ? AND account_id = ?
+                            """,
                     account.getName(), account.getChannelId(), account.isEnabled(), account.getYoutubeChannelId(),
                     account.getLastYoutubeVideoId(), yt.isEmbed(), yt.getTitle(), yt.getTitleUrl(), yt.getAuthor(),
                     yt.getContent(), yt.getColor(), yt.getImageUrl(), yt.getFooter(), yt.isTimestamp(),
@@ -112,9 +108,6 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
             result.computeIfAbsent(row.guildId, key -> new ArrayList<>()).add(row.account);
         }
         return result;
-    }
-
-    private record GuildAccount(String guildId, SocialAccount account) {
     }
 
     private GuildAccount mapGuildAccount(ResultSet resultSet) throws SQLException {
@@ -159,5 +152,8 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         tw.setTimestamp(Jdbc.getBoolean(resultSet, "tw_timestamp"));
 
         return account;
+    }
+
+    private record GuildAccount(String guildId, SocialAccount account) {
     }
 }

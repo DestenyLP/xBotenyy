@@ -1,12 +1,12 @@
 package de.destenylp.xBotenyy.discordbot.commands;
 
+import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleEntry;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleMessage;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleService;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleType;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
-import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.util.PermissionGuard;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -134,7 +134,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
     }
 
     private void addReactionRole(SlashCommandInteractionEvent event, Message message, ReactionRoleMessage rrMessage,
-                                  Role role, Emoji emoji) {
+                                 Role role, Emoji emoji) {
         message.addReaction(emoji).queue(success -> {
             service.recordReactionEntry(event.getGuild().getId(), rrMessage.getMessageId(), role.getId(), emoji.getFormatted());
             event.getHook().sendMessage("Reaction-Role hinzugefügt: " + emoji.getFormatted() + " -> " + role.getAsMention()).queue();
@@ -148,7 +148,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
     }
 
     private void addButtonRole(SlashCommandInteractionEvent event, Message message, ReactionRoleMessage rrMessage,
-                                Role role, Emoji emoji, String label, String styleRaw) {
+                               Role role, Emoji emoji, String label, String styleRaw) {
         ButtonStyle style = service.parseButtonStyle(styleRaw);
         String componentId = service.buildButtonComponentId(rrMessage.getMessageId(), role.getId());
 
@@ -229,9 +229,9 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
             List<ActionRow> rows = service.buildButtonRows(remainingButtons, roleId -> resolveRoleName(guild, roleId));
 
             channel.retrieveMessageById(messageId).queue(message ->
-                    message.editMessageComponents(rows).queue(
-                            success -> event.getHook().sendMessage("Zuweisung entfernt.").queue(),
-                            failure -> event.getHook().sendMessage("Zuweisung entfernt, der Button konnte jedoch nicht gelöscht werden.").queue()),
+                            message.editMessageComponents(rows).queue(
+                                    success -> event.getHook().sendMessage("Zuweisung entfernt.").queue(),
+                                    failure -> event.getHook().sendMessage("Zuweisung entfernt, der Button konnte jedoch nicht gelöscht werden.").queue()),
                     failure -> event.getHook().sendMessage("Zuweisung entfernt.").queue());
         }
     }

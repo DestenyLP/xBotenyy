@@ -39,7 +39,7 @@ public abstract class AbstractHttpApiClient {
     }
 
     protected <T> HttpResponse<T> sendWithRetry(HttpRequest request, HttpResponse.BodyHandler<T> bodyHandler,
-                                                 Logger logger, String description) throws IOException, InterruptedException {
+                                                Logger logger, String description) throws IOException, InterruptedException {
         IOException lastError = null;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {

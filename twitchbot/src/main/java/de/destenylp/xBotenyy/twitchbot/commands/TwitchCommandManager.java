@@ -1,10 +1,6 @@
 package de.destenylp.xBotenyy.twitchbot.commands;
 
-import de.destenylp.xBotenyy.common.commands.CommandDispatchResult;
-import de.destenylp.xBotenyy.common.commands.CommandDispatcher;
-import de.destenylp.xBotenyy.common.commands.CommandPermission;
-import de.destenylp.xBotenyy.common.commands.CommandRegistry;
-import de.destenylp.xBotenyy.common.commands.CooldownManager;
+import de.destenylp.xBotenyy.common.commands.*;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatMessage;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
@@ -24,9 +20,10 @@ public class TwitchCommandManager {
     private final CustomCommandRepository customCommandRepository;
     private final TwitchBotServices services;
     private final TwitchEventLogService eventLogService;
+    private final CooldownManager customCommandCooldownManager = new CooldownManager();
 
     public TwitchCommandManager(String prefix, CustomCommandRepository customCommandRepository,
-                                 TwitchBotServices services, TwitchEventLogService eventLogService) {
+                                TwitchBotServices services, TwitchEventLogService eventLogService) {
         this.prefix = prefix;
         this.customCommandRepository = customCommandRepository;
         this.services = services;
@@ -34,6 +31,22 @@ public class TwitchCommandManager {
         this.dispatcher = new CommandDispatcher<>(registry, new CooldownManager(),
                 context -> resolvePermission(context.message()),
                 context -> context.message().userId());
+    }
+
+    private static CommandPermission resolvePermission(TwitchChatMessage message) {
+        if (message.broadcaster()) {
+            return CommandPermission.BROADCASTER;
+        }
+        if (message.moderator()) {
+            return CommandPermission.MODERATOR;
+        }
+        if (message.vip()) {
+            return CommandPermission.VIP;
+        }
+        if (message.subscriber()) {
+            return CommandPermission.SUBSCRIBER;
+        }
+        return CommandPermission.EVERYONE;
     }
 
     public CommandRegistry<TwitchCommandContext> getRegistry() {
@@ -88,6 +101,17 @@ public class TwitchCommandManager {
         if (custom.isEmpty()) {
             return false;
         }
+
+        int cooldownSeconds = custom.get().cooldownSeconds();
+        if (cooldownSeconds > 0) {
+            String cooldownKey = message.channelLogin() + ":" + commandName + ":" + message.userId();
+            if (!customCommandCooldownManager.tryAcquire(cooldownKey, cooldownSeconds)) {
+                LOGGER.debug("Custom-Befehl '{}' von {} in {} ist im Cooldown.",
+                        commandName, message.userLogin(), message.channelLogin());
+                return true;
+            }
+        }
+
         String response = custom.get().response()
                 .replace("{user}", message.displayName())
                 .replace("{channel}", message.channelLogin());
@@ -95,21 +119,5 @@ public class TwitchCommandManager {
         customCommandRepository.incrementUses(message.channelLogin(), commandName);
         Metrics.increment("twitch.custom_commands_executed");
         return true;
-    }
-
-    private static CommandPermission resolvePermission(TwitchChatMessage message) {
-        if (message.broadcaster()) {
-            return CommandPermission.BROADCASTER;
-        }
-        if (message.moderator()) {
-            return CommandPermission.MODERATOR;
-        }
-        if (message.vip()) {
-            return CommandPermission.VIP;
-        }
-        if (message.subscriber()) {
-            return CommandPermission.SUBSCRIBER;
-        }
-        return CommandPermission.EVERYONE;
     }
 }

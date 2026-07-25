@@ -1,8 +1,8 @@
 package de.destenylp.xBotenyy.discordbot.commands;
 
-import de.destenylp.xBotenyy.discordbot.automod.AutomodService;
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodVerdict;
+import de.destenylp.xBotenyy.discordbot.automod.AutomodService;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.util.PermissionGuard;
 import net.dv8tion.jda.api.entities.Guild;

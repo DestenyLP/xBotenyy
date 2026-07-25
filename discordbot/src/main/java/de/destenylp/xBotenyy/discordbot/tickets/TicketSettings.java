@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class TicketSettings {
+    private final Supplier<List<Ticket>> ticketsSupplier;
     private String categoryChannelId;
     private String supportRoleId;
     private String logChannelId;
@@ -12,7 +13,6 @@ public class TicketSettings {
     private String panelMessageId;
     private int maxOpenTicketsPerMember = 1;
     private int autoCloseInactivityHours = 0;
-    private final Supplier<List<Ticket>> ticketsSupplier;
 
     public TicketSettings() {
         this(List::of);

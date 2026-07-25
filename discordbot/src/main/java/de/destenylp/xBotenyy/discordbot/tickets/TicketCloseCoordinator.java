@@ -28,7 +28,8 @@ public class TicketCloseCoordinator {
 
         channel.sendMessageEmbeds(TicketEmbedFactory.buildTicketEmbed(ticket))
                 .setComponents(TicketEmbedFactory.buildTicketComponents(ticket))
-                .queue(success -> { }, failure -> LOGGER.warn("Abschluss-Embed konnte nicht gepostet werden: {}", failure.getMessage()));
+                .queue(success -> {
+                }, failure -> LOGGER.warn("Abschluss-Embed konnte nicht gepostet werden: {}", failure.getMessage()));
 
         TicketTranscriptService.generate(channel, ticket).thenAccept(transcript -> {
             if (transcript != null) {
@@ -83,7 +84,8 @@ public class TicketCloseCoordinator {
             } else {
                 transcriptChannel.sendMessage("Transcript für Ticket #" + ticket.getId() + " · " + ticket.getSubject())
                         .setFiles(transcript.toFileUpload())
-                        .queue(success -> { }, failure -> LOGGER.error("Transcript für Ticket {} konnte nicht in Kanal {} gepostet werden: {}",
+                        .queue(success -> {
+                        }, failure -> LOGGER.error("Transcript für Ticket {} konnte nicht in Kanal {} gepostet werden: {}",
                                 ticket.getId(), transcriptChannelId, failure.getMessage()));
             }
         }
@@ -99,7 +101,8 @@ public class TicketCloseCoordinator {
             return;
         }
         logChannel.editMessageEmbedsById(ticket.getLogMessageId(), TicketEmbedFactory.buildLogEmbed(ticket))
-                .queue(success -> { }, failure -> LOGGER.warn("Log-Eintrag {} für Ticket {} konnte nicht mit Bewertung aktualisiert werden: {}",
+                .queue(success -> {
+                }, failure -> LOGGER.warn("Log-Eintrag {} für Ticket {} konnte nicht mit Bewertung aktualisiert werden: {}",
                         ticket.getLogMessageId(), ticket.getId(), failure.getMessage()));
     }
 
@@ -108,7 +111,8 @@ public class TicketCloseCoordinator {
                 user -> user.openPrivateChannel().queue(
                         dm -> dm.sendMessageEmbeds(TicketEmbedFactory.buildRatingRequestEmbed(ticket))
                                 .setComponents(TicketEmbedFactory.buildRatingComponents(ticket))
-                                .queue(success -> { }, failure -> LOGGER.debug("Konnte Bewertungsanfrage nicht an {} senden: {}",
+                                .queue(success -> {
+                                }, failure -> LOGGER.debug("Konnte Bewertungsanfrage nicht an {} senden: {}",
                                         ticket.getAuthorId(), failure.getMessage())),
                         failure -> LOGGER.debug("Konnte keinen DM-Kanal mit {} öffnen: {}", ticket.getAuthorId(), failure.getMessage())),
                 failure -> LOGGER.debug("Konnte Nutzer {} nicht auflösen: {}", ticket.getAuthorId(), failure.getMessage()));
@@ -116,10 +120,13 @@ public class TicketCloseCoordinator {
 
     private void scheduleChannelDeletion(TextChannel channel, Ticket ticket) {
         channel.sendMessage("\uD83D\uDD12 Dieses Ticket wird in " + channelDeleteDelaySeconds + " Sekunden archiviert...")
-                .queue(success -> { }, failure -> { });
+                .queue(success -> {
+                }, failure -> {
+                });
         channel.delete()
                 .reason("Ticket #" + ticket.getId() + " geschlossen")
-                .queueAfter(channelDeleteDelaySeconds, TimeUnit.SECONDS, success -> { },
+                .queueAfter(channelDeleteDelaySeconds, TimeUnit.SECONDS, success -> {
+                        },
                         failure -> LOGGER.warn("Ticket-Kanal {} konnte nicht gelöscht werden: {}", channel.getId(), failure.getMessage()));
     }
 }

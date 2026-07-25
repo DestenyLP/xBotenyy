@@ -1,6 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.eventlog;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.Optional;
 
 public enum LogEventType {
@@ -31,6 +31,18 @@ public enum LogEventType {
         this.color = color;
     }
 
+    public static Optional<LogEventType> fromKey(String key) {
+        if (key == null) {
+            return Optional.empty();
+        }
+        for (LogEventType type : values()) {
+            if (type.key.equalsIgnoreCase(key)) {
+                return Optional.of(type);
+            }
+        }
+        return Optional.empty();
+    }
+
     public String getKey() {
         return key;
     }
@@ -45,17 +57,5 @@ public enum LogEventType {
 
     public Color getColor() {
         return color;
-    }
-
-    public static Optional<LogEventType> fromKey(String key) {
-        if (key == null) {
-            return Optional.empty();
-        }
-        for (LogEventType type : values()) {
-            if (type.key.equalsIgnoreCase(key)) {
-                return Optional.of(type);
-            }
-        }
-        return Optional.empty();
     }
 }

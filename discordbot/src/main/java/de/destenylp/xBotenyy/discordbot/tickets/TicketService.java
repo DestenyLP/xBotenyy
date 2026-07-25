@@ -26,6 +26,16 @@ public class TicketService implements PrunableGuildService {
         this.gracePeriodMinHours = Math.max(0, gracePeriodMinHours);
     }
 
+    public static boolean isStaff(Member member, TicketSettings settings) {
+        if (member.hasPermission(Permission.ADMINISTRATOR) || member.hasPermission(Permission.MANAGE_SERVER)) {
+            return true;
+        }
+        if (settings != null && settings.getSupportRoleId() != null) {
+            return member.getRoles().stream().anyMatch(role -> role.getId().equals(settings.getSupportRoleId()));
+        }
+        return false;
+    }
+
     @Override
     public String getServiceName() {
         return "Tickets";
@@ -68,10 +78,6 @@ public class TicketService implements PrunableGuildService {
         manager.updatePanel(guildId, channelId, messageId);
     }
 
-    public enum CreateEligibility {
-        ALLOWED, NOT_CONFIGURED, LIMIT_REACHED
-    }
-
     public CreateEligibility checkEligibility(String guildId, String memberId) {
         TicketSettings settings = manager.getSettings(guildId).orElse(null);
         if (settings == null || !settings.isConfigured()) {
@@ -85,7 +91,7 @@ public class TicketService implements PrunableGuildService {
     }
 
     public Ticket createTicket(String guildId, String authorId, String authorName, TicketCategory category,
-                                String subject, String description) {
+                               String subject, String description) {
         Ticket draft = new Ticket(guildId, authorId, authorName, category, subject, description);
         return manager.createTicket(draft);
     }
@@ -209,13 +215,7 @@ public class TicketService implements PrunableGuildService {
         return manager.pruneClosedTickets(retention);
     }
 
-    public static boolean isStaff(Member member, TicketSettings settings) {
-        if (member.hasPermission(Permission.ADMINISTRATOR) || member.hasPermission(Permission.MANAGE_SERVER)) {
-            return true;
-        }
-        if (settings != null && settings.getSupportRoleId() != null) {
-            return member.getRoles().stream().anyMatch(role -> role.getId().equals(settings.getSupportRoleId()));
-        }
-        return false;
+    public enum CreateEligibility {
+        ALLOWED, NOT_CONFIGURED, LIMIT_REACHED
     }
 }

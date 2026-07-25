@@ -22,10 +22,10 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
 
     private static final String POLICY = """
             # Discord Chat Moderation Policy
-
+            
             ## AUFGABE
             Bewerte den folgenden Chat-Nachrichtentext eines Discord-Servers und entscheide, ob er gegen die Community-Regeln verstoesst. Antworte ausschliesslich mit einem JSON-Objekt, ohne zusaetzlichen Text.
-
+            
             ## VERSTOSS (1)
             - Gewaltandrohungen oder Verherrlichung von Gewalt
             - Hassrede oder Diskriminierung aufgrund von Herkunft, Religion, Geschlecht, sexueller Orientierung oder Behinderung
@@ -33,12 +33,12 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
             - Aufforderung oder Anleitung zu Selbstverletzung oder Suizid
             - Gezielte Beleidigung, Belaestigung oder Mobbing einzelner Personen
             - Anleitung oder Werbung fuer illegale Aktivitaeten, Betrug oder Scams
-
+            
             ## KEIN VERSTOSS (0)
             - Normale Unterhaltung, Meinungsaeusserung oder Kritik ohne persoenliche Angriffe
             - Derbe, aber nicht diskriminierende oder bedrohliche Umgangssprache
             - Fiktionale oder thematische Erwaehnung sensibler Themen ohne Verherrlichung oder Anleitung
-
+            
             ## ANTWORTFORMAT
             Antworte ausschliesslich mit einem JSON-Objekt in exakt dieser Form:
             {"violation": 0 oder 1, "category": "Kurzname der Kategorie oder null", "rationale": "kurze Begruendung"}
