@@ -18,10 +18,32 @@ import de.destenylp.xBotenyy.twitchbot.broadcast.TwitchBroadcastScheduler;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatClient;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchBotServices;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandManager;
-import de.destenylp.xBotenyy.twitchbot.commands.impl.*;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.AutomodStatusCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.BroadcastCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.ClipCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.CommandsCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.CustomCommandManagementCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.EventLogCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.FollowageCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.GameCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.ModBanCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.ModPurgeCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.ModTimeoutCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.ModUnbanCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.PermitCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.PingCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.ShoutoutCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.StrikesCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.TitleCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.UptimeCommand;
+import de.destenylp.xBotenyy.twitchbot.commands.impl.WatchtimeCommand;
 import de.destenylp.xBotenyy.twitchbot.config.TwitchBotProperties;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
-import de.destenylp.xBotenyy.twitchbot.persistence.*;
+import de.destenylp.xBotenyy.twitchbot.persistence.CustomCommandRepository;
+import de.destenylp.xBotenyy.twitchbot.persistence.TwitchBroadcastRepository;
+import de.destenylp.xBotenyy.twitchbot.persistence.TwitchChannelRepository;
+import de.destenylp.xBotenyy.twitchbot.persistence.TwitchEventLogRepository;
+import de.destenylp.xBotenyy.twitchbot.persistence.TwitchWatchtimeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,8 +164,7 @@ public final class Bot extends AbstractBot {
 
         chatClient.onMessage(message -> {
             try {
-                channelRepository.recordActivity(message.channelLogin());
-                broadcastScheduler.recordActivity(message.channelLogin());
+                recordActivityQuietly(message.channelLogin());
                 Metrics.increment("twitch.messages_processed");
                 boolean flaggedByAutomod = automodAdapter.handleMessage(message);
                 if (!flaggedByAutomod) {
@@ -189,6 +210,16 @@ public final class Bot extends AbstractBot {
         commandManager.register(new ShoutoutCommand(eventLogService));
         commandManager.register(new ClipCommand());
         LOGGER.info("{} eingebaute Befehle registriert.", commandManager.getRegistry().size());
+    }
+
+    private void recordActivityQuietly(String channelLogin) {
+        try {
+            channelRepository.recordActivity(channelLogin);
+            broadcastScheduler.recordActivity(channelLogin);
+        } catch (Exception e) {
+            LOGGER.warn("Konnte Aktivitaet fuer Kanal {} nicht speichern (Watchtime/Broadcast-Tracking betroffen): {}",
+                    channelLogin, e.getMessage());
+        }
     }
 
     private void startDataRetentionTask() {

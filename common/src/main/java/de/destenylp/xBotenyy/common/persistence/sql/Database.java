@@ -31,14 +31,17 @@ public final class Database implements AutoCloseable {
                 Files.createDirectories(databaseFile.getParent());
             }
 
-            SQLiteConfig config = new SQLiteConfig();
-            config.setJournalMode(SQLiteConfig.JournalMode.WAL);
-            config.enforceForeignKeys(true);
-            config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
-            config.setBusyTimeout(10_000);
-
-            Connection connection = DriverManager.getConnection(
-                    "jdbc:sqlite:" + databaseFile.toAbsolutePath(), config.toProperties());
+            Connection connection;
+            try {
+                connection = openConnection(databaseFile, SQLiteConfig.JournalMode.WAL);
+            } catch (SQLException e) {
+                LOGGER.warn("Konnte SQLite im WAL-Modus nicht oeffnen ({}), falle auf DELETE-Journal zurueck. "
+                        + "Das deutet meist auf ein Dateisystem hin, das kein Shared-Memory-Mapping unterstuetzt "
+                        + "(z.B. Netzwerk-Storage bei manchen Hostern).", e.getMessage());
+                deleteQuietly(Path.of(databaseFile + "-wal"));
+                deleteQuietly(Path.of(databaseFile + "-shm"));
+                connection = openConnection(databaseFile, SQLiteConfig.JournalMode.DELETE);
+            }
 
             Database database = new Database(connection, databaseFile);
             SchemaMigrator.migrate(database);
@@ -47,6 +50,32 @@ public final class Database implements AutoCloseable {
         } catch (IOException | SQLException e) {
             throw new IllegalStateException("Konnte SQLite Datenbank " + databaseFile + " nicht oeffnen", e);
         }
+    }
+
+    private static void deleteQuietly(Path file) {
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            LOGGER.debug("Konnte {} nicht loeschen: {}", file, e.getMessage());
+        }
+    }
+
+    private static Connection openConnection(Path databaseFile, SQLiteConfig.JournalMode journalMode) throws SQLException {
+        SQLiteConfig config = new SQLiteConfig();
+        config.setJournalMode(journalMode);
+        config.enforceForeignKeys(true);
+        config.setSynchronous(SQLiteConfig.SynchronousMode.NORMAL);
+        config.setBusyTimeout(10_000);
+
+        Connection connection = DriverManager.getConnection(
+                "jdbc:sqlite:" + databaseFile.toAbsolutePath(), config.toProperties());
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SELECT 1");
+        } catch (SQLException e) {
+            connection.close();
+            throw e;
+        }
+        return connection;
     }
 
     public Path getDatabaseFile() {
