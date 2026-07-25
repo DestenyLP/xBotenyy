@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractBot {
     protected final Logger logger;
@@ -15,6 +16,7 @@ public abstract class AbstractBot {
     protected final ScheduledExecutorService scheduler;
 
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private volatile boolean shutdownHookRegistered = false;
 
     protected AbstractBot(Logger logger, CommonConfig config, String schedulerThreadName, int schedulerThreadCount) {
@@ -88,20 +90,29 @@ public abstract class AbstractBot {
             return;
         }
         shutdownHookRegistered = true;
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutdown angefordert, beende Bot geordnet...");
-            scheduler.shutdownNow();
-            try {
-                onShutdown();
-            } catch (Exception e) {
-                logger.error("Fehler beim Beenden des Bots: ", e);
-            }
-            logger.info("Bot wurde beendet.");
-            shutdownLatch.countDown();
-        }, "shutdown-hook"));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "shutdown-hook"));
     }
 
     protected abstract void onShutdown();
+
+    public final void shutdown() {
+        if (!shuttingDown.compareAndSet(false, true)) {
+            return;
+        }
+        logger.info("Shutdown angefordert, beende Bot geordnet...");
+        scheduler.shutdownNow();
+        try {
+            onShutdown();
+        } catch (Exception e) {
+            logger.error("Fehler beim Beenden des Bots: ", e);
+        }
+        logger.info("Bot wurde beendet.");
+        shutdownLatch.countDown();
+    }
+
+    public final boolean isShuttingDown() {
+        return shuttingDown.get();
+    }
 
     public final void awaitShutdown() throws InterruptedException {
         shutdownLatch.await();

@@ -45,75 +45,6 @@ Modul `launcher` können beide Bots auch gemeinsam in **einem** Prozess/Server g
 
 ---
 
-## Kombinierter Start (`launcher`)
-
-Standardmäßig ist jeder Bot ein eigenständiger Prozess (eigene JAR, eigenes Logging). Wer Discord- und Twitch-Bot
-auf demselben Server **in einem einzigen Prozess** betreiben möchte, nutzt stattdessen das Modul `launcher`.
-
-Der Launcher enthält **keine eigene Bot-Logik**. Er startet lediglich `xBotenyyDiscordBot` und `xBotenyyTwitchBot`
-(jeweils über deren bestehende `Main`-Klasse) parallel in zwei eigenen Threads und bündelt das Logging beider Bots
-strukturiert in einem Prozess. Die Konfiguration (`.env`, `discordbot.properties`, `twitchbot.properties`) bleibt
-unverändert dieselbe wie beim getrennten Betrieb.
-
-### Bauen und starten
-
-```bash
-mvn -pl launcher -am -DskipTests package
-java -jar launcher/target/xBotenyyLauncher.jar
-```
-
-Optional kann über ein Startargument nur einer der beiden Bots aktiviert werden (z. B. zum Debuggen):
-
-```bash
-java -jar launcher/target/xBotenyyLauncher.jar --mode=discord
-java -jar launcher/target/xBotenyyLauncher.jar --mode=twitch
-```
-
-Ohne Argument (oder mit `--mode=both`) starten beide Bots gemeinsam.
-
-### Logging im kombinierten Betrieb
-
-Da beide Bots im selben Prozess laufen, bringt der Launcher ein eigenes, nach Modul getrenntes Logback-Setup mit
-(`launcher/src/main/resources/logback.xml`), das anhand des Java-Package-Namens automatisch zuordnet, statt alles
-unstrukturiert in eine Datei zu schreiben:
-
-| Datei                        | Inhalt                                                              |
-|-------------------------------|----------------------------------------------------------------------|
-| `logs/xbotenyy-discord.log`   | Alle Logs aus `discordbot` sowie der JDA-Bibliothek                  |
-| `logs/xbotenyy-twitch.log`    | Alle Logs aus `twitchbot`                                            |
-| `logs/xbotenyy-launcher.log`  | Gemeinsame Infrastruktur aus `common` sowie der Launcher selbst      |
-| `logs/audit.log`              | Audit-Log beider Bots (wie im getrennten Betrieb auch gemeinsam)     |
-
-Beim Bau der JAR sorgt ein eigener Assembly-Descriptor (`launcher/src/main/assembly/with-dependencies.xml`) dafür,
-dass die `logback.xml`-Dateien von `discordbot` und `twitchbot` **nicht** mit ins Fat-Jar gepackt werden - so bleibt
-ausschließlich die Konfiguration des `launcher`-Moduls aktiv und es entsteht keine Ressourcen-Kollision im Classpath.
-
-### Ausfallsicherheit
-
-Jeder Bot läuft in einem eigenen Thread, überwacht von einem `BotSupervisor`. Stürzt ein Bot ab (z. B. durch einen
-Programmierfehler oder eine unerwartete Exception), betrifft das **ausschließlich diesen einen Bot** - der jeweils
-andere läuft unbeeinflusst weiter, und der Prozess selbst bleibt am Leben. Der `BotSupervisor` startet den
-abgestürzten Bot zusätzlich automatisch neu (Standard: bis zu 5 Versuche, 15 Sekunden Pause dazwischen). Beide Werte
-lassen sich ohne Neubau der JAR per Umgebungsvariable anpassen:
-
-```env
-LAUNCHER_MAX_RESTART_ATTEMPTS=5
-LAUNCHER_RESTART_DELAY_SECONDS=15
-```
-
-*Einzige Grenze: Läuft die JVM selbst gegen ein hartes Problem (z. B. `OutOfMemoryError` durch zu wenig
-zugewiesenen Arbeitsspeicher), kann das trotzdem den gesamten Prozess und damit beide Bots betreffen - das lässt sich
-nur durch ausreichend RAM für den kombinierten Betrieb vermeiden, nicht durch Code.*
-
-### Reicht die Launcher-JAR allein aus?
-
-Ja. `xBotenyyLauncher.jar` ist bereits ein eigenständiges Fat-Jar und enthält `common`, `discordbot` und `twitchbot`
-vollständig. Es müssen **keine** zusätzlichen JARs (`xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`) auf den Server
-kopiert werden - nur `xBotenyyLauncher.jar` sowie wie gewohnt `.env`, `discordbot.properties` und
-`twitchbot.properties` im selben Verzeichnis.
-
----
-
 ## Discord-Bot
 
 ### Features
@@ -262,3 +193,97 @@ Tabellen: `twitch_channels`, `twitch_custom_commands` (inkl. `cooldown_seconds`)
 
 - `twitch.automod.permit.default.seconds` (Standard `30`): Dauer der AutoMod-Ausnahme, wenn `!permit <nutzer>` ohne
   Sekundenangabe genutzt wird.
+
+---
+
+## Kombinierter Start (`launcher`)
+
+Standardmäßig ist jeder Bot ein eigenständiger Prozess (eigene JAR, eigenes Logging). Wer Discord- und Twitch-Bot
+auf demselben Server **in einem einzigen Prozess** betreiben möchte, nutzt stattdessen das Modul `launcher`.
+
+Der Launcher enthält **keine eigene Bot-Logik**, sondern instanziiert und startet lediglich die bestehenden
+`Bot`-Klassen aus `xBotenyyDiscordBot` und `xBotenyyTwitchBot` jeweils in einem eigenen Thread. Zusätzlich bringt
+er eine interaktive **Konsole** mit, über die beide Bots zur Laufzeit gestartet, gestoppt und neugestartet werden
+können, sowie Logging-Bündelung für beide Bots in einem Prozess. Die Konfiguration (`.env`, `discordbot.properties`,
+`twitchbot.properties`) bleibt unverändert dieselbe wie beim getrennten Betrieb.
+
+**Vollständige Dokumentation (Konsolen-Befehle, Architektur,
+Logging-Details): [`launcher/README.md`](launcher/README.md)**
+
+### Bauen und starten
+
+```bash
+mvn -pl launcher -am -DskipTests package
+java -jar launcher/target/xBotenyyLauncher.jar
+```
+
+Optional kann über ein Startargument nur einer der beiden Bots aktiviert werden (der jeweils andere lässt sich
+danach trotzdem jederzeit über die Konsole mit `start <bot>` dazu starten):
+
+```bash
+java -jar launcher/target/xBotenyyLauncher.jar --mode=discord
+java -jar launcher/target/xBotenyyLauncher.jar --mode=twitch
+```
+
+Ohne Argument (oder mit `--mode=both`) starten beide Bots gemeinsam.
+
+### Konsolen-Befehle
+
+Sobald der Launcher läuft, akzeptiert er interaktiv Befehle über die Standard-Eingabe:
+
+| Befehl                                                | Beschreibung                                                              |
+|-------------------------------------------------------|---------------------------------------------------------------------------|
+| `help`                                                | Übersicht aller Befehle                                                   |
+| `status`                                              | Status, Neustart-Zähler und letzter Start pro Bot, aktuelle Einstellungen |
+| `start <discord\|twitch\|all>`                        | Bot(s) starten                                                            |
+| `stop <discord\|twitch\|all> [timeoutSekunden]`       | Bot(s) geordnet stoppen (kein Auto-Neustart danach)                       |
+| `restart <discord\|twitch\|all> [timeoutSekunden]`    | Bot(s) stoppen und sofort wieder starten                                  |
+| `set maxrestarts <n>` / `set restartdelay <sekunden>` | Neustart-Verhalten zur Laufzeit ändern (siehe unten)                      |
+| `exit`                                                | Alle Bots geordnet stoppen und den Launcher beenden                       |
+
+Details und Beispiele siehe [`launcher/README.md`](launcher/README.md#konsolen-befehle).
+
+### Logging im kombinierten Betrieb
+
+Da beide Bots im selben Prozess laufen, bringt der Launcher ein eigenes, nach Modul getrenntes Logback-Setup mit
+(`launcher/src/main/resources/logback.xml`), das anhand des Java-Package-Namens automatisch zuordnet, statt alles
+unstrukturiert in eine Datei zu schreiben:
+
+| Datei                        | Inhalt                                                           |
+|------------------------------|------------------------------------------------------------------|
+| `logs/xbotenyy-discord.log`  | Alle Logs aus `discordbot` sowie der JDA-Bibliothek              |
+| `logs/xbotenyy-twitch.log`   | Alle Logs aus `twitchbot`                                        |
+| `logs/xbotenyy-launcher.log` | Gemeinsame Infrastruktur aus `common` sowie der Launcher selbst  |
+| `logs/audit.log`             | Audit-Log beider Bots (wie im getrennten Betrieb auch gemeinsam) |
+
+Beim Bau der JAR sorgt ein eigener Assembly-Descriptor (`launcher/src/main/assembly/with-dependencies.xml`) dafür,
+dass die `logback.xml`-Dateien von `discordbot` und `twitchbot` **nicht** mit ins Fat-Jar gepackt werden - so bleibt
+ausschließlich die Konfiguration des `launcher`-Moduls aktiv und es entsteht keine Ressourcen-Kollision im Classpath.
+
+### Ausfallsicherheit
+
+Jeder Bot läuft in einem eigenen, vom Launcher überwachten Thread. Stürzt ein Bot ab (z. B. durch einen
+Programmierfehler oder eine unerwartete Exception), betrifft das **ausschließlich diesen einen Bot** - der jeweils
+andere läuft unbeeinflusst weiter, und der Prozess selbst bleibt am Leben. Der Launcher startet den abgestürzten Bot
+zusätzlich automatisch neu (Standard: bis zu 5 Versuche, 15 Sekunden Pause dazwischen). Beide Werte lassen sich ohne
+Neubau der JAR per Umgebungsvariable vorbelegen **und zusätzlich zur Laufzeit über die Konsole ändern**
+(`set maxrestarts <n>`, `set restartdelay <sekunden>`):
+
+```env
+LAUNCHER_MAX_RESTART_ATTEMPTS=5
+LAUNCHER_RESTART_DELAY_SECONDS=15
+```
+
+Sind alle automatischen Versuche aufgebraucht, bleibt der Bot stehen und kann jederzeit manuell per Konsolen-Befehl
+(`start <bot>`) neugestartet werden - der Neustart-Zähler wird dabei zurückgesetzt.
+
+*Einzige Grenze: Läuft die JVM selbst gegen ein hartes Problem (z. B. `OutOfMemoryError` durch zu wenig
+zugewiesenen Arbeitsspeicher), kann das trotzdem den gesamten Prozess und damit beide Bots betreffen - das lässt sich
+nur durch ausreichend RAM für den kombinierten Betrieb vermeiden, nicht durch Code.*
+
+### Reicht die Launcher-JAR allein aus?
+
+Ja. `xBotenyyLauncher.jar` ist bereits ein eigenständiges Fat-Jar und enthält `common`, `discordbot` und `twitchbot`
+vollständig. Es müssen **keine** zusätzlichen JARs (`xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`) auf den Server
+kopiert werden - nur `xBotenyyLauncher.jar` sowie wie gewohnt `.env`, `discordbot.properties` und
+`twitchbot.properties` im selben Verzeichnis.

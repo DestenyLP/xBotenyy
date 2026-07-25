@@ -15,14 +15,6 @@ public enum LaunchMode {
         this.twitch = twitch;
     }
 
-    public boolean includesDiscord() {
-        return discord;
-    }
-
-    public boolean includesTwitch() {
-        return twitch;
-    }
-
     public static LaunchMode fromArgs(String[] args) {
         if (args.length == 0) {
             return BOTH;
@@ -33,5 +25,13 @@ public enum LaunchMode {
             case "twitch", "twitchbot", "twitch-only" -> TWITCH_ONLY;
             default -> BOTH;
         };
+    }
+
+    public boolean includesDiscord() {
+        return discord;
+    }
+
+    public boolean includesTwitch() {
+        return twitch;
     }
 }

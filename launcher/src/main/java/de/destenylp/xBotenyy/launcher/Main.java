@@ -1,80 +1,82 @@
 package de.destenylp.xBotenyy.launcher;
 
+import de.destenylp.xBotenyy.launcher.bot.BotRegistry;
+import de.destenylp.xBotenyy.launcher.bot.DiscordManagedBot;
+import de.destenylp.xBotenyy.launcher.bot.ManagedBot;
+import de.destenylp.xBotenyy.launcher.bot.TwitchManagedBot;
+import de.destenylp.xBotenyy.launcher.console.CommandContext;
+import de.destenylp.xBotenyy.launcher.console.ConsoleCommandRegistry;
+import de.destenylp.xBotenyy.launcher.console.ConsoleShell;
+import de.destenylp.xBotenyy.launcher.console.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-    private static final int DEFAULT_MAX_RESTART_ATTEMPTS = 5;
-    private static final int DEFAULT_RESTART_DELAY_SECONDS = 15;
+    private static final long SHUTDOWN_STOP_TIMEOUT_SECONDS = 30;
 
     private Main() {
     }
 
     public static void main(String[] args) throws InterruptedException {
         LaunchMode mode = LaunchMode.fromArgs(args);
-        int maxRestartAttempts = resolveMaxRestartAttempts();
-        Duration restartDelay = resolveRestartDelay();
-        LOGGER.info("xBotenyy Launcher startet im Modus {} (maxRestartAttempts={} restartDelay={}s)",
-                mode, maxRestartAttempts, restartDelay.toSeconds());
+        LauncherSettings settings = LauncherSettings.loadFromEnvironment();
+        LOGGER.info("xBotenyy Launcher startet im Modus {} ({})", mode, settings);
 
-        Thread discordThread = mode.includesDiscord()
-                ? startSupervised("discordbot-main", "Discord-Bot", maxRestartAttempts, restartDelay,
-                        () -> de.destenylp.xBotenyy.discordbot.Main.main(new String[0]))
-                : null;
-        Thread twitchThread = mode.includesTwitch()
-                ? startSupervised("twitchbot-main", "Twitch-Bot", maxRestartAttempts, restartDelay,
-                        () -> de.destenylp.xBotenyy.twitchbot.Main.main(new String[0]))
-                : null;
+        BotRegistry registry = new BotRegistry();
+        if (mode.includesDiscord()) {
+            registry.register(new DiscordManagedBot(LOGGER, settings));
+        }
+        if (mode.includesTwitch()) {
+            registry.register(new TwitchManagedBot(LOGGER, settings));
+        }
 
-        if (discordThread == null && twitchThread == null) {
+        if (registry.isEmpty()) {
             LOGGER.error("Modus {} aktiviert keinen Bot, Launcher wird beendet.", mode);
             return;
         }
 
-        joinQuietly(discordThread);
-        joinQuietly(twitchThread);
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Runnable shutdownAction = () -> initiateLauncherShutdown(registry, shutdownLatch);
 
+        ConsoleCommandRegistry commandRegistry = buildCommandRegistry();
+        CommandContext commandContext = new CommandContext(registry, settings, commandRegistry, shutdownAction);
+        ConsoleShell consoleShell = new ConsoleShell(commandRegistry, commandContext, LOGGER);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(
+                () -> initiateLauncherShutdown(registry, shutdownLatch), "launcher-shutdown-hook"));
+
+        for (ManagedBot bot : registry.all()) {
+            bot.start();
+        }
+        consoleShell.start();
+
+        shutdownLatch.await();
         LOGGER.info("xBotenyy Launcher wurde beendet.");
     }
 
-    private static Thread startSupervised(String threadName, String botName, int maxRestartAttempts,
-                                           Duration restartDelay, Runnable entryPoint) {
-        BotSupervisor supervisor = new BotSupervisor(botName, entryPoint, LOGGER, maxRestartAttempts, restartDelay);
-        Thread thread = new Thread(supervisor::runSupervised, threadName);
-        thread.setUncaughtExceptionHandler((failedThread, error) ->
-                LOGGER.error("{} wurde durch einen fatalen Fehler im Thread {} beendet, der andere Bot ist davon "
-                        + "nicht betroffen: ", botName, failedThread.getName(), error));
-        thread.start();
-        return thread;
+    private static ConsoleCommandRegistry buildCommandRegistry() {
+        ConsoleCommandRegistry registry = new ConsoleCommandRegistry();
+        registry.register(new HelpCommand());
+        registry.register(new StatusCommand());
+        registry.register(new StartCommand());
+        registry.register(new StopCommand());
+        registry.register(new RestartCommand());
+        registry.register(new SetCommand());
+        registry.register(new ExitCommand());
+        return registry;
     }
 
-    private static void joinQuietly(Thread thread) throws InterruptedException {
-        if (thread != null) {
-            thread.join();
+    private static synchronized void initiateLauncherShutdown(BotRegistry registry, CountDownLatch shutdownLatch) {
+        if (shutdownLatch.getCount() == 0) {
+            return;
         }
-    }
-
-    private static int resolveMaxRestartAttempts() {
-        return parsePositiveInt(System.getenv("LAUNCHER_MAX_RESTART_ATTEMPTS"), DEFAULT_MAX_RESTART_ATTEMPTS);
-    }
-
-    private static Duration resolveRestartDelay() {
-        return Duration.ofSeconds(parsePositiveInt(System.getenv("LAUNCHER_RESTART_DELAY_SECONDS"),
-                DEFAULT_RESTART_DELAY_SECONDS));
-    }
-
-    private static int parsePositiveInt(String value, int fallback) {
-        if (value == null || value.isBlank()) {
-            return fallback;
+        LOGGER.info("Launcher-Shutdown angefordert, stoppe alle Bots geordnet...");
+        for (ManagedBot bot : registry.all()) {
+            bot.stop(SHUTDOWN_STOP_TIMEOUT_SECONDS);
         }
-        try {
-            int parsed = Integer.parseInt(value.trim());
-            return parsed > 0 ? parsed : fallback;
-        } catch (NumberFormatException e) {
-            return fallback;
-        }
+        shutdownLatch.countDown();
     }
 }

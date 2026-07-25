@@ -15,8 +15,9 @@
 
     <description>
         Startet xBotenyyDiscordBot und xBotenyyTwitchBot gemeinsam in einem Prozess. Enthaelt keine eigene
-        Bot-Logik, sondern delegiert vollstaendig an die bestehenden Main-Klassen der beiden Module und
-        stellt lediglich Threading sowie ein je Modul getrenntes Logging-Setup bereit.
+        Bot-Logik, sondern instanziiert und startet lediglich die bestehenden Bot-Klassen der beiden Module,
+        stellt ein je Modul getrenntes Logging-Setup bereit und bietet zusaetzlich eine interaktive Konsole
+        (start/stop/restart/set/status/exit) zur Laufzeitsteuerung beider Bots.
     </description>
 
     <dependencies>
