@@ -1,5 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.eventlog;
 
+import de.destenylp.xBotenyy.common.commands.CommandDispatchResult;
 import de.destenylp.xBotenyy.discordbot.core.AbstractEmbedFactory;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -9,9 +10,12 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class EventLogEmbedFactory extends AbstractEmbedFactory {
     private EventLogEmbedFactory() {
@@ -170,6 +174,41 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
             eb.setThumbnail(cached.authorAvatarUrl());
         }
         return eb.build();
+    }
+
+    public static MessageEmbed buildCommandUsage(SlashCommandInteractionEvent event, CommandDispatchResult result) {
+        EmbedBuilder eb = base(LogEventType.COMMAND_USAGE);
+        eb.setTitle(LogEventType.COMMAND_USAGE.getEmoji() + " Command-Nutzung");
+        eb.setDescription(event.getUser().getAsMention() + " hat `/" + event.getFullCommandName() + "` in "
+                + event.getChannel().getAsMention() + " ausgeführt.");
+        eb.addField("Status", describeCommandResult(result), true);
+        List<OptionMapping> options = event.getOptions();
+        if (!options.isEmpty()) {
+            String optionsText = options.stream()
+                    .map(EventLogEmbedFactory::describeOption)
+                    .collect(Collectors.joining("\n"));
+            eb.addField("Optionen", optionsText.length() > 1000 ? optionsText.substring(0, 1000) + "…" : optionsText, false);
+        }
+        appendUserFooter(eb, event.getUser().getId(), event.getUser().getEffectiveAvatarUrl());
+        return eb.build();
+    }
+
+    private static String describeOption(OptionMapping option) {
+        try {
+            return option.getName() + ": " + option.getAsString();
+        } catch (Exception e) {
+            return option.getName() + ": *(nicht darstellbar)*";
+        }
+    }
+
+    private static String describeCommandResult(CommandDispatchResult result) {
+        return switch (result) {
+            case EXECUTED -> "\u2705 Ausgeführt";
+            case NO_PERMISSION -> "\u26D4 Keine Berechtigung";
+            case ON_COOLDOWN -> "\u23F3 Cooldown";
+            case ERROR -> "\u26A0\uFE0F Fehler";
+            default -> result.name();
+        };
     }
 
     private static String describeChannel(GuildChannel channel) {

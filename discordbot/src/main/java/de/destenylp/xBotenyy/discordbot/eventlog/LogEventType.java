@@ -17,7 +17,8 @@ public enum LogEventType {
     MEMBER_TIMEOUT_REMOVED("member-timeout-removed", "Timeout aufgehoben", "\uD83D\uDD0A", new Color(87, 242, 135)),
     CHANNEL_CREATE("channel-create", "Channel erstellt", "\u2795", new Color(87, 242, 135)),
     CHANNEL_DELETE("channel-delete", "Channel gelöscht", "\u2796", new Color(237, 66, 69)),
-    MESSAGE_DELETE("message-delete", "Nachricht gelöscht", "\uD83D\uDDD1\uFE0F", new Color(237, 66, 69));
+    MESSAGE_DELETE("message-delete", "Nachricht gelöscht", "\uD83D\uDDD1\uFE0F", new Color(237, 66, 69)),
+    COMMAND_USAGE("command-usage", "Command-Nutzung", "\uD83E\uDDFE", new Color(88, 101, 242));
 
     private final String key;
     private final String label;

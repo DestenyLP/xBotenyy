@@ -3,6 +3,7 @@ package de.destenylp.xBotenyy.twitchbot.commands;
 import de.destenylp.xBotenyy.common.commands.*;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatMessage;
+import de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogService;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.CustomCommandRepository;
 import org.slf4j.Logger;
@@ -20,14 +21,17 @@ public class TwitchCommandManager {
     private final CustomCommandRepository customCommandRepository;
     private final TwitchBotServices services;
     private final TwitchEventLogService eventLogService;
+    private final TwitchDiscordLogService discordLogService;
     private final CooldownManager customCommandCooldownManager = new CooldownManager();
 
     public TwitchCommandManager(String prefix, CustomCommandRepository customCommandRepository,
-                                TwitchBotServices services, TwitchEventLogService eventLogService) {
+                                TwitchBotServices services, TwitchEventLogService eventLogService,
+                                TwitchDiscordLogService discordLogService) {
         this.prefix = prefix;
         this.customCommandRepository = customCommandRepository;
         this.services = services;
         this.eventLogService = eventLogService;
+        this.discordLogService = discordLogService;
         this.dispatcher = new CommandDispatcher<>(registry, new CooldownManager(),
                 context -> resolvePermission(context.message()),
                 context -> context.message().userId());
@@ -93,6 +97,17 @@ public class TwitchCommandManager {
             default -> {
             }
         }
+        discordLogService.logCommandUsage(context.message(), commandName, describeResult(result));
+    }
+
+    private static String describeResult(CommandDispatchResult result) {
+        return switch (result) {
+            case EXECUTED -> "Ausgefuehrt";
+            case NO_PERMISSION -> "Keine Berechtigung";
+            case ON_COOLDOWN -> "Cooldown";
+            case ERROR -> "Fehler";
+            default -> result.name();
+        };
     }
 
     private boolean handleCustomCommand(TwitchChatMessage message, String commandName) {
@@ -118,6 +133,7 @@ public class TwitchCommandManager {
         services.reply(message.channelLogin(), response);
         customCommandRepository.incrementUses(message.channelLogin(), commandName);
         Metrics.increment("twitch.custom_commands_executed");
+        discordLogService.logCommandUsage(message, commandName, "Ausgefuehrt (Custom)");
         return true;
     }
 }

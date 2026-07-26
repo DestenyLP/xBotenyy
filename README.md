@@ -109,9 +109,30 @@ Prefix konfigurierbar (`twitch.chat.command.prefix`, Standard `!`):
 | `!game [kategorie]`                 | Moderator    | Zeigt/aendert die Stream-Kategorie                    |
 | `!so <kanal>`                       | Moderator    | Shoutout fuer einen anderen Streamer                  |
 | `!clip`                             | alle         | Erstellt einen Clip vom aktuellen Moment              |
+| `!quote [nummer]`                   | alle         | Zeigt ein zufaelliges oder gezieltes Zitat            |
+| `!quote add <text>`                 | Moderator    | Speichert ein neues Zitat                             |
+| `!quote del <nummer>`               | Moderator    | Entfernt ein gespeichertes Zitat                      |
+| `!quote list`                       | alle         | Zeigt Anzahl und erste gespeicherte Zitate            |
+| `!poll start <frage> \| <opt1> \| <opt2> [\| ...]` | Moderator | Startet eine Chat-Umfrage (max. 5 Optionen) |
+| `!poll results`                     | alle         | Zeigt den aktuellen Zwischenstand der Umfrage         |
+| `!poll end`                         | Moderator    | Beendet die Umfrage und zeigt das Endergebnis         |
+| `!vote <nummer>`                    | alle         | Stimmt bei der laufenden Umfrage ab                   |
 
 *Custom-Command-Antworten unterstützen die Platzhalter `{user}` und `{channel}`. Cooldown je Custom-Command
 ueber `!command cooldown <name> <sekunden>`, Standard 5 Sekunden.*
+
+### Zitat-System (`!quote`)
+
+Zitate werden pro Kanal fortlaufend nummeriert und dauerhaft in der SQLite-Datenbank gespeichert (Tabelle
+`twitch_quotes`). `!quote` ohne Argument liefert ein zufaelliges Zitat, `!quote <nummer>` ein bestimmtes.
+Hinzufuegen und Entfernen ist Moderatoren vorbehalten, jeder Vorgang wird im Event-Log festgehalten.
+
+### Umfrage-System (`!poll` / `!vote`)
+
+Pro Kanal kann jeweils eine Umfrage aktiv sein (2-5 Antwortoptionen, durch `|` getrennt). Zuschauer stimmen mit
+`!vote <nummer>` ab, Mehrfachstimmen desselben Nutzers ersetzen die vorherige Stimme. Umfragen leben nur im
+Arbeitsspeicher des laufenden Prozesses (kein Neustart-Ueberdauern) und werden beim Start/Ende ins Event-Log
+geschrieben.
 
 ### Twitch-Autorisierung (Generierung der Tokens)
 
@@ -137,11 +158,12 @@ keine Aenderung).*
 Logge dich im Browser in den **Bot-Account** ein und rufe folgende URL auf:
 
 ```text
-https://id.twitch.tv/oauth2/authorize?client_id=<TWITCH_CLIENT_ID>&redirect_uri=http://localhost:8080&response_type=code&scope=user:bot+user:write:chat+user:read:chat+clips:edit+moderator:manage:shoutouts&force_verify=true
+https://id.twitch.tv/oauth2/authorize?client_id=<TWITCH_CLIENT_ID>&redirect_uri=http://localhost:8080&response_type=code&scope=user:bot+user:write:chat+user:read:chat+clips:edit+moderator:manage:shoutouts+moderator:manage:automod&force_verify=true
 ```
 
 *Tausche den empfangenen `?code=` gegen das Access- und Refresh-Token für den **Bot** und trage es in die `.env`
-ein. `clips:edit` wird fuer `!clip`, `moderator:manage:shoutouts` fuer `!so` benoetigt.*
+ein. `clips:edit` wird fuer `!clip`, `moderator:manage:shoutouts` fuer `!so`, `moderator:manage:automod` fuer das
+native Twitch-AutoMod-Logging (siehe Abschnitt "Discord-Logging") benoetigt.*
 
 #### 3. Code gegen Access- und Refresh-Token tauschen
 
@@ -173,6 +195,31 @@ automatisch im Hintergrund, solange das Refresh-Token gültig bleibt (siehe `Twi
 1. Trage den Bot-Account im Kanal des Broadcasters als Moderator ein (`/mod <botname>`).
 2. Trage den Zielkanal in den `twitchbot.properties` unter `twitch.chat.channels` ein.
 
+### Discord-Logging (Twitch → Discord)
+
+Der Twitch-Bot kann Chat-Nachrichten, AutoMod-Ereignisse (das eigene AutoMod **und** Twitchs natives AutoMod) sowie
+Command-Nutzungen live per Discord-Webhook in einen Discord-Channel spiegeln. Da der Twitch-Bot als eigener Prozess
+ohne Discord-Verbindung laeuft, geschieht das unabhaengig vom Discord-Bot ueber einen klassischen Discord-Webhook.
+
+1. Lege in Discord im gewuenschten Log-Channel einen Webhook an (Channel-Einstellungen → Integrationen →
+   Webhooks → Neuer Webhook) und kopiere die Webhook-URL.
+2. Trage die URL in `twitchbot.properties` unter `discord.log.webhook.url` ein.
+3. Steuere ueber folgende Schalter, was geloggt wird:
+
+| Property                        | Standard | Bedeutung                                              |
+|----------------------------------|----------|---------------------------------------------------------|
+| `discord.log.webhook.url`        | *(leer)* | Discord-Webhook-URL, ohne URL ist das Feature deaktiviert |
+| `discord.log.messages.enabled`   | `false`  | Loggt jede Chat-Nachricht (kann sehr viel Traffic erzeugen) |
+| `discord.log.automod.enabled`    | `true`   | Loggt eigenes AutoMod **und** natives Twitch-AutoMod       |
+| `discord.log.commands.enabled`   | `true`   | Loggt jede Nutzung eines eingebauten oder Custom-Commands  |
+
+Fuer das native Twitch-AutoMod (Nachrichten, die Twitch selbst zur Pruefung zurueckhaelt) abonniert der Bot
+automatisch die EventSub-Typen `automod.message.hold` und `automod.message.update`. Dafuer wird der Scope
+`moderator:manage:automod` auf dem Bot-Account-Token benoetigt (siehe Schritt 2 der Twitch-Autorisierung oben).
+
+Auf der Discord-Bot-Seite wird die Nutzung von Discord-Slash-Commands ueber das bestehende Event-Log-System
+geloggt (`/eventlog` bzw. `/serverlog`, Event-Typ "Command-Nutzung") und benoetigt keine zusaetzliche Konfiguration.
+
 ### AutoMod-Mapping
 
 | Discord-Key                    | Twitch-Bedeutung                          |
@@ -187,7 +234,7 @@ automatisch im Hintergrund, solange das Refresh-Token gültig bleibt (siehe `Twi
 Eigene SQLite-DB (`twitch.database.file`), nutzt die identische `Database`/`Jdbc`/`SchemaMigrator`-Schicht wie der
 Discord-Bot.
 Tabellen: `twitch_channels`, `twitch_custom_commands` (inkl. `cooldown_seconds`), `twitch_watchtime`,
-`twitch_broadcasts`, `twitch_event_log`.
+`twitch_broadcasts`, `twitch_event_log`, `twitch_quotes`.
 
 ### Weitere Einstellungen
 
@@ -241,7 +288,6 @@ Sobald der Launcher läuft, akzeptiert er interaktiv Befehle über die Standard-
 | `set maxrestarts <n>` / `set restartdelay <sekunden>` | Neustart-Verhalten zur Laufzeit ändern (siehe unten)                      |
 | `exit`                                                | Alle Bots geordnet stoppen und den Launcher beenden                       |
 
-Details und Beispiele siehe [`launcher/README.md`](launcher/README.md#konsolen-befehle).
 
 ### Logging im kombinierten Betrieb
 

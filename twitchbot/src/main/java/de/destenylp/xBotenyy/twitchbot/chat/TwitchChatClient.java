@@ -60,6 +60,10 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
 
     private Consumer<TwitchChatMessage> onMessage = message -> {
     };
+    private Consumer<TwitchAutomodHeldMessage> onAutomodHeld = message -> {
+    };
+    private Consumer<TwitchAutomodUpdateMessage> onAutomodUpdate = message -> {
+    };
     private Runnable onConnected = () -> {
     };
 
@@ -82,6 +86,14 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
 
     public void onMessage(Consumer<TwitchChatMessage> listener) {
         this.onMessage = listener;
+    }
+
+    public void onAutomodHeld(Consumer<TwitchAutomodHeldMessage> listener) {
+        this.onAutomodHeld = listener;
+    }
+
+    public void onAutomodUpdate(Consumer<TwitchAutomodUpdateMessage> listener) {
+        this.onAutomodUpdate = listener;
     }
 
     public void onConnected(Runnable listener) {
@@ -302,14 +314,20 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         }
         JsonObject subscription = payload.getAsJsonObject("subscription");
         String type = subscription != null ? JsonUtil.optString(subscription, "type") : null;
-        if (!"channel.chat.message".equals(type)) {
-            return;
-        }
         JsonObject event = payload.getAsJsonObject("event");
-        if (event == null) {
+        if (type == null || event == null) {
             return;
         }
+        switch (type) {
+            case "channel.chat.message" -> handleChatMessageEvent(event);
+            case "automod.message.hold" -> handleAutomodHoldEvent(event);
+            case "automod.message.update" -> handleAutomodUpdateEvent(event);
+            default -> {
+            }
+        }
+    }
 
+    private void handleChatMessageEvent(JsonObject event) {
         String chatterUserId = JsonUtil.optString(event, "chatter_user_id");
         if (botUserId.equals(chatterUserId)) {
             return;
@@ -347,39 +365,67 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         onMessage.accept(message);
     }
 
+    private void handleAutomodHoldEvent(JsonObject event) {
+        String channelLogin = JsonUtil.optString(event, "broadcaster_user_login");
+        String messageId = JsonUtil.optString(event, "message_id");
+        String userId = JsonUtil.optString(event, "user_id");
+        String userLogin = JsonUtil.optString(event, "user_login");
+        String content = JsonUtil.optString(event, "message", "");
+        String category = JsonUtil.optString(event, "category", "unbekannt");
+        String level = event.has("level") && !event.get("level").isJsonNull()
+                ? String.valueOf(event.get("level").getAsInt()) : "unbekannt";
+        onAutomodHeld.accept(new TwitchAutomodHeldMessage(channelLogin, messageId, userId, userLogin, content, category, level));
+    }
+
+    private void handleAutomodUpdateEvent(JsonObject event) {
+        String channelLogin = JsonUtil.optString(event, "broadcaster_user_login");
+        String messageId = JsonUtil.optString(event, "message_id");
+        String userId = JsonUtil.optString(event, "user_id");
+        String userLogin = JsonUtil.optString(event, "user_login");
+        String status = JsonUtil.optString(event, "status", "unbekannt");
+        String moderatorLogin = JsonUtil.optString(event, "moderator_user_login");
+        onAutomodUpdate.accept(new TwitchAutomodUpdateMessage(channelLogin, messageId, userId, userLogin, status, moderatorLogin));
+    }
+
     private void subscribeToChannel(String channelLogin) {
         Optional<String> broadcasterId = resolveBroadcasterId(channelLogin);
         if (broadcasterId.isEmpty()) {
             LOGGER.warn("Konnte Broadcaster-ID fuer Kanal {} nicht aufloesen, Chat-Abo wird uebersprungen.", channelLogin);
             return;
         }
-        createEventSubSubscription(broadcasterId.get(), channelLogin);
+
+        JsonObject chatCondition = new JsonObject();
+        chatCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+        chatCondition.addProperty("user_id", botUserId);
+        createEventSubSubscription("channel.chat.message", "1", chatCondition, channelLogin);
+
+        JsonObject automodCondition = new JsonObject();
+        automodCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+        automodCondition.addProperty("moderator_user_id", botUserId);
+        createEventSubSubscription("automod.message.hold", "1", automodCondition, channelLogin);
+        createEventSubSubscription("automod.message.update", "1", automodCondition, channelLogin);
     }
 
-    private void createEventSubSubscription(String broadcasterId, String channelLogin) {
+    private void createEventSubSubscription(String type, String version, JsonObject condition, String channelLogin) {
         String currentSessionId = sessionId;
         if (currentSessionId == null) {
-            LOGGER.warn("Keine aktive Twitch-EventSub-Session, Chat-Abo fuer #{} wird uebersprungen.", channelLogin);
+            LOGGER.warn("Keine aktive Twitch-EventSub-Session, {}-Abo fuer #{} wird uebersprungen.", type, channelLogin);
             return;
         }
         String token = userAccessTokenSupplier.get();
         if (token == null || token.isBlank()) {
-            LOGGER.warn("Kein Twitch User-Access-Token verfuegbar, Chat-Abo fuer #{} wird uebersprungen.", channelLogin);
+            LOGGER.warn("Kein Twitch User-Access-Token verfuegbar, {}-Abo fuer #{} wird uebersprungen.", type, channelLogin);
             return;
         }
 
         try {
-            JsonObject condition = new JsonObject();
-            condition.addProperty("broadcaster_user_id", broadcasterId);
-            condition.addProperty("user_id", botUserId);
-
             JsonObject transport = new JsonObject();
             transport.addProperty("method", "websocket");
             transport.addProperty("session_id", currentSessionId);
 
             JsonObject body = new JsonObject();
-            body.addProperty("type", "channel.chat.message");
-            body.addProperty("version", "1");
+            body.addProperty("type", type);
+            body.addProperty("version", version);
             body.add("condition", condition);
             body.add("transport", transport);
 
@@ -391,15 +437,15 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
                     .build();
 
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
-                    LOGGER, "Twitch EventSub-Abo fuer #" + channelLogin);
+                    LOGGER, "Twitch EventSub-Abo (" + type + ") fuer #" + channelLogin);
             if (response.statusCode() != 202) {
-                LOGGER.warn("Konnte Twitch-Chat-Abo fuer #{} nicht anlegen (Status {}): {}",
-                        channelLogin, response.statusCode(), response.body());
+                LOGGER.warn("Konnte Twitch-{}-Abo fuer #{} nicht anlegen (Status {}): {}",
+                        type, channelLogin, response.statusCode(), response.body());
                 return;
             }
-            LOGGER.info("Twitch-Chat-Abo fuer #{} eingerichtet.", channelLogin);
+            LOGGER.info("Twitch-{}-Abo fuer #{} eingerichtet.", type, channelLogin);
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Anlegen des Twitch-Chat-Abos fuer #{}: {}", channelLogin, e.getMessage());
+            LOGGER.warn("Fehler beim Anlegen des Twitch-{}-Abos fuer #{}: {}", type, channelLogin, e.getMessage());
         }
     }
 

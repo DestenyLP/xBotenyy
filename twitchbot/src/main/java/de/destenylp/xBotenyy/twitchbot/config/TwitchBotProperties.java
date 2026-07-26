@@ -93,6 +93,10 @@ public final class TwitchBotProperties {
         values.put("twitch.broadcast.default.interval.seconds", "1800");
         values.put("twitch.broadcast.default.min.messages", "5");
         values.put("twitch.automod.permit.default.seconds", "30");
+        values.put("discord.log.webhook.url", "");
+        values.put("discord.log.messages.enabled", "false");
+        values.put("discord.log.automod.enabled", "true");
+        values.put("discord.log.commands.enabled", "true");
 
         values.putAll(AutomodSettingsFactory.defaultValues());
 
@@ -218,5 +222,26 @@ public final class TwitchBotProperties {
 
     public Path getDatabaseFile() {
         return getDataDirectory().resolve(getString("twitch.database.file", "xbotenyy-twitch.sqlite"));
+    }
+
+    public String getDiscordLogWebhookUrl() {
+        return getString("discord.log.webhook.url", "");
+    }
+
+    public boolean isDiscordLogMessagesEnabled() {
+        return Boolean.parseBoolean(getString("discord.log.messages.enabled", "false"));
+    }
+
+    public boolean isDiscordLogAutomodEnabled() {
+        return Boolean.parseBoolean(getString("discord.log.automod.enabled", "true"));
+    }
+
+    public boolean isDiscordLogCommandsEnabled() {
+        return Boolean.parseBoolean(getString("discord.log.commands.enabled", "true"));
+    }
+
+    public de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogSettings getDiscordLogSettings() {
+        return new de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogSettings(getDiscordLogWebhookUrl(),
+                isDiscordLogMessagesEnabled(), isDiscordLogAutomodEnabled(), isDiscordLogCommandsEnabled());
     }
 }

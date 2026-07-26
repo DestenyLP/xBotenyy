@@ -45,7 +45,7 @@ public class Bot extends AbstractBot {
     private static final String FALLBACK_VERSION = "dev";
 
     private final BotProperties properties;
-    private final DiscordCommandManager commandManager = new DiscordCommandManager();
+    private DiscordCommandManager commandManager;
     private ServiceContainer services;
     private JDA jda;
     private YoutubeFeedClient youtubeFeedClient;
@@ -80,6 +80,7 @@ public class Bot extends AbstractBot {
         ReactionRoleService.configureMaxButtonsPerMessage(properties.getReactionRoleMaxButtonsPerMessage());
 
         services = new ServiceContainer(properties);
+        commandManager = new DiscordCommandManager(services.getEventLogService());
 
         LOGGER.info("Konfiguration geladen: Twitch-Integration={} Groq-Moderation-Key={} AutoMod-KI-Feature={}",
                 config.hasTwitchAppCredentials() ? "erkannt" : "nicht gesetzt",

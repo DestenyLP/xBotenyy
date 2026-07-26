@@ -8,6 +8,7 @@ import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatClient;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatMessage;
+import de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogService;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class TwitchAutomodAdapter {
     private final String warnMessageTemplate;
     private final String moderatorUserId;
     private final TwitchEventLogService eventLogService;
+    private final TwitchDiscordLogService discordLogService;
     private final Map<String, String> broadcasterIdCache = new ConcurrentHashMap<>();
     private final Map<String, Long> permittedUntilMillis = new ConcurrentHashMap<>();
     private final ExecutorService moderationExecutor = Executors.newFixedThreadPool(2, runnable -> {
@@ -47,13 +49,15 @@ public class TwitchAutomodAdapter {
                                 TwitchModerationApiClient moderationApiClient,
                                 String warnMessageTemplate,
                                 String moderatorUserId,
-                                TwitchEventLogService eventLogService) {
+                                TwitchEventLogService eventLogService,
+                                TwitchDiscordLogService discordLogService) {
         this.engine = new AutomodEngine(settings, moderationClient);
         this.chatClient = chatClient;
         this.moderationApiClient = moderationApiClient;
         this.warnMessageTemplate = warnMessageTemplate;
         this.moderatorUserId = moderatorUserId;
         this.eventLogService = eventLogService;
+        this.discordLogService = discordLogService;
     }
 
     private static String permitKey(String channelLogin, String userLogin) {
@@ -136,6 +140,7 @@ public class TwitchAutomodAdapter {
                 verdict.ruleType(), message.userLogin(), message.channelLogin(), finalAction, strikes);
         eventLogService.record(message.channelLogin(), message.userId(), "AUTOMOD_" + verdict.ruleType(),
                 finalAction + " (Strikes: " + strikes + ") - " + verdict.reason());
+        discordLogService.logOwnAutomodAction(message, verdict, finalAction, strikes);
         Metrics.increment("twitch.automod_violations_detected");
 
         moderationExecutor.submit(() -> {

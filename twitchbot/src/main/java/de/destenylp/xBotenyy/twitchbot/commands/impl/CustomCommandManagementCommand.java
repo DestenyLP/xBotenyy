@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 
 public class CustomCommandManagementCommand extends AbstractTwitchCommand {
     private static final List<String> RESERVED_NAMES =
-            List.of("ping", "uptime", "automod", "mod", "strikes", "commands", "help", "command");
+            List.of("ping", "uptime", "automod", "mod", "strikes", "commands", "help", "command",
+                    "quote", "zitat", "poll", "umfrage", "vote", "v");
 
     private final CustomCommandRepository repository;
     private final TwitchEventLogService eventLogService;

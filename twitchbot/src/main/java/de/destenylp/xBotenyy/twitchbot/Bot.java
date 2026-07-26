@@ -6,6 +6,7 @@ import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
 import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.common.core.AbstractBot;
 import de.destenylp.xBotenyy.common.core.PrunableResource;
+import de.destenylp.xBotenyy.common.discord.DiscordWebhookClient;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.common.persistence.BackupService;
 import de.destenylp.xBotenyy.common.persistence.BackupSettings;
@@ -20,8 +21,10 @@ import de.destenylp.xBotenyy.twitchbot.commands.TwitchBotServices;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandManager;
 import de.destenylp.xBotenyy.twitchbot.commands.impl.*;
 import de.destenylp.xBotenyy.twitchbot.config.TwitchBotProperties;
+import de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogService;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.*;
+import de.destenylp.xBotenyy.twitchbot.poll.TwitchPollManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +52,10 @@ public final class Bot extends AbstractBot {
     private TwitchEventLogService eventLogService;
     private TwitchBroadcastRepository broadcastRepository;
     private TwitchBroadcastScheduler broadcastScheduler;
+    private TwitchQuoteRepository quoteRepository;
+    private final TwitchPollManager pollManager = new TwitchPollManager();
+    private DiscordWebhookClient discordWebhookClient;
+    private TwitchDiscordLogService discordLogService;
     private BackupService backupService;
     private String moderatorUserId;
     private Set<String> channels;
@@ -71,8 +78,12 @@ public final class Bot extends AbstractBot {
         eventLogRepository = new TwitchEventLogRepository(database);
         eventLogService = new TwitchEventLogService(eventLogRepository);
         broadcastRepository = new TwitchBroadcastRepository(database);
+        quoteRepository = new TwitchQuoteRepository(database);
         CustomCommandRepository customCommandRepository = new CustomCommandRepository(database);
         channels.forEach(channelRepository::recordJoin);
+
+        discordWebhookClient = new DiscordWebhookClient();
+        discordLogService = new TwitchDiscordLogService(discordWebhookClient, properties.getDiscordLogSettings());
 
         Optional<TwitchUserTokenManager> tokenManager = TwitchUserTokenManager.create(
                 config.twitchClientId(), config.twitchClientSecret(), config.twitchBotRefreshToken(),
@@ -129,12 +140,13 @@ public final class Bot extends AbstractBot {
                 : null;
 
         automodAdapter = new TwitchAutomodAdapter(automodSettings, moderationClient, chatClient,
-                moderationApiClient, properties.getWarnMessageTemplate(), moderatorUserId, eventLogService);
+                moderationApiClient, properties.getWarnMessageTemplate(), moderatorUserId, eventLogService,
+                discordLogService);
 
         TwitchBotServices services = new TwitchBotServices(chatClient, automodAdapter.getEngine(), automodAdapter,
                 customCommandRepository, watchtimeRepository, moderationApiClient, moderatorUserId, startedAt);
         commandManager = new TwitchCommandManager(properties.getCommandPrefix(), customCommandRepository, services,
-                eventLogService);
+                eventLogService, discordLogService);
         registerCommands(commandManager, customCommandRepository);
 
         broadcastScheduler = new TwitchBroadcastScheduler(broadcastRepository, chatClient, eventLogService, channels);
@@ -144,6 +156,7 @@ public final class Bot extends AbstractBot {
             try {
                 recordActivityQuietly(message.channelLogin());
                 Metrics.increment("twitch.messages_processed");
+                discordLogService.logChatMessage(message);
                 boolean flaggedByAutomod = automodAdapter.handleMessage(message);
                 if (!flaggedByAutomod) {
                     commandManager.handleMessage(message);
@@ -151,6 +164,28 @@ public final class Bot extends AbstractBot {
             } catch (Exception e) {
                 LOGGER.error("Unerwarteter Fehler bei der Verarbeitung einer Twitch-Nachricht in Kanal {}: ",
                         message.channelLogin(), e);
+            }
+        });
+        chatClient.onAutomodHeld(held -> {
+            try {
+                eventLogService.record(held.channelLogin(), held.userId(), "TWITCH_AUTOMOD_HOLD",
+                        "category=" + held.category() + " level=" + held.level());
+                discordLogService.logNativeAutomodHold(held.channelLogin(), held.userLogin(), held.content(),
+                        held.category(), held.level());
+            } catch (Exception e) {
+                LOGGER.error("Unerwarteter Fehler bei der Verarbeitung eines Twitch-AutoMod-Holds in Kanal {}: ",
+                        held.channelLogin(), e);
+            }
+        });
+        chatClient.onAutomodUpdate(update -> {
+            try {
+                eventLogService.record(update.channelLogin(), update.userId(), "TWITCH_AUTOMOD_UPDATE",
+                        "status=" + update.status());
+                discordLogService.logNativeAutomodUpdate(update.channelLogin(), update.userLogin(), update.status(),
+                        update.moderatorLogin());
+            } catch (Exception e) {
+                LOGGER.error("Unerwarteter Fehler bei der Verarbeitung eines Twitch-AutoMod-Updates in Kanal {}: ",
+                        update.channelLogin(), e);
             }
         });
         chatClient.onConnected(() -> LOGGER.info("Twitch-Bot ist in {} Kanälen aktiv: {}", channels.size(), channels));
@@ -187,6 +222,9 @@ public final class Bot extends AbstractBot {
         commandManager.register(new GameCommand(eventLogService));
         commandManager.register(new ShoutoutCommand(eventLogService));
         commandManager.register(new ClipCommand());
+        commandManager.register(new QuoteCommand(quoteRepository, eventLogService));
+        commandManager.register(new PollCommand(pollManager, eventLogService));
+        commandManager.register(new VoteCommand(pollManager));
         LOGGER.info("{} eingebaute Befehle registriert.", commandManager.getRegistry().size());
     }
 
@@ -260,6 +298,9 @@ public final class Bot extends AbstractBot {
         }
         if (automodAdapter != null) {
             automodAdapter.shutdown();
+        }
+        if (discordWebhookClient != null) {
+            discordWebhookClient.shutdown();
         }
         if (backupService != null) {
             backupService.close();

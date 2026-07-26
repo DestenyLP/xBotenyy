@@ -67,6 +67,7 @@
                     <descriptors>
                         <descriptor>src/main/assembly/with-dependencies.xml</descriptor>
                     </descriptors>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
                             <mainClass>de.destenylp.xBotenyy.launcher.Main</mainClass>
