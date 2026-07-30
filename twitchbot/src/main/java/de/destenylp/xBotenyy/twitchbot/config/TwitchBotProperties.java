@@ -97,6 +97,11 @@ public final class TwitchBotProperties {
         values.put("discord.log.messages.enabled", "false");
         values.put("discord.log.automod.enabled", "true");
         values.put("discord.log.commands.enabled", "true");
+        values.put("bridge.enabled", "false");
+        values.put("bridge.port", "8083");
+        values.put("bridge.token", "");
+        values.put("bridge.peer.url", "");
+        values.put("moderation.sync.channel", "");
 
         values.putAll(AutomodSettingsFactory.defaultValues());
 
@@ -243,5 +248,17 @@ public final class TwitchBotProperties {
     public de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogSettings getDiscordLogSettings() {
         return new de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogSettings(getDiscordLogWebhookUrl(),
                 isDiscordLogMessagesEnabled(), isDiscordLogAutomodEnabled(), isDiscordLogCommandsEnabled());
+    }
+
+    public de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings getBridgeSettings() {
+        return new de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings(
+                Boolean.parseBoolean(getString("bridge.enabled", "false")),
+                getInt("bridge.port", 8083, 1),
+                getString("bridge.token", ""),
+                getString("bridge.peer.url", ""));
+    }
+
+    public String getModerationSyncChannel() {
+        return getString("moderation.sync.channel", "");
     }
 }

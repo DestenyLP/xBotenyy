@@ -7,6 +7,12 @@ import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.common.core.AbstractBot;
 import de.destenylp.xBotenyy.common.core.PrunableResource;
 import de.destenylp.xBotenyy.common.discord.DiscordWebhookClient;
+import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
+import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
+import de.destenylp.xBotenyy.common.moderation.PendingLinkVerificationRepository;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings;
+import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeClient;
+import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeServer;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.common.persistence.BackupService;
 import de.destenylp.xBotenyy.common.persistence.BackupSettings;
@@ -23,6 +29,9 @@ import de.destenylp.xBotenyy.twitchbot.commands.impl.*;
 import de.destenylp.xBotenyy.twitchbot.config.TwitchBotProperties;
 import de.destenylp.xBotenyy.twitchbot.discordlog.TwitchDiscordLogService;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
+import de.destenylp.xBotenyy.twitchbot.moderation.TwitchModerationBridgeHandler;
+import de.destenylp.xBotenyy.twitchbot.moderation.TwitchModerationSyncTrigger;
+import de.destenylp.xBotenyy.twitchbot.moderation.TwitchRoleSyncService;
 import de.destenylp.xBotenyy.twitchbot.persistence.*;
 import de.destenylp.xBotenyy.twitchbot.poll.TwitchPollManager;
 import org.slf4j.Logger;
@@ -41,7 +50,7 @@ public final class Bot extends AbstractBot {
 
     private final TwitchBotProperties properties;
     private final Instant startedAt = Instant.now();
-
+    private final TwitchPollManager pollManager = new TwitchPollManager();
     private Database database;
     private TwitchChatClient chatClient;
     private TwitchAutomodAdapter automodAdapter;
@@ -53,9 +62,15 @@ public final class Bot extends AbstractBot {
     private TwitchBroadcastRepository broadcastRepository;
     private TwitchBroadcastScheduler broadcastScheduler;
     private TwitchQuoteRepository quoteRepository;
-    private final TwitchPollManager pollManager = new TwitchPollManager();
     private DiscordWebhookClient discordWebhookClient;
     private TwitchDiscordLogService discordLogService;
+    private ModerationCaseRepository moderationCaseRepository;
+    private AccountLinkRepository accountLinkRepository;
+    private PendingLinkVerificationRepository pendingLinkVerificationRepository;
+    private ModerationBridgeClient moderationBridgeClient;
+    private ModerationBridgeServer moderationBridgeServer;
+    private TwitchModerationSyncTrigger moderationSyncTrigger;
+    private TwitchRoleSyncService roleSyncService;
     private BackupService backupService;
     private String moderatorUserId;
     private Set<String> channels;
@@ -84,6 +99,15 @@ public final class Bot extends AbstractBot {
 
         discordWebhookClient = new DiscordWebhookClient();
         discordLogService = new TwitchDiscordLogService(discordWebhookClient, properties.getDiscordLogSettings());
+
+        moderationCaseRepository = new ModerationCaseRepository(database);
+        accountLinkRepository = new AccountLinkRepository(database);
+        pendingLinkVerificationRepository = new PendingLinkVerificationRepository(database);
+        moderationBridgeClient = new ModerationBridgeClient();
+        moderationSyncTrigger = new TwitchModerationSyncTrigger(accountLinkRepository, moderationBridgeClient,
+                properties::getBridgeSettings);
+        roleSyncService = new TwitchRoleSyncService(accountLinkRepository, moderationBridgeClient,
+                properties::getBridgeSettings);
 
         Optional<TwitchUserTokenManager> tokenManager = TwitchUserTokenManager.create(
                 config.twitchClientId(), config.twitchClientSecret(), config.twitchBotRefreshToken(),
@@ -125,6 +149,15 @@ public final class Bot extends AbstractBot {
                         "Konnte die Twitch-Nutzer-ID des Bot-Accounts nicht aufloesen - "
                                 + "TWITCH_BOT_USERNAME und TWITCH_MODERATOR_ACCESS_TOKEN pruefen."));
 
+        BridgeSettings bridgeSettings = properties.getBridgeSettings();
+        if (bridgeSettings.isServerEnabled()) {
+            TwitchModerationBridgeHandler bridgeHandler = new TwitchModerationBridgeHandler(
+                    properties.getModerationSyncChannel(), moderatorUserId, moderationApiClient,
+                    moderationCaseRepository, accountLinkRepository, pendingLinkVerificationRepository);
+            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.port(), bridgeSettings.token(), bridgeHandler);
+            moderationBridgeServer.start();
+        }
+
         TwitchAppAccessTokenManager appAccessTokenManager = new TwitchAppAccessTokenManager(
                 config.twitchClientId(), config.twitchClientSecret(), Duration.ofSeconds(10), Duration.ofMinutes(10),
                 properties.getRestActionMaxAttempts(), Duration.ofSeconds(properties.getRestActionBaseDelaySeconds()));
@@ -157,6 +190,7 @@ public final class Bot extends AbstractBot {
                 recordActivityQuietly(message.channelLogin());
                 Metrics.increment("twitch.messages_processed");
                 discordLogService.logChatMessage(message);
+                roleSyncService.handleMessage(message);
                 boolean flaggedByAutomod = automodAdapter.handleMessage(message);
                 if (!flaggedByAutomod) {
                     commandManager.handleMessage(message);
@@ -213,9 +247,10 @@ public final class Bot extends AbstractBot {
         commandManager.register(new BroadcastCommand(broadcastRepository, eventLogService,
                 properties.getBroadcastDefaultIntervalSeconds(), properties.getBroadcastDefaultMinMessages()));
         commandManager.register(new EventLogCommand(eventLogService));
-        commandManager.register(new ModTimeoutCommand(eventLogService));
-        commandManager.register(new ModBanCommand(eventLogService));
-        commandManager.register(new ModUnbanCommand(eventLogService));
+        commandManager.register(new ModTimeoutCommand(eventLogService, moderationCaseRepository, moderationSyncTrigger));
+        commandManager.register(new ModBanCommand(eventLogService, moderationCaseRepository, moderationSyncTrigger));
+        commandManager.register(new ModUnbanCommand(eventLogService, moderationCaseRepository, moderationSyncTrigger));
+        commandManager.register(new ModWarnCommand(moderationCaseRepository, moderationSyncTrigger));
         commandManager.register(new ModPurgeCommand(eventLogService));
         commandManager.register(new PermitCommand(eventLogService, properties.getAutomodPermitDefaultSeconds()));
         commandManager.register(new TitleCommand(eventLogService));
@@ -225,6 +260,8 @@ public final class Bot extends AbstractBot {
         commandManager.register(new QuoteCommand(quoteRepository, eventLogService));
         commandManager.register(new PollCommand(pollManager, eventLogService));
         commandManager.register(new VoteCommand(pollManager));
+        commandManager.register(new LinkCommand(pendingLinkVerificationRepository));
+        commandManager.register(new VerifyCommand(accountLinkRepository, moderationBridgeClient, properties::getBridgeSettings));
         LOGGER.info("{} eingebaute Befehle registriert.", commandManager.getRegistry().size());
     }
 
@@ -301,6 +338,9 @@ public final class Bot extends AbstractBot {
         }
         if (discordWebhookClient != null) {
             discordWebhookClient.shutdown();
+        }
+        if (moderationBridgeServer != null) {
+            moderationBridgeServer.stop();
         }
         if (backupService != null) {
             backupService.close();

@@ -88,35 +88,35 @@ Eigenständiges Modul. Verbindet sich per modernen Helix-Chat-API + EventSub-Web
 
 Prefix konfigurierbar (`twitch.chat.command.prefix`, Standard `!`):
 
-| Befehl                              | Berechtigung | Funktion                                              |
-|-------------------------------------|--------------|-------------------------------------------------------|
-| `!ping`                             | alle         | Erreichbarkeits-Check                                 |
-| `!uptime`                           | alle         | Laufzeit des Bots                                     |
-| `!strikes`                          | alle         | Eigene AutoMod-Strikes                                |
-| `!watchtime [nutzer]`               | alle         | Watchtime des Nutzers                                 |
-| `!followage [nutzer]`               | alle         | Seit wann jemand folgt                                |
-| `!automod` / `!mod`                 | Moderator    | AutoMod-Status abfragen                               |
-| `!command add/remove/list/cooldown` | Moderator    | Custom-Commands verwalten (inkl. Cooldown je Command) |
-| `!commands` / `!help`               | alle         | Listet Befehle auf                                    |
-| `!broadcast add/remove/list`        | Moderator    | Wiederkehrende Chat-Ansagen                           |
-| `!eventlog`                         | Moderator    | Event-Log-Einstellungen                               |
-| `!timeout <nutzer> <sek> [grund]`   | Moderator    | Timeoutet einen Nutzer                                |
-| `!ban <nutzer> [grund]`             | Moderator    | Bannt einen Nutzer dauerhaft                          |
-| `!unban <nutzer>`                   | Moderator    | Hebt Bann/Timeout auf                                 |
-| `!purge` / `!clear`                 | Moderator    | Leert den kompletten Chat                             |
-| `!permit <nutzer> [sek]`            | Moderator    | Voruebergehende AutoMod-Ausnahme fuer einen Nutzer    |
-| `!title [neuer titel]`              | Moderator    | Zeigt/aendert den Stream-Titel                        |
-| `!game [kategorie]`                 | Moderator    | Zeigt/aendert die Stream-Kategorie                    |
-| `!so <kanal>`                       | Moderator    | Shoutout fuer einen anderen Streamer                  |
-| `!clip`                             | alle         | Erstellt einen Clip vom aktuellen Moment              |
-| `!quote [nummer]`                   | alle         | Zeigt ein zufaelliges oder gezieltes Zitat            |
-| `!quote add <text>`                 | Moderator    | Speichert ein neues Zitat                             |
-| `!quote del <nummer>`               | Moderator    | Entfernt ein gespeichertes Zitat                      |
-| `!quote list`                       | alle         | Zeigt Anzahl und erste gespeicherte Zitate            |
-| `!poll start <frage> \| <opt1> \| <opt2> [\| ...]` | Moderator | Startet eine Chat-Umfrage (max. 5 Optionen) |
-| `!poll results`                     | alle         | Zeigt den aktuellen Zwischenstand der Umfrage         |
-| `!poll end`                         | Moderator    | Beendet die Umfrage und zeigt das Endergebnis         |
-| `!vote <nummer>`                    | alle         | Stimmt bei der laufenden Umfrage ab                   |
+| Befehl                                             | Berechtigung | Funktion                                              |
+|----------------------------------------------------|--------------|-------------------------------------------------------|
+| `!ping`                                            | alle         | Erreichbarkeits-Check                                 |
+| `!uptime`                                          | alle         | Laufzeit des Bots                                     |
+| `!strikes`                                         | alle         | Eigene AutoMod-Strikes                                |
+| `!watchtime [nutzer]`                              | alle         | Watchtime des Nutzers                                 |
+| `!followage [nutzer]`                              | alle         | Seit wann jemand folgt                                |
+| `!automod` / `!mod`                                | Moderator    | AutoMod-Status abfragen                               |
+| `!command add/remove/list/cooldown`                | Moderator    | Custom-Commands verwalten (inkl. Cooldown je Command) |
+| `!commands` / `!help`                              | alle         | Listet Befehle auf                                    |
+| `!broadcast add/remove/list`                       | Moderator    | Wiederkehrende Chat-Ansagen                           |
+| `!eventlog`                                        | Moderator    | Event-Log-Einstellungen                               |
+| `!timeout <nutzer> <sek> [grund]`                  | Moderator    | Timeoutet einen Nutzer                                |
+| `!ban <nutzer> [grund]`                            | Moderator    | Bannt einen Nutzer dauerhaft                          |
+| `!unban <nutzer>`                                  | Moderator    | Hebt Bann/Timeout auf                                 |
+| `!purge` / `!clear`                                | Moderator    | Leert den kompletten Chat                             |
+| `!permit <nutzer> [sek]`                           | Moderator    | Voruebergehende AutoMod-Ausnahme fuer einen Nutzer    |
+| `!title [neuer titel]`                             | Moderator    | Zeigt/aendert den Stream-Titel                        |
+| `!game [kategorie]`                                | Moderator    | Zeigt/aendert die Stream-Kategorie                    |
+| `!so <kanal>`                                      | Moderator    | Shoutout fuer einen anderen Streamer                  |
+| `!clip`                                            | alle         | Erstellt einen Clip vom aktuellen Moment              |
+| `!quote [nummer]`                                  | alle         | Zeigt ein zufaelliges oder gezieltes Zitat            |
+| `!quote add <text>`                                | Moderator    | Speichert ein neues Zitat                             |
+| `!quote del <nummer>`                              | Moderator    | Entfernt ein gespeichertes Zitat                      |
+| `!quote list`                                      | alle         | Zeigt Anzahl und erste gespeicherte Zitate            |
+| `!poll start <frage> \| <opt1> \| <opt2> [\| ...]` | Moderator    | Startet eine Chat-Umfrage (max. 5 Optionen)           |
+| `!poll results`                                    | alle         | Zeigt den aktuellen Zwischenstand der Umfrage         |
+| `!poll end`                                        | Moderator    | Beendet die Umfrage und zeigt das Endergebnis         |
+| `!vote <nummer>`                                   | alle         | Stimmt bei der laufenden Umfrage ab                   |
 
 *Custom-Command-Antworten unterstützen die Platzhalter `{user}` und `{channel}`. Cooldown je Custom-Command
 ueber `!command cooldown <name> <sekunden>`, Standard 5 Sekunden.*
@@ -206,12 +206,12 @@ ohne Discord-Verbindung laeuft, geschieht das unabhaengig vom Discord-Bot ueber 
 2. Trage die URL in `twitchbot.properties` unter `discord.log.webhook.url` ein.
 3. Steuere ueber folgende Schalter, was geloggt wird:
 
-| Property                        | Standard | Bedeutung                                              |
-|----------------------------------|----------|---------------------------------------------------------|
-| `discord.log.webhook.url`        | *(leer)* | Discord-Webhook-URL, ohne URL ist das Feature deaktiviert |
-| `discord.log.messages.enabled`   | `false`  | Loggt jede Chat-Nachricht (kann sehr viel Traffic erzeugen) |
-| `discord.log.automod.enabled`    | `true`   | Loggt eigenes AutoMod **und** natives Twitch-AutoMod       |
-| `discord.log.commands.enabled`   | `true`   | Loggt jede Nutzung eines eingebauten oder Custom-Commands  |
+| Property                       | Standard | Bedeutung                                                   |
+|--------------------------------|----------|-------------------------------------------------------------|
+| `discord.log.webhook.url`      | *(leer)* | Discord-Webhook-URL, ohne URL ist das Feature deaktiviert   |
+| `discord.log.messages.enabled` | `false`  | Loggt jede Chat-Nachricht (kann sehr viel Traffic erzeugen) |
+| `discord.log.automod.enabled`  | `true`   | Loggt eigenes AutoMod **und** natives Twitch-AutoMod        |
+| `discord.log.commands.enabled` | `true`   | Loggt jede Nutzung eines eingebauten oder Custom-Commands   |
 
 Fuer das native Twitch-AutoMod (Nachrichten, die Twitch selbst zur Pruefung zurueckhaelt) abonniert der Bot
 automatisch die EventSub-Typen `automod.message.hold` und `automod.message.update`. Dafuer wird der Scope
@@ -240,6 +240,98 @@ Tabellen: `twitch_channels`, `twitch_custom_commands` (inkl. `cooldown_seconds`)
 
 - `twitch.automod.permit.default.seconds` (Standard `30`): Dauer der AutoMod-Ausnahme, wenn `!permit <nutzer>` ohne
   Sekundenangabe genutzt wird.
+
+---
+
+## Erweiterte Moderation (Discord ↔ Twitch)
+
+Zusaetzlich zum automatischen AutoMod gibt es ein vollstaendiges manuelles Moderationssystem mit eigener
+Fall-Historie, konfigurierbaren Straf-/Moderator-Rollen und optionaler Synchronisation zwischen Discord und Twitch.
+
+### Discord: `/mod` und `/modroles`
+
+| Befehl                                   | Beschreibung                                                      |
+|------------------------------------------|-------------------------------------------------------------------|
+| `/mod warn user:<@nutzer>`               | Verwarnt ein Mitglied, vergibt optional die Warn-Rolle            |
+| `/mod timeout user: dauer:`              | Timeout (z. B. `10m`, `1h`, `1d`, `1w`, max. 28 Tage)             |
+| `/mod untimeout user:`                   | Hebt einen Timeout auf                                            |
+| `/mod kick user:`                        | Kickt ein Mitglied                                                |
+| `/mod ban user:`                         | Bannt einen Nutzer (auch per ID, ohne dass er Mitglied sein muss) |
+| `/mod unban user:`                       | Hebt einen Bann auf                                               |
+| `/mod cases user:`                       | Zeigt die vollstaendige Moderations-Historie eines Nutzers        |
+| `/modroles warn-role/mute-role/ban-role` | Legt die drei automatisch vergebenen Straf-Rollen fest            |
+| `/modroles add-moderator/add-admin`      | Erlaubt zusaetzlichen Rollen die Nutzung von `/mod`/`/modroles`   |
+| `/modroles status`                       | Zeigt die aktuelle Rollen-Konfiguration                           |
+
+`/mod`-Befehle duerfen von Mitgliedern mit `ADMINISTRATOR`/`Mitglieder moderieren`-Rechten sowie allen ueber
+`/modroles add-moderator` freigegebenen Rollen genutzt werden. `/modroles` selbst erfordert `ADMINISTRATOR` oder
+eine ueber `add-admin` freigegebene Rolle. Bans und Timeouts erscheinen automatisch auch im normalen `/serverlog`
+(Discord meldet diese Events selbst); Kicks und Verwarnungen werden zusaetzlich als eigene Log-Typen erfasst.
+
+### Twitch: `!warn`, `!ban`, `!timeout`, `!unban`
+
+Die bereits vorhandenen Mod-Commands (`!ban`, `!timeout`/`!to`, `!unban`/`!untimeout`) sowie das neue `!warn`
+schreiben jetzt zusaetzlich in die gemeinsame Fall-Historie und loesen - falls konfiguriert - eine Synchronisation
+zum verknuepften Discord-Account aus.
+
+### Accounts verknuepfen
+
+Die Verknuepfung ist fuer Nutzer komplett **freiwillig** - ohne sie funktionieren Server, Kanal und alle anderen
+Features normal weiter. Sie lohnt sich, weil dadurch Twitch-Rollen (Subscriber, VIP, Moderator, Broadcaster)
+automatisch als Discord-Rolle gespiegelt werden koennen und - falls die Bridge aktiviert ist - Moderationsmaßnahmen
+zwischen Discord und Twitch synchronisiert werden. Gespeichert wird dabei ausschließlich die Zuordnung
+Discord-ID ↔ Twitch-ID/-Login, keine Passwoerter oder Tokens.
+
+Die Verknuepfung funktioniert in beide Richtungen und erfordert immer eine Bestaetigung auf der jeweils anderen
+Plattform (kein reines Vertrauen auf Zuruf):
+
+- **Panel (empfohlen):** `/link panel channel:<kanal>` (Admin) postet ein Embed mit einem "🔗 Verknuepfen"-Button
+  in den angegebenen Kanal - aehnlich wie beim Ticket-System. Klick auf den Button oeffnet ein kleines Formular
+  fuer den Twitch-Loginnamen, der Rest laeuft wie unten beschrieben weiter.
+- **Start auf Discord (Command):** `/link twitch login:<name>` → Bot nennt einen Code → Nutzer postet
+  `!verify <code>` im Twitch-Chat des angegebenen Kanals.
+- **Start auf Twitch:** `!link` im Chat → Bot nennt einen Code → Nutzer fuehrt `/link verify code:<code>` auf
+  Discord aus.
+- `/link status` / `/link unlink` verwalten die eigene Verknuepfung auf Discord-Seite.
+
+### Twitch-Rollen mit Discord synchronisieren
+
+Ueber `/modroles sync-role status:<subscriber|vip|moderator|broadcaster> role:<@rolle>` legst du fest, welche
+Discord-Rolle fuer welchen Twitch-Status automatisch vergeben werden soll (Aufruf ohne `role` entfernt die
+Zuordnung wieder). `/modroles status` zeigt die aktuelle Konfiguration.
+
+Der Twitch-Bot erkennt den Status eines verknuepften Nutzers automatisch anhand der Chat-Badges, sobald dieser
+im Twitch-Chat schreibt (kein Polling noetig) und gleicht die Discord-Rolle darueber die Bridge ab - sowohl beim
+Erhalten als auch beim Verlieren eines Status (z. B. nach Ablauf des Abos, sobald erneut geschrieben wird).
+
+### Die Bridge (Discord ↔ Twitch)
+
+Da beide Bots als getrennte Prozesse - auch auf unterschiedlichen Servern - laufen koennen, sprechen sie ueber eine
+kleine, in beide Bots eingebaute HTTP-Schnittstelle miteinander ("Bridge"). Es wird **keine** zusaetzliche Software
+benoetigt; jeder Bot kann optional einen kleinen HTTP-Server starten und den des jeweils anderen Bots aufrufen.
+
+| Property (beide Bots) | Standard      | Bedeutung                                                           |
+|-----------------------|---------------|---------------------------------------------------------------------|
+| `bridge.enabled`      | `false`       | Startet den eigenen Bridge-Server (muss vom Peer erreichbar sein)   |
+| `bridge.port`         | `8082`/`8083` | Port des eigenen Bridge-Servers                                     |
+| `bridge.token`        | *(leer)*      | Gemeinsames Shared-Secret - **muss auf beiden Bots identisch sein** |
+| `bridge.peer.url`     | *(leer)*      | Basis-URL des jeweils anderen Bots, z. B. `http://localhost:8083`   |
+
+Zusaetzlich (jeweils nur auf einer Seite):
+
+- **Discordbot:** `moderation.sync.guild.id` - die Discord-Server-ID, in der synchronisierte Aktionen ausgefuehrt
+  werden (dieses Bot-Setup ist auf eine Community/einen Server ausgelegt).
+- **Twitchbot:** `moderation.sync.channel` - der Twitch-Kanal, in dem synchronisierte Aktionen ausgefuehrt werden
+  (leer = erster Kanal aus `twitch.chat.channels`).
+
+**Setup fuer zwei getrennte Server:** `bridge.enabled=true` auf beiden Seiten, `bridge.token` identisch setzen,
+`bridge.peer.url` jeweils auf die oeffentlich erreichbare Adresse des anderen Bots zeigen lassen (Firewall/Reverse
+Proxy beachten - die Bridge hat außer dem Shared-Secret keine weitere Absicherung).
+**Setup ueber den Launcher (ein Server):** `bridge.peer.url` einfach auf `http://localhost:<port-des-anderen-bots>`
+setzen, beide Ports muessen sich unterscheiden.
+
+Ohne `bridge.peer.url` funktioniert alles andere (manuelle Commands, Rollen, Fall-Historie) weiterhin normal -
+es wird lediglich keine Aktion zur anderen Plattform gespiegelt.
 
 ---
 
@@ -288,7 +380,6 @@ Sobald der Launcher läuft, akzeptiert er interaktiv Befehle über die Standard-
 | `set maxrestarts <n>` / `set restartdelay <sekunden>` | Neustart-Verhalten zur Laufzeit ändern (siehe unten)                      |
 | `exit`                                                | Alle Bots geordnet stoppen und den Launcher beenden                       |
 
-
 ### Logging im kombinierten Betrieb
 
 Da beide Bots im selben Prozess laufen, bringt der Launcher ein eigenes, nach Modul getrenntes Logback-Setup mit
@@ -333,3 +424,28 @@ Ja. `xBotenyyLauncher.jar` ist bereits ein eigenständiges Fat-Jar und enthält 
 vollständig. Es müssen **keine** zusätzlichen JARs (`xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`) auf den Server
 kopiert werden - nur `xBotenyyLauncher.jar` sowie wie gewohnt `.env`, `discordbot.properties` und
 `twitchbot.properties` im selben Verzeichnis.
+
+### Automatische Builds und Releases
+
+Drei GitHub-Actions-Workflows unter `.github/workflows/` bauen alle drei Fat-Jars automatisch:
+
+- **`build.yml`** läuft bei jedem Push und Pull Request auf `main` (`mvn clean verify`, inkl. Tests, Checkstyle,
+  SpotBugs) und lädt `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar` sowie `xBotenyyLauncher.jar` als
+  Workflow-Artefakte hoch (14 Tage abrufbar unter dem jeweiligen Workflow-Lauf, **kein** GitHub-Release).
+- **`latest-release.yml`** läuft ebenfalls bei jedem Push auf `main` und aktualisiert automatisch eine rollierende
+  Vorab-Release namens „Latest Build“ (Tag `latest`) mit den drei aktuellen Fat-Jars - so bekommst du auch ohne
+  eigenes Tagging nach jedem Push sofort eine herunterladbare Release.
+- **`release.yml`** läuft **nur** bei einem echten Versions-Tag (z. B. `v3.0.0`) oder manuell über
+  „Run workflow“ und veröffentlicht ein offizielles GitHub-Release mit allen drei Fat-Jars als Anhang.
+
+Ein offizielles, versioniertes Release erstellst du also per:
+
+```bash
+git tag v3.0.0
+git push origin v3.0.0
+```
+
+> ⚠️ **IntelliJ-Hinweis:** Ein Tag über *Git → New Tag* anlegen reicht nicht - IntelliJ pusht Tags standardmäßig
+> **nicht** automatisch mit. Im Push-Dialog musst du unter „Push Tags“ explizit „All“ auswählen, oder den Tag
+> per Terminal pushen (`git push origin v3.0.0`). Ein normaler Commit-Push ohne Tag löst nur `build.yml` und
+> `latest-release.yml` aus, aber kein offizielles, versioniertes Release.

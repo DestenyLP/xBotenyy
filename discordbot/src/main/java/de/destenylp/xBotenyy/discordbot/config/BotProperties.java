@@ -115,6 +115,12 @@ public final class BotProperties {
         values.put("socials.youtube.default-message", "Neues Video von {account}!\\n{video.title}\\n{video.url}");
         values.put("socials.twitch.default-message", "{account} ist jetzt live auf Twitch!\\n{stream.title}\\n{stream.url}");
 
+        values.put("bridge.enabled", "false");
+        values.put("bridge.port", "8082");
+        values.put("bridge.token", "");
+        values.put("bridge.peer.url", "");
+        values.put("moderation.sync.guild.id", "");
+
         values.putAll(AutomodSettingsFactory.defaultValues());
 
         values.putAll(de.destenylp.xBotenyy.common.persistence.BackupSettings.defaultValues());
@@ -200,6 +206,18 @@ public final class BotProperties {
 
     public Path getDatabaseFile() {
         return getDataDirectory().resolve(getString("database.file", "xbotenyy.sqlite"));
+    }
+
+    public de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings getBridgeSettings() {
+        return new de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings(
+                getBoolean("bridge.enabled", false),
+                getInt("bridge.port", 8082, 1),
+                getString("bridge.token", ""),
+                getString("bridge.peer.url", ""));
+    }
+
+    public String getModerationSyncGuildId() {
+        return getString("moderation.sync.guild.id", "");
     }
 
     public String getBotActivityType() {

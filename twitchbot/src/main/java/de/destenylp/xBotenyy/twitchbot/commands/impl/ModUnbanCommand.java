@@ -1,9 +1,13 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
 
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
+import de.destenylp.xBotenyy.common.moderation.ModerationAction;
+import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
+import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
+import de.destenylp.xBotenyy.twitchbot.moderation.TwitchModerationSyncTrigger;
 
 import java.util.List;
 import java.util.Locale;
@@ -13,11 +17,16 @@ public class ModUnbanCommand extends AbstractTwitchCommand {
     private static final String USAGE = "Nutzung: !unban <nutzer>";
 
     private final TwitchEventLogService eventLogService;
+    private final ModerationCaseRepository caseRepository;
+    private final TwitchModerationSyncTrigger syncTrigger;
 
-    public ModUnbanCommand(TwitchEventLogService eventLogService) {
+    public ModUnbanCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
+                           TwitchModerationSyncTrigger syncTrigger) {
         super("unban", "Hebt einen Bann oder Timeout auf.", List.of("untimeout"),
                 CommandPermission.MODERATOR, 2);
         this.eventLogService = eventLogService;
+        this.caseRepository = caseRepository;
+        this.syncTrigger = syncTrigger;
     }
 
     @Override
@@ -41,6 +50,12 @@ public class ModUnbanCommand extends AbstractTwitchCommand {
         if (success) {
             eventLogService.record(channel, context.message().userId(), "MANUAL_UNBAN",
                     "target=" + targetLogin + " by=" + context.message().userLogin());
+            caseRepository.deactivate(ModerationPlatform.TWITCH, channel, targetUserId.get(), ModerationAction.BAN);
+            caseRepository.deactivate(ModerationPlatform.TWITCH, channel, targetUserId.get(), ModerationAction.TIMEOUT);
+            caseRepository.insert(ModerationPlatform.TWITCH, channel, targetUserId.get(), targetLogin,
+                    context.message().userId(), context.message().displayName(), ModerationAction.UNBAN, "-", 0, false);
+            syncTrigger.trigger(targetUserId.get(), ModerationAction.UNBAN, "Entbannt/Timeout aufgehoben", 0,
+                    context.message().displayName());
             context.reply(targetLogin + " wurde entbannt.");
         } else {
             context.reply("Konnte " + targetLogin + " nicht entbannen.");

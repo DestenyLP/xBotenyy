@@ -3,6 +3,8 @@ package de.destenylp.xBotenyy.discordbot;
 import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.common.core.AbstractBot;
 import de.destenylp.xBotenyy.common.core.PrunableResource;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings;
+import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeServer;
 import de.destenylp.xBotenyy.discordbot.commands.*;
 import de.destenylp.xBotenyy.discordbot.commands.report.MyReportsCommand;
 import de.destenylp.xBotenyy.discordbot.commands.report.ReportCommand;
@@ -13,6 +15,7 @@ import de.destenylp.xBotenyy.discordbot.core.ServiceContainer;
 import de.destenylp.xBotenyy.discordbot.giveaways.GiveawayEndCoordinator;
 import de.destenylp.xBotenyy.discordbot.giveaways.GiveawayEndTask;
 import de.destenylp.xBotenyy.discordbot.listeners.*;
+import de.destenylp.xBotenyy.discordbot.moderation.DiscordModerationBridgeHandler;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.placeholders.DefaultPlaceholders;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleService;
@@ -48,6 +51,7 @@ public class Bot extends AbstractBot {
     private DiscordCommandManager commandManager;
     private ServiceContainer services;
     private JDA jda;
+    private ModerationBridgeServer moderationBridgeServer;
     private YoutubeFeedClient youtubeFeedClient;
     private TwitchApiClient twitchApiClient;
 
@@ -120,12 +124,22 @@ public class Bot extends AbstractBot {
                         new EventLogListener(services.getEventLogService(),
                                 properties.getEventLogMessageCacheMaxSize(),
                                 properties.getEventLogMessageDeleteContentMaxLength()),
-                        new AutomodListener(services.getAutomodService()))
+                        new AutomodListener(services.getAutomodService()),
+                        new AccountLinkListener(services.getAccountLinkService()))
                 .build();
 
         registerShutdownHook();
         jda.awaitReady();
         LOGGER.info("Discord Bot has been enabled.");
+
+        BridgeSettings bridgeSettings = properties.getBridgeSettings();
+        if (bridgeSettings.isServerEnabled()) {
+            DiscordModerationBridgeHandler bridgeHandler = new DiscordModerationBridgeHandler(jda,
+                    properties.getModerationSyncGuildId(), services.getModerationService(),
+                    services.getAccountLinkRepository(), services.getPendingLinkVerificationRepository());
+            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.port(), bridgeSettings.token(), bridgeHandler);
+            moderationBridgeServer.start();
+        }
 
         registerSlashCommands();
         startHeartbeat();
@@ -197,6 +211,9 @@ public class Bot extends AbstractBot {
 
     @Override
     protected void onShutdown() {
+        if (moderationBridgeServer != null) {
+            moderationBridgeServer.stop();
+        }
         if (jda == null) {
             return;
         }
@@ -231,6 +248,13 @@ public class Bot extends AbstractBot {
                 properties.getSocialsYoutubeDefaultMessage(), properties.getSocialsTwitchDefaultMessage(),
                 youtubeFeedClient, twitchApiClient));
         commandManager.register(new AutomodCommand(services.getAutomodService()));
+        commandManager.register(new ModerationCommand(services.getModerationService(),
+                services.getModerationRoleSettingsRepository(), services.getModerationCaseRepository(),
+                services.getModerationSyncTrigger()));
+        commandManager.register(new ModerationRolesCommand(services.getModerationRoleSettingsRepository()));
+        commandManager.register(new AccountLinkCommand(services.getAccountLinkService(),
+                services.getModerationBridgeClient(), services.getProperties()::getBridgeSettings,
+                services.getModerationRoleSettingsRepository()));
     }
 
     private void registerSlashCommands() {

@@ -18,7 +18,9 @@ public enum LogEventType {
     CHANNEL_CREATE("channel-create", "Channel erstellt", "\u2795", new Color(87, 242, 135)),
     CHANNEL_DELETE("channel-delete", "Channel gelöscht", "\u2796", new Color(237, 66, 69)),
     MESSAGE_DELETE("message-delete", "Nachricht gelöscht", "\uD83D\uDDD1\uFE0F", new Color(237, 66, 69)),
-    COMMAND_USAGE("command-usage", "Command-Nutzung", "\uD83E\uDDFE", new Color(88, 101, 242));
+    COMMAND_USAGE("command-usage", "Command-Nutzung", "\uD83E\uDDFE", new Color(88, 101, 242)),
+    MEMBER_KICK("member-kick", "Mitglied gekickt", "\uD83D\uDC62", new Color(237, 66, 69)),
+    MEMBER_WARN("member-warn", "Mitglied verwarnt", "\u26A0\uFE0F", new Color(250, 166, 26));
 
     private final String key;
     private final String label;

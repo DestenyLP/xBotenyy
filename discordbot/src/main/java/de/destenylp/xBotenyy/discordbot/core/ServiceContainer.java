@@ -4,6 +4,10 @@ import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodSettingsFactory;
 import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
 import de.destenylp.xBotenyy.common.config.CommonConfig;
+import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
+import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
+import de.destenylp.xBotenyy.common.moderation.PendingLinkVerificationRepository;
+import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeClient;
 import de.destenylp.xBotenyy.common.persistence.BackupService;
 import de.destenylp.xBotenyy.common.persistence.BackupSettings;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
@@ -13,6 +17,10 @@ import de.destenylp.xBotenyy.discordbot.eventlog.EventLogManager;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogService;
 import de.destenylp.xBotenyy.discordbot.giveaways.GiveawayManager;
 import de.destenylp.xBotenyy.discordbot.giveaways.GiveawayService;
+import de.destenylp.xBotenyy.discordbot.moderation.AccountLinkService;
+import de.destenylp.xBotenyy.discordbot.moderation.DiscordModerationService;
+import de.destenylp.xBotenyy.discordbot.moderation.DiscordModerationSyncTrigger;
+import de.destenylp.xBotenyy.discordbot.moderation.ModerationRoleSettingsRepository;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleManager;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleService;
 import de.destenylp.xBotenyy.discordbot.reports.ReportManager;
@@ -41,6 +49,15 @@ public class ServiceContainer implements AutoCloseable {
     private final AutomodService automodService;
     private final BackupService backupService;
     private final BackupSettings backupSettings;
+    private final ModerationCaseRepository moderationCaseRepository;
+    private final ModerationRoleSettingsRepository moderationRoleSettingsRepository;
+    private final DiscordModerationService moderationService;
+    private final AccountLinkRepository accountLinkRepository;
+    private final PendingLinkVerificationRepository pendingLinkVerificationRepository;
+    private final AccountLinkService accountLinkService;
+    private final ModerationBridgeClient moderationBridgeClient;
+    private final DiscordModerationSyncTrigger moderationSyncTrigger;
+    private final BotProperties properties;
 
     public ServiceContainer() {
         this(BotProperties.load());
@@ -85,6 +102,18 @@ public class ServiceContainer implements AutoCloseable {
         this.backupService = new BackupService(database,
                 backupSettings.resolveDirectory(properties.getDataDirectory()), "xbotenyy-discord",
                 backupSettings.maxBackupsToKeep());
+
+        this.moderationCaseRepository = new ModerationCaseRepository(database);
+        this.moderationRoleSettingsRepository = new ModerationRoleSettingsRepository(database);
+        this.moderationService = new DiscordModerationService(moderationCaseRepository, moderationRoleSettingsRepository);
+
+        this.accountLinkRepository = new AccountLinkRepository(database);
+        this.pendingLinkVerificationRepository = new PendingLinkVerificationRepository(database);
+        this.accountLinkService = new AccountLinkService(accountLinkRepository, pendingLinkVerificationRepository);
+        this.moderationBridgeClient = new ModerationBridgeClient();
+        this.moderationSyncTrigger = new DiscordModerationSyncTrigger(accountLinkRepository, moderationBridgeClient,
+                properties::getBridgeSettings);
+        this.properties = properties;
     }
 
     private static GroqSafeguardClient buildModerationClient(AutomodSettings settings) {
@@ -149,6 +178,42 @@ public class ServiceContainer implements AutoCloseable {
 
     public SocialService getSocialService() {
         return socialService;
+    }
+
+    public ModerationCaseRepository getModerationCaseRepository() {
+        return moderationCaseRepository;
+    }
+
+    public ModerationRoleSettingsRepository getModerationRoleSettingsRepository() {
+        return moderationRoleSettingsRepository;
+    }
+
+    public DiscordModerationService getModerationService() {
+        return moderationService;
+    }
+
+    public AccountLinkRepository getAccountLinkRepository() {
+        return accountLinkRepository;
+    }
+
+    public PendingLinkVerificationRepository getPendingLinkVerificationRepository() {
+        return pendingLinkVerificationRepository;
+    }
+
+    public AccountLinkService getAccountLinkService() {
+        return accountLinkService;
+    }
+
+    public ModerationBridgeClient getModerationBridgeClient() {
+        return moderationBridgeClient;
+    }
+
+    public DiscordModerationSyncTrigger getModerationSyncTrigger() {
+        return moderationSyncTrigger;
+    }
+
+    public BotProperties getProperties() {
+        return properties;
     }
 
     @Override
