@@ -58,7 +58,7 @@ public final class TwitchDiscordEmbedFactory {
     }
 
     public static JsonObject buildOwnAutomodAction(TwitchChatMessage message, AutomodVerdict verdict,
-                                                   AutomodAction action, int strikes) {
+                                                    AutomodAction action, int strikes) {
         JsonObject embed = base(COLOR_OWN_AUTOMOD, "\u26A0\uFE0F Eigenes AutoMod");
         embed.addProperty("description", message.displayName() + " (" + message.userLogin() + ") in #" + message.channelLogin());
         addFields(embed,
@@ -72,7 +72,7 @@ public final class TwitchDiscordEmbedFactory {
     }
 
     public static JsonObject buildNativeAutomodHold(String channelLogin, String userLogin, String messageText,
-                                                    String category, String level) {
+                                                     String category, String level) {
         JsonObject embed = base(COLOR_NATIVE_AUTOMOD, "\uD83D\uDEE1\uFE0F Twitch AutoMod (nativ)");
         embed.addProperty("description", "Twitch hat eine Nachricht von **" + userLogin + "** in #" + channelLogin
                 + " zur Pruefung zurueckgehalten.");
@@ -84,7 +84,7 @@ public final class TwitchDiscordEmbedFactory {
     }
 
     public static JsonObject buildNativeAutomodUpdate(String channelLogin, String userLogin, String status,
-                                                      String moderatorLogin) {
+                                                       String moderatorLogin) {
         JsonObject embed = base(COLOR_NATIVE_AUTOMOD, "\uD83D\uDEE1\uFE0F Twitch AutoMod (nativ) \u2013 Entscheidung");
         embed.addProperty("description", "Die zurueckgehaltene Nachricht von **" + userLogin + "** in #" + channelLogin
                 + " wurde " + status + ".");

@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneOffset;
 import java.util.List;
 
 public class ModerationCommand extends AbstractGuildCommand {
@@ -43,51 +43,13 @@ public class ModerationCommand extends AbstractGuildCommand {
     private final DiscordModerationSyncTrigger syncTrigger;
 
     public ModerationCommand(DiscordModerationService moderationService,
-                             ModerationRoleSettingsRepository roleSettingsRepository,
-                             ModerationCaseRepository caseRepository,
-                             DiscordModerationSyncTrigger syncTrigger) {
+                              ModerationRoleSettingsRepository roleSettingsRepository,
+                              ModerationCaseRepository caseRepository,
+                              DiscordModerationSyncTrigger syncTrigger) {
         this.moderationService = moderationService;
         this.roleSettingsRepository = roleSettingsRepository;
         this.caseRepository = caseRepository;
         this.syncTrigger = syncTrigger;
-    }
-
-    private static Duration parseDuration(String input) {
-        if (input == null || input.isBlank()) {
-            return null;
-        }
-        String trimmed = input.trim().toLowerCase();
-        try {
-            char unit = trimmed.charAt(trimmed.length() - 1);
-            long amount = Long.parseLong(trimmed.substring(0, trimmed.length() - 1));
-            Duration duration = switch (unit) {
-                case 's' -> Duration.ofSeconds(amount);
-                case 'm' -> Duration.ofMinutes(amount);
-                case 'h' -> Duration.ofHours(amount);
-                case 'd' -> Duration.ofDays(amount);
-                case 'w' -> Duration.ofDays(amount * 7);
-                default -> null;
-            };
-            if (duration == null || duration.isNegative() || duration.isZero() || duration.toDays() > 28) {
-                return null;
-            }
-            return duration;
-        } catch (NumberFormatException | IndexOutOfBoundsException e) {
-            return null;
-        }
-    }
-
-    private static String formatDuration(Duration duration) {
-        if (duration.toDays() >= 1) {
-            return duration.toDays() + " Tag(e)";
-        }
-        if (duration.toHours() >= 1) {
-            return duration.toHours() + " Stunde(n)";
-        }
-        if (duration.toMinutes() >= 1) {
-            return duration.toMinutes() + " Minute(n)";
-        }
-        return duration.getSeconds() + " Sekunde(n)";
     }
 
     @Override
@@ -255,5 +217,43 @@ public class ModerationCommand extends AbstractGuildCommand {
         } else {
             event.reply(message).setEphemeral(true).queue();
         }
+    }
+
+    private static Duration parseDuration(String input) {
+        if (input == null || input.isBlank()) {
+            return null;
+        }
+        String trimmed = input.trim().toLowerCase();
+        try {
+            char unit = trimmed.charAt(trimmed.length() - 1);
+            long amount = Long.parseLong(trimmed.substring(0, trimmed.length() - 1));
+            Duration duration = switch (unit) {
+                case 's' -> Duration.ofSeconds(amount);
+                case 'm' -> Duration.ofMinutes(amount);
+                case 'h' -> Duration.ofHours(amount);
+                case 'd' -> Duration.ofDays(amount);
+                case 'w' -> Duration.ofDays(amount * 7);
+                default -> null;
+            };
+            if (duration == null || duration.isNegative() || duration.isZero() || duration.toDays() > 28) {
+                return null;
+            }
+            return duration;
+        } catch (NumberFormatException | IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    private static String formatDuration(Duration duration) {
+        if (duration.toDays() >= 1) {
+            return duration.toDays() + " Tag(e)";
+        }
+        if (duration.toHours() >= 1) {
+            return duration.toHours() + " Stunde(n)";
+        }
+        if (duration.toMinutes() >= 1) {
+            return duration.toMinutes() + " Minute(n)";
+        }
+        return duration.getSeconds() + " Sekunde(n)";
     }
 }

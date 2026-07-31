@@ -21,7 +21,7 @@ public class ModBanCommand extends AbstractTwitchCommand {
     private final TwitchModerationSyncTrigger syncTrigger;
 
     public ModBanCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
-                         TwitchModerationSyncTrigger syncTrigger) {
+                          TwitchModerationSyncTrigger syncTrigger) {
         super("ban", "Bannt einen Nutzer dauerhaft aus dem Kanal.", List.of(),
                 CommandPermission.MODERATOR, 2);
         this.eventLogService = eventLogService;

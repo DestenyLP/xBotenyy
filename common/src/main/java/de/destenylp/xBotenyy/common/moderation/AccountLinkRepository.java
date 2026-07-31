@@ -55,6 +55,19 @@ public class AccountLinkRepository {
         });
     }
 
+    public java.util.List<AccountLink> findAll() {
+        return database.withConnection(connection -> {
+            java.util.List<AccountLink> links = new java.util.ArrayList<>();
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM account_links");
+                 ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    links.add(map(resultSet));
+                }
+            }
+            return links;
+        });
+    }
+
     public void delete(String discordUserId) {
         database.useConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(

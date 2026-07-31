@@ -17,17 +17,6 @@ public class VoteCommand extends AbstractTwitchCommand {
         this.pollManager = pollManager;
     }
 
-    private static Integer parseNumber(String raw) {
-        if (raw == null) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(raw.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
     @Override
     public void execute(TwitchCommandContext context) {
         String channel = context.message().channelLogin();
@@ -45,5 +34,16 @@ public class VoteCommand extends AbstractTwitchCommand {
 
         poll.get().vote(context.message().userId(), optionNumber);
         context.reply(context.message().displayName() + " hat fuer Option " + optionNumber + " gestimmt.");
+    }
+
+    private static Integer parseNumber(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

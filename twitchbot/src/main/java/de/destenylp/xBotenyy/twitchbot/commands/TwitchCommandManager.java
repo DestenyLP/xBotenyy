@@ -53,16 +53,6 @@ public class TwitchCommandManager {
         return CommandPermission.EVERYONE;
     }
 
-    private static String describeResult(CommandDispatchResult result) {
-        return switch (result) {
-            case EXECUTED -> "Ausgefuehrt";
-            case NO_PERMISSION -> "Keine Berechtigung";
-            case ON_COOLDOWN -> "Cooldown";
-            case ERROR -> "Fehler";
-            default -> result.name();
-        };
-    }
-
     public CommandRegistry<TwitchCommandContext> getRegistry() {
         return registry;
     }
@@ -108,6 +98,16 @@ public class TwitchCommandManager {
             }
         }
         discordLogService.logCommandUsage(context.message(), commandName, describeResult(result));
+    }
+
+    private static String describeResult(CommandDispatchResult result) {
+        return switch (result) {
+            case EXECUTED -> "Ausgefuehrt";
+            case NO_PERMISSION -> "Keine Berechtigung";
+            case ON_COOLDOWN -> "Cooldown";
+            case ERROR -> "Fehler";
+            default -> result.name();
+        };
     }
 
     private boolean handleCustomCommand(TwitchChatMessage message, String commandName) {

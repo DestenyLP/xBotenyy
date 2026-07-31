@@ -20,14 +20,14 @@ public class DiscordModerationSyncTrigger {
     private final Supplier<BridgeSettings> bridgeSettingsSupplier;
 
     public DiscordModerationSyncTrigger(AccountLinkRepository accountLinkRepository, ModerationBridgeClient bridgeClient,
-                                        Supplier<BridgeSettings> bridgeSettingsSupplier) {
+                                         Supplier<BridgeSettings> bridgeSettingsSupplier) {
         this.accountLinkRepository = accountLinkRepository;
         this.bridgeClient = bridgeClient;
         this.bridgeSettingsSupplier = bridgeSettingsSupplier;
     }
 
     public void trigger(String discordUserId, ModerationAction action, String reason, long durationSeconds,
-                        String sourceModeratorName) {
+                         String sourceModeratorName) {
         BridgeSettings settings = bridgeSettingsSupplier.get();
         if (!settings.isPeerConfigured()) {
             return;

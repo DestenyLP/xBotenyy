@@ -116,6 +116,7 @@ public final class BotProperties {
         values.put("socials.twitch.default-message", "{account} ist jetzt live auf Twitch!\\n{stream.title}\\n{stream.url}");
 
         values.put("bridge.enabled", "false");
+        values.put("bridge.bind.host", "127.0.0.1");
         values.put("bridge.port", "8082");
         values.put("bridge.token", "");
         values.put("bridge.peer.url", "");
@@ -211,6 +212,7 @@ public final class BotProperties {
     public de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings getBridgeSettings() {
         return new de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings(
                 getBoolean("bridge.enabled", false),
+                getString("bridge.bind.host", "127.0.0.1"),
                 getInt("bridge.port", 8082, 1),
                 getString("bridge.token", ""),
                 getString("bridge.peer.url", ""));

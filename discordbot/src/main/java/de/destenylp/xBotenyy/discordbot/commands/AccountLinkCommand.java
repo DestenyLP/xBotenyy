@@ -30,8 +30,8 @@ public class AccountLinkCommand extends AbstractGuildCommand {
     private final ModerationRoleSettingsRepository roleSettingsRepository;
 
     public AccountLinkCommand(AccountLinkService accountLinkService, ModerationBridgeClient bridgeClient,
-                              Supplier<BridgeSettings> bridgeSettingsSupplier,
-                              ModerationRoleSettingsRepository roleSettingsRepository) {
+                               Supplier<BridgeSettings> bridgeSettingsSupplier,
+                               ModerationRoleSettingsRepository roleSettingsRepository) {
         this.accountLinkService = accountLinkService;
         this.bridgeClient = bridgeClient;
         this.bridgeSettingsSupplier = bridgeSettingsSupplier;

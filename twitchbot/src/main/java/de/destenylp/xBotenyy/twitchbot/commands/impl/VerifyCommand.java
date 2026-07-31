@@ -21,7 +21,7 @@ public class VerifyCommand extends AbstractTwitchCommand {
     private final Supplier<BridgeSettings> bridgeSettingsSupplier;
 
     public VerifyCommand(AccountLinkRepository accountLinkRepository, ModerationBridgeClient bridgeClient,
-                         Supplier<BridgeSettings> bridgeSettingsSupplier) {
+                          Supplier<BridgeSettings> bridgeSettingsSupplier) {
         super("verify", "Bestaetigt einen auf Discord mit /link erzeugten Code.", List.of(), CommandPermission.EVERYONE, 10);
         this.accountLinkRepository = accountLinkRepository;
         this.bridgeClient = bridgeClient;

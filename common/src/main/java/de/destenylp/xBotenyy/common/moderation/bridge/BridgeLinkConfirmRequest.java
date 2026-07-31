@@ -10,15 +10,6 @@ public record BridgeLinkConfirmRequest(
         String discordUserId,
         String discordUsername) {
 
-    public static BridgeLinkConfirmRequest fromJson(JsonObject json) {
-        return new BridgeLinkConfirmRequest(
-                JsonUtil.optString(json, "code"),
-                JsonUtil.optString(json, "twitchUserId"),
-                JsonUtil.optString(json, "twitchLogin"),
-                JsonUtil.optString(json, "discordUserId"),
-                JsonUtil.optString(json, "discordUsername"));
-    }
-
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("code", code);
@@ -27,5 +18,14 @@ public record BridgeLinkConfirmRequest(
         json.addProperty("discordUserId", discordUserId == null ? "" : discordUserId);
         json.addProperty("discordUsername", discordUsername == null ? "" : discordUsername);
         return json;
+    }
+
+    public static BridgeLinkConfirmRequest fromJson(JsonObject json) {
+        return new BridgeLinkConfirmRequest(
+                JsonUtil.optString(json, "code"),
+                JsonUtil.optString(json, "twitchUserId"),
+                JsonUtil.optString(json, "twitchLogin"),
+                JsonUtil.optString(json, "discordUserId"),
+                JsonUtil.optString(json, "discordUsername"));
     }
 }

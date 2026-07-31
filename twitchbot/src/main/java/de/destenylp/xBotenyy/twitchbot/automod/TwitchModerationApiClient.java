@@ -57,6 +57,56 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
         return broadcasterAccessTokenSupplier != null;
     }
 
+    public java.util.Set<String> getSubscriberUserIds(String broadcasterId) {
+        return getBroadcasterPaginatedIds(HELIX_BASE + "/subscriptions?broadcaster_id=" + broadcasterId + "&first=100",
+                "user_id", "Twitch Abonnenten-Liste fuer " + broadcasterId);
+    }
+
+    public java.util.Set<String> getVipUserIds(String broadcasterId) {
+        return getBroadcasterPaginatedIds(HELIX_BASE + "/channels/vips?broadcaster_id=" + broadcasterId + "&first=100",
+                "user_id", "Twitch VIP-Liste fuer " + broadcasterId);
+    }
+
+    public java.util.Set<String> getModeratorUserIds(String broadcasterId) {
+        return getBroadcasterPaginatedIds(HELIX_BASE + "/moderation/moderators?broadcaster_id=" + broadcasterId + "&first=100",
+                "user_id", "Twitch Moderatoren-Liste fuer " + broadcasterId);
+    }
+
+    private java.util.Set<String> getBroadcasterPaginatedIds(String baseUri, String idField, String description) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        if (broadcasterAccessTokenSupplier == null) {
+            LOGGER.warn("Kein Broadcaster-Token konfiguriert, {} kann nicht abgefragt werden.", description);
+            return ids;
+        }
+        String cursor = null;
+        do {
+            String uri = baseUri + (cursor != null ? "&after=" + cursor : "");
+            try {
+                HttpRequest request = requestBuilder(URI.create(uri))
+                        .header("Client-Id", clientId)
+                        .header("Authorization", "Bearer " + broadcasterAccessTokenSupplier.get())
+                        .GET()
+                        .build();
+                HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(), LOGGER, description);
+                if (response.statusCode() != 200) {
+                    LOGGER.warn("Konnte {} nicht abfragen (Status {}): {}", description, response.statusCode(), response.body());
+                    return ids;
+                }
+                JsonObject body = JsonParser.parseString(response.body()).getAsJsonObject();
+                JsonArray data = body.getAsJsonArray("data");
+                for (int i = 0; i < data.size(); i++) {
+                    ids.add(data.get(i).getAsJsonObject().get(idField).getAsString());
+                }
+                JsonObject pagination = body.getAsJsonObject("pagination");
+                cursor = pagination != null && pagination.has("cursor") ? pagination.get("cursor").getAsString() : null;
+            } catch (Exception e) {
+                LOGGER.warn("Fehler beim Abfragen von {}: {}", description, e.getMessage());
+                return ids;
+            }
+        } while (cursor != null && !cursor.isBlank());
+        return ids;
+    }
+
     public Optional<String> resolveUserId(String login) {
         String cached = userIdCache.get(login.toLowerCase());
         if (cached != null) {

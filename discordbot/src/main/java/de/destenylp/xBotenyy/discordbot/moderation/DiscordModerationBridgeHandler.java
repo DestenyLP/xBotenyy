@@ -4,7 +4,13 @@ import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
 import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
 import de.destenylp.xBotenyy.common.moderation.PendingLinkVerification;
 import de.destenylp.xBotenyy.common.moderation.PendingLinkVerificationRepository;
-import de.destenylp.xBotenyy.common.moderation.bridge.*;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeActionRequest;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeActionResult;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmRequest;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmResult;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeRoleSyncRequest;
+import de.destenylp.xBotenyy.common.moderation.bridge.BridgeRoleSyncResult;
+import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeHandler;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -23,8 +29,8 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
     private final PendingLinkVerificationRepository pendingLinkVerificationRepository;
 
     public DiscordModerationBridgeHandler(JDA jda, String syncGuildId, DiscordModerationService moderationService,
-                                          AccountLinkRepository accountLinkRepository,
-                                          PendingLinkVerificationRepository pendingLinkVerificationRepository) {
+                                           AccountLinkRepository accountLinkRepository,
+                                           PendingLinkVerificationRepository pendingLinkVerificationRepository) {
         this.jda = jda;
         this.syncGuildId = syncGuildId;
         this.moderationService = moderationService;

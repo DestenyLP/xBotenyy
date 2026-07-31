@@ -21,7 +21,7 @@ public class ModUnbanCommand extends AbstractTwitchCommand {
     private final TwitchModerationSyncTrigger syncTrigger;
 
     public ModUnbanCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
-                           TwitchModerationSyncTrigger syncTrigger) {
+                            TwitchModerationSyncTrigger syncTrigger) {
         super("unban", "Hebt einen Bann oder Timeout auf.", List.of("untimeout"),
                 CommandPermission.MODERATOR, 2);
         this.eventLogService = eventLogService;

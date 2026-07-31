@@ -22,7 +22,7 @@ public class ModTimeoutCommand extends AbstractTwitchCommand {
     private final TwitchModerationSyncTrigger syncTrigger;
 
     public ModTimeoutCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
-                             TwitchModerationSyncTrigger syncTrigger) {
+                              TwitchModerationSyncTrigger syncTrigger) {
         super("timeout", "Timeoutet einen Nutzer fuer eine bestimmte Dauer.", List.of("to"),
                 CommandPermission.MODERATOR, 2);
         this.eventLogService = eventLogService;

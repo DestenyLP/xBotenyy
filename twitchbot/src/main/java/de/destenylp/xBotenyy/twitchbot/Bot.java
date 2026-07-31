@@ -50,7 +50,7 @@ public final class Bot extends AbstractBot {
 
     private final TwitchBotProperties properties;
     private final Instant startedAt = Instant.now();
-    private final TwitchPollManager pollManager = new TwitchPollManager();
+
     private Database database;
     private TwitchChatClient chatClient;
     private TwitchAutomodAdapter automodAdapter;
@@ -62,6 +62,7 @@ public final class Bot extends AbstractBot {
     private TwitchBroadcastRepository broadcastRepository;
     private TwitchBroadcastScheduler broadcastScheduler;
     private TwitchQuoteRepository quoteRepository;
+    private final TwitchPollManager pollManager = new TwitchPollManager();
     private DiscordWebhookClient discordWebhookClient;
     private TwitchDiscordLogService discordLogService;
     private ModerationCaseRepository moderationCaseRepository;
@@ -154,7 +155,8 @@ public final class Bot extends AbstractBot {
             TwitchModerationBridgeHandler bridgeHandler = new TwitchModerationBridgeHandler(
                     properties.getModerationSyncChannel(), moderatorUserId, moderationApiClient,
                     moderationCaseRepository, accountLinkRepository, pendingLinkVerificationRepository);
-            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.port(), bridgeSettings.token(), bridgeHandler);
+            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.bindHost(), bridgeSettings.port(),
+                    bridgeSettings.token(), bridgeHandler);
             moderationBridgeServer.start();
         }
 
@@ -228,6 +230,7 @@ public final class Bot extends AbstractBot {
         startHeartbeat();
         startBackupSchedule();
         startWatchtimeTracking(moderationApiClient);
+        startRoleReconciliation(moderationApiClient);
 
         registerShutdownHook();
 
@@ -306,6 +309,19 @@ public final class Bot extends AbstractBot {
                 }
             }
         }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+    }
+
+    private void startRoleReconciliation(TwitchModerationApiClient moderationApiClient) {
+        long intervalMinutes = properties.getModerationSyncReconcileIntervalMinutes();
+        scheduler.scheduleAtFixedRate(() -> {
+            for (String channelLogin : channels) {
+                try {
+                    roleSyncService.reconcile(channelLogin, moderationApiClient);
+                } catch (Exception e) {
+                    LOGGER.warn("Fehler beim Rollen-Abgleich fuer {}: {}", channelLogin, e.getMessage());
+                }
+            }
+        }, intervalMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
 
     private void startHeartbeat() {

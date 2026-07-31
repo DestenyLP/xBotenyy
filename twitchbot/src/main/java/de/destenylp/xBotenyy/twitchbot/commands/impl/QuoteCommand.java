@@ -30,22 +30,6 @@ public class QuoteCommand extends AbstractTwitchCommand {
         this.eventLogService = eventLogService;
     }
 
-    private static Integer parseNumber(String raw) {
-        if (raw == null) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(raw.replace("#", ""));
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static String formatQuote(QuoteRecord quote) {
-        String date = DATE_FORMAT.format(Instant.ofEpochMilli(quote.createdAt()));
-        return "Zitat #" + quote.quoteNumber() + ": \"" + quote.content() + "\" (" + date + ")";
-    }
-
     @Override
     public void execute(TwitchCommandContext context) {
         String channel = context.message().channelLogin();
@@ -135,5 +119,21 @@ public class QuoteCommand extends AbstractTwitchCommand {
             return;
         }
         context.reply(formatQuote(quote.get()));
+    }
+
+    private static Integer parseNumber(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(raw.replace("#", ""));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static String formatQuote(QuoteRecord quote) {
+        String date = DATE_FORMAT.format(Instant.ofEpochMilli(quote.createdAt()));
+        return "Zitat #" + quote.quoteNumber() + ": \"" + quote.content() + "\" (" + date + ")";
     }
 }

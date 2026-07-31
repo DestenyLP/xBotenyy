@@ -29,8 +29,8 @@ public final class SchemaMigrator {
     public static void migrate(Database database, String migrationsResourcePath) {
         List<Migration> migrations = discoverMigrations(migrationsResourcePath);
         if (migrations.isEmpty()) {
-            throw new IllegalStateException("Keine Migrationsdateien unter " + migrationsResourcePath
-                    + " gefunden, Datenbankschema kann nicht initialisiert werden.");
+            LOGGER.warn("Keine Migrationsdateien unter {} gefunden.", migrationsResourcePath);
+            return;
         }
 
         database.runInTransaction(connection -> ensureMigrationsTable(connection));

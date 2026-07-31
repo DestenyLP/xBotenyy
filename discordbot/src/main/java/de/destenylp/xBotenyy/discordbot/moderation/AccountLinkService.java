@@ -1,6 +1,11 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
 
-import de.destenylp.xBotenyy.common.moderation.*;
+import de.destenylp.xBotenyy.common.moderation.AccountLink;
+import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
+import de.destenylp.xBotenyy.common.moderation.LinkCodeGenerator;
+import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
+import de.destenylp.xBotenyy.common.moderation.PendingLinkVerification;
+import de.destenylp.xBotenyy.common.moderation.PendingLinkVerificationRepository;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -11,7 +16,7 @@ public class AccountLinkService {
     private final PendingLinkVerificationRepository pendingLinkVerificationRepository;
 
     public AccountLinkService(AccountLinkRepository accountLinkRepository,
-                              PendingLinkVerificationRepository pendingLinkVerificationRepository) {
+                               PendingLinkVerificationRepository pendingLinkVerificationRepository) {
         this.accountLinkRepository = accountLinkRepository;
         this.pendingLinkVerificationRepository = pendingLinkVerificationRepository;
     }

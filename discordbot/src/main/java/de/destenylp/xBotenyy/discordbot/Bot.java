@@ -137,7 +137,8 @@ public class Bot extends AbstractBot {
             DiscordModerationBridgeHandler bridgeHandler = new DiscordModerationBridgeHandler(jda,
                     properties.getModerationSyncGuildId(), services.getModerationService(),
                     services.getAccountLinkRepository(), services.getPendingLinkVerificationRepository());
-            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.port(), bridgeSettings.token(), bridgeHandler);
+            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.bindHost(), bridgeSettings.port(),
+                    bridgeSettings.token(), bridgeHandler);
             moderationBridgeServer.start();
         }
 

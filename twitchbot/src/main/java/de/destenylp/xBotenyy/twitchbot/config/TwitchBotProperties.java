@@ -98,10 +98,12 @@ public final class TwitchBotProperties {
         values.put("discord.log.automod.enabled", "true");
         values.put("discord.log.commands.enabled", "true");
         values.put("bridge.enabled", "false");
+        values.put("bridge.bind.host", "127.0.0.1");
         values.put("bridge.port", "8083");
         values.put("bridge.token", "");
         values.put("bridge.peer.url", "");
         values.put("moderation.sync.channel", "");
+        values.put("moderation.sync.reconcile.interval.minutes", "15");
 
         values.putAll(AutomodSettingsFactory.defaultValues());
 
@@ -253,6 +255,7 @@ public final class TwitchBotProperties {
     public de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings getBridgeSettings() {
         return new de.destenylp.xBotenyy.common.moderation.bridge.BridgeSettings(
                 Boolean.parseBoolean(getString("bridge.enabled", "false")),
+                getString("bridge.bind.host", "127.0.0.1"),
                 getInt("bridge.port", 8083, 1),
                 getString("bridge.token", ""),
                 getString("bridge.peer.url", ""));
@@ -260,5 +263,9 @@ public final class TwitchBotProperties {
 
     public String getModerationSyncChannel() {
         return getString("moderation.sync.channel", "");
+    }
+
+    public long getModerationSyncReconcileIntervalMinutes() {
+        return getLong("moderation.sync.reconcile.interval.minutes", 15, 1);
     }
 }

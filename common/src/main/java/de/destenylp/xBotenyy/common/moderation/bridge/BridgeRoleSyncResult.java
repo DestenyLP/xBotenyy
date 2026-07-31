@@ -5,16 +5,16 @@ import de.destenylp.xBotenyy.common.util.JsonUtil;
 
 public record BridgeRoleSyncResult(boolean success, String message) {
 
-    public static BridgeRoleSyncResult fromJson(JsonObject json) {
-        return new BridgeRoleSyncResult(
-                json.has("success") && json.get("success").getAsBoolean(),
-                JsonUtil.optString(json, "message", ""));
-    }
-
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("success", success);
         json.addProperty("message", message == null ? "" : message);
         return json;
+    }
+
+    public static BridgeRoleSyncResult fromJson(JsonObject json) {
+        return new BridgeRoleSyncResult(
+                json.has("success") && json.get("success").getAsBoolean(),
+                JsonUtil.optString(json, "message", ""));
     }
 }

@@ -25,7 +25,7 @@ public final class ModerationBridgeClient extends AbstractHttpApiClient {
     }
 
     public Optional<BridgeLinkConfirmResult> sendLinkConfirm(String peerBaseUrl, String token,
-                                                             BridgeLinkConfirmRequest request) {
+                                                              BridgeLinkConfirmRequest request) {
         return post(peerBaseUrl + "/bridge/v1/link/confirm", token, request.toJson().toString())
                 .map(body -> BridgeLinkConfirmResult.fromJson(JsonParser.parseString(body).getAsJsonObject()));
     }

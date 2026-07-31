@@ -18,8 +18,8 @@ public class ModerationCaseRepository {
     }
 
     public long insert(ModerationPlatform platform, String scopeId, String targetId, String targetName,
-                       String moderatorId, String moderatorName, ModerationAction action, String reason,
-                       long durationSeconds, boolean synced) {
+                        String moderatorId, String moderatorName, ModerationAction action, String reason,
+                        long durationSeconds, boolean synced) {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO moderation_cases (platform, scope_id, target_id, target_name, moderator_id, "

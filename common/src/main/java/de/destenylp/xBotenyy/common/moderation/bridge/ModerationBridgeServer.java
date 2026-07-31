@@ -18,11 +18,13 @@ public final class ModerationBridgeServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModerationBridgeServer.class);
 
     private final int port;
+    private final String bindHost;
     private final String authToken;
     private final ModerationBridgeHandler handler;
     private HttpServer server;
 
-    public ModerationBridgeServer(int port, String authToken, ModerationBridgeHandler handler) {
+    public ModerationBridgeServer(String bindHost, int port, String authToken, ModerationBridgeHandler handler) {
+        this.bindHost = bindHost;
         this.port = port;
         this.authToken = authToken;
         this.handler = handler;
@@ -30,7 +32,7 @@ public final class ModerationBridgeServer {
 
     public void start() {
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            server = HttpServer.create(new InetSocketAddress(bindHost, port), 0);
             server.setExecutor(Executors.newCachedThreadPool(runnable -> {
                 Thread thread = new Thread(runnable, "moderation-bridge-server");
                 thread.setDaemon(true);
@@ -40,7 +42,7 @@ public final class ModerationBridgeServer {
             server.createContext("/bridge/v1/link/confirm", this::handleLinkConfirm);
             server.createContext("/bridge/v1/roles/sync", this::handleRoleSync);
             server.start();
-            LOGGER.info("Moderation-Bridge-Server auf Port {} gestartet.", port);
+            LOGGER.info("Moderation-Bridge-Server auf {}:{} gestartet.", bindHost, port);
         } catch (IOException e) {
             LOGGER.error("Konnte Moderation-Bridge-Server nicht auf Port {} starten: {}", port, e.getMessage());
         }
@@ -104,7 +106,10 @@ public final class ModerationBridgeServer {
             return false;
         }
         String header = exchange.getRequestHeaders().getFirst("Authorization");
-        if (header == null || !header.equals("Bearer " + authToken)) {
+        String expected = "Bearer " + authToken;
+        boolean valid = header != null
+                && java.security.MessageDigest.isEqual(header.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8));
+        if (!valid) {
             exchange.sendResponseHeaders(401, -1);
             exchange.close();
             return false;

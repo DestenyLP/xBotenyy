@@ -4,7 +4,11 @@ import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
 import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
 import de.destenylp.xBotenyy.common.moderation.TwitchRoleSyncStatus;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,20 +25,20 @@ public class DiscordModerationService {
     private final ModerationRoleSettingsRepository roleSettingsRepository;
 
     public DiscordModerationService(ModerationCaseRepository caseRepository,
-                                    ModerationRoleSettingsRepository roleSettingsRepository) {
+                                     ModerationRoleSettingsRepository roleSettingsRepository) {
         this.caseRepository = caseRepository;
         this.roleSettingsRepository = roleSettingsRepository;
     }
 
     public void warn(Guild guild, Member target, Member moderator, String reason,
-                     Runnable onSuccess, Consumer<Throwable> onFailure) {
+                      Runnable onSuccess, Consumer<Throwable> onFailure) {
         applyRole(guild, target, roleSettingsRepository.getOrEmpty(guild.getId()).warnRoleId(), true, reason);
         recordCase(guild, target.getUser(), moderator.getUser(), ModerationAction.WARN, reason, 0);
         onSuccess.run();
     }
 
     public void timeout(Guild guild, Member target, Member moderator, String reason, Duration duration,
-                        Runnable onSuccess, Consumer<Throwable> onFailure) {
+                         Runnable onSuccess, Consumer<Throwable> onFailure) {
         target.timeoutFor(duration).reason(reason).queue(unused -> {
             applyRole(guild, target, roleSettingsRepository.getOrEmpty(guild.getId()).muteRoleId(), true, reason);
             recordCase(guild, target.getUser(), moderator.getUser(), ModerationAction.TIMEOUT, reason, duration.getSeconds());
@@ -43,7 +47,7 @@ public class DiscordModerationService {
     }
 
     public void untimeout(Guild guild, Member target, Member moderator, String reason,
-                          Runnable onSuccess, Consumer<Throwable> onFailure) {
+                           Runnable onSuccess, Consumer<Throwable> onFailure) {
         target.removeTimeout().reason(reason).queue(unused -> {
             applyRole(guild, target, roleSettingsRepository.getOrEmpty(guild.getId()).muteRoleId(), false, reason);
             caseRepository.deactivate(ModerationPlatform.DISCORD, guild.getId(), target.getId(), ModerationAction.TIMEOUT);
@@ -53,7 +57,7 @@ public class DiscordModerationService {
     }
 
     public void kick(Guild guild, Member target, Member moderator, String reason,
-                     Runnable onSuccess, Consumer<Throwable> onFailure) {
+                      Runnable onSuccess, Consumer<Throwable> onFailure) {
         User targetUser = target.getUser();
         guild.kick(target).reason(reason).queue(unused -> {
             recordCase(guild, targetUser, moderator.getUser(), ModerationAction.KICK, reason, 0);
@@ -62,7 +66,7 @@ public class DiscordModerationService {
     }
 
     public void ban(Guild guild, UserSnowflake target, String targetId, String targetName, Member moderator,
-                    String reason, Runnable onSuccess, Consumer<Throwable> onFailure) {
+                     String reason, Runnable onSuccess, Consumer<Throwable> onFailure) {
         String banRoleId = roleSettingsRepository.getOrEmpty(guild.getId()).banRoleId();
         if (banRoleId != null && !banRoleId.isBlank()) {
             Role role = guild.getRoleById(banRoleId);
@@ -79,7 +83,7 @@ public class DiscordModerationService {
     }
 
     public void unban(Guild guild, UserSnowflake target, String targetId, String targetName, Member moderator,
-                      String reason, Runnable onSuccess, Consumer<Throwable> onFailure) {
+                       String reason, Runnable onSuccess, Consumer<Throwable> onFailure) {
         guild.unban(target).reason(reason).queue(unused -> {
             String banRoleId = roleSettingsRepository.getOrEmpty(guild.getId()).banRoleId();
             Member member = guild.getMemberById(targetId);
@@ -97,7 +101,7 @@ public class DiscordModerationService {
     }
 
     public void applySyncedAction(Guild guild, String targetId, String targetName, ModerationAction action,
-                                  String reason, long durationSeconds, Runnable onSuccess, Consumer<Throwable> onFailure) {
+                                   String reason, long durationSeconds, Runnable onSuccess, Consumer<Throwable> onFailure) {
         UserSnowflake target = UserSnowflake.fromId(targetId);
         Member member = guild.getMemberById(targetId);
         switch (action) {
@@ -203,13 +207,13 @@ public class DiscordModerationService {
     }
 
     private void recordCase(Guild guild, String targetId, String targetName, User moderator, ModerationAction action,
-                            String reason, long durationSeconds) {
+                             String reason, long durationSeconds) {
         caseRepository.insert(ModerationPlatform.DISCORD, guild.getId(), targetId, targetName, moderator.getId(),
                 moderator.getName(), action, reason, durationSeconds, false);
     }
 
     private void recordSyncedCase(Guild guild, String targetId, String targetName, ModerationAction action,
-                                  String reason, long durationSeconds) {
+                                   String reason, long durationSeconds) {
         caseRepository.insert(ModerationPlatform.DISCORD, guild.getId(), targetId, targetName, SYNC_MODERATOR_ID,
                 SYNC_MODERATOR_NAME, action, reason, durationSeconds, true);
     }

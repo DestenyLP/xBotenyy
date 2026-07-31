@@ -10,14 +10,6 @@ import java.util.List;
 
 public record BridgeRoleSyncRequest(String targetDiscordUserId, List<TwitchRoleSyncStatus> statuses) {
 
-    public static BridgeRoleSyncRequest fromJson(JsonObject json) {
-        List<TwitchRoleSyncStatus> statuses = new ArrayList<>();
-        if (json.has("statuses")) {
-            json.getAsJsonArray("statuses").forEach(element -> statuses.add(TwitchRoleSyncStatus.valueOf(element.getAsString())));
-        }
-        return new BridgeRoleSyncRequest(JsonUtil.optString(json, "targetDiscordUserId"), statuses);
-    }
-
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("targetDiscordUserId", targetDiscordUserId);
@@ -25,5 +17,13 @@ public record BridgeRoleSyncRequest(String targetDiscordUserId, List<TwitchRoleS
         statuses.forEach(status -> array.add(status.name()));
         json.add("statuses", array);
         return json;
+    }
+
+    public static BridgeRoleSyncRequest fromJson(JsonObject json) {
+        List<TwitchRoleSyncStatus> statuses = new ArrayList<>();
+        if (json.has("statuses")) {
+            json.getAsJsonArray("statuses").forEach(element -> statuses.add(TwitchRoleSyncStatus.valueOf(element.getAsString())));
+        }
+        return new BridgeRoleSyncRequest(JsonUtil.optString(json, "targetDiscordUserId"), statuses);
     }
 }
