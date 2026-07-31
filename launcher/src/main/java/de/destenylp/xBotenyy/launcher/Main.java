@@ -8,6 +8,8 @@ import de.destenylp.xBotenyy.launcher.console.CommandContext;
 import de.destenylp.xBotenyy.launcher.console.ConsoleCommandRegistry;
 import de.destenylp.xBotenyy.launcher.console.ConsoleShell;
 import de.destenylp.xBotenyy.launcher.console.impl.*;
+import de.destenylp.xBotenyy.launcher.scheduler.SchedulerStore;
+import de.destenylp.xBotenyy.launcher.scheduler.TaskScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,19 +40,23 @@ public final class Main {
             return;
         }
 
+        TaskScheduler scheduler = new TaskScheduler(registry, new SchedulerStore(LOGGER), LOGGER);
+
         CountDownLatch shutdownLatch = new CountDownLatch(1);
-        Runnable shutdownAction = () -> initiateLauncherShutdown(registry, shutdownLatch);
+        Runnable shutdownAction = () -> initiateLauncherShutdown(registry, scheduler, shutdownLatch);
 
         ConsoleCommandRegistry commandRegistry = buildCommandRegistry();
-        CommandContext commandContext = new CommandContext(registry, settings, commandRegistry, shutdownAction);
+        CommandContext commandContext = new CommandContext(registry, settings, commandRegistry, shutdownAction,
+                scheduler);
         ConsoleShell consoleShell = new ConsoleShell(commandRegistry, commandContext, LOGGER);
 
         Runtime.getRuntime().addShutdownHook(new Thread(
-                () -> initiateLauncherShutdown(registry, shutdownLatch), "launcher-shutdown-hook"));
+                () -> initiateLauncherShutdown(registry, scheduler, shutdownLatch), "launcher-shutdown-hook"));
 
         for (ManagedBot bot : registry.all()) {
             bot.start();
         }
+        scheduler.start();
         consoleShell.start();
 
         shutdownLatch.await();
@@ -65,15 +71,18 @@ public final class Main {
         registry.register(new StopCommand());
         registry.register(new RestartCommand());
         registry.register(new SetCommand());
+        registry.register(new ScheduleCommand());
         registry.register(new ExitCommand());
         return registry;
     }
 
-    private static synchronized void initiateLauncherShutdown(BotRegistry registry, CountDownLatch shutdownLatch) {
+    private static synchronized void initiateLauncherShutdown(BotRegistry registry, TaskScheduler scheduler,
+                                                                CountDownLatch shutdownLatch) {
         if (shutdownLatch.getCount() == 0) {
             return;
         }
         LOGGER.info("Launcher-Shutdown angefordert, stoppe alle Bots geordnet...");
+        scheduler.stop();
         for (ManagedBot bot : registry.all()) {
             bot.stop(SHUTDOWN_STOP_TIMEOUT_SECONDS);
         }

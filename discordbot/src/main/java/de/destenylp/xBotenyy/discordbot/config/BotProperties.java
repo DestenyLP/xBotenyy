@@ -120,6 +120,13 @@ public final class BotProperties {
         values.put("bridge.port", "8082");
         values.put("bridge.token", "");
         values.put("bridge.peer.url", "");
+        values.put("bridge.tls.enabled", "false");
+        values.put("bridge.tls.keystore.path", "");
+        values.put("bridge.tls.keystore.password", "");
+        values.put("bridge.tls.key.password", "");
+        values.put("bridge.tls.truststore.path", "");
+        values.put("bridge.tls.truststore.password", "");
+        values.put("bridge.tls.mutual-auth", "false");
         values.put("moderation.sync.guild.id", "");
 
         values.putAll(AutomodSettingsFactory.defaultValues());
@@ -214,8 +221,34 @@ public final class BotProperties {
                 getBoolean("bridge.enabled", false),
                 getString("bridge.bind.host", "127.0.0.1"),
                 getInt("bridge.port", 8082, 1),
-                getString("bridge.token", ""),
-                getString("bridge.peer.url", ""));
+                resolveSecret(getString("bridge.token", "")),
+                getString("bridge.peer.url", ""),
+                getBoolean("bridge.tls.enabled", false),
+                getString("bridge.tls.keystore.path", ""),
+                resolveSecret(getString("bridge.tls.keystore.password", "")),
+                resolveSecret(getString("bridge.tls.key.password", "")),
+                getString("bridge.tls.truststore.path", ""),
+                resolveSecret(getString("bridge.tls.truststore.password", "")),
+                getBoolean("bridge.tls.mutual-auth", false));
+    }
+
+    /**
+     * Erlaubt es, sensible Werte (Tokens, Keystore-Passwoerter) statt im Klartext in der
+     * Properties-Datei ueber eine Umgebungsvariable bereitzustellen, z. B.
+     * {@code bridge.tls.keystore.password=env:BRIDGE_KEYSTORE_PASSWORD}. Das reduziert das Risiko,
+     * dass Geheimnisse versehentlich mit der Konfigurationsdatei geteilt/committed werden.
+     */
+    private String resolveSecret(String rawValue) {
+        if (rawValue != null && rawValue.startsWith("env:")) {
+            String variable = rawValue.substring("env:".length());
+            String resolved = System.getenv(variable);
+            if (resolved == null) {
+                LOGGER.warn("Umgebungsvariable {} fuer Bridge-Geheimnis ist nicht gesetzt.", variable);
+                return "";
+            }
+            return resolved;
+        }
+        return rawValue;
     }
 
     public String getModerationSyncGuildId() {

@@ -40,10 +40,21 @@ public abstract class AbstractHttpApiClient {
 
     protected <T> HttpResponse<T> sendWithRetry(HttpRequest request, HttpResponse.BodyHandler<T> bodyHandler,
                                                 Logger logger, String description) throws IOException, InterruptedException {
+        return sendWithRetry(httpClient, request, bodyHandler, logger, description);
+    }
+
+    /**
+     * Wie {@link #sendWithRetry(HttpRequest, HttpResponse.BodyHandler, Logger, String)}, erlaubt
+     * aber die Verwendung eines abweichenden {@link HttpClient} (z. B. mit individuellem
+     * SSLContext fuer TLS/mTLS), statt der ueber den Konstruktor fest verdrahteten Instanz.
+     */
+    protected <T> HttpResponse<T> sendWithRetry(HttpClient client, HttpRequest request,
+                                                HttpResponse.BodyHandler<T> bodyHandler,
+                                                Logger logger, String description) throws IOException, InterruptedException {
         IOException lastError = null;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                HttpResponse<T> response = httpClient.send(request, bodyHandler);
+                HttpResponse<T> response = client.send(request, bodyHandler);
                 if (!isRetryableStatus(response.statusCode()) || attempt == maxAttempts) {
                     return response;
                 }

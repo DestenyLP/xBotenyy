@@ -101,7 +101,7 @@ public class TwitchRoleSyncService {
         }
 
         BridgeSettings settings = bridgeSettingsSupplier.get();
-        bridgeClient.sendRoleSync(settings.peerUrl(), settings.token(),
+        bridgeClient.sendRoleSync(settings,
                 new BridgeRoleSyncRequest(link.discordUserId(), statuses)).ifPresentOrElse(result -> {
                     if (result.success()) {
                         lastSyncedStatuses.put(link.twitchUserId(), statuses);

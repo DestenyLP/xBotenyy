@@ -4,9 +4,16 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsExchange;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,22 +24,28 @@ import java.util.concurrent.Executors;
 public final class ModerationBridgeServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModerationBridgeServer.class);
 
-    private final int port;
-    private final String bindHost;
-    private final String authToken;
+    private final BridgeSettings settings;
     private final ModerationBridgeHandler handler;
     private HttpServer server;
 
-    public ModerationBridgeServer(String bindHost, int port, String authToken, ModerationBridgeHandler handler) {
-        this.bindHost = bindHost;
-        this.port = port;
-        this.authToken = authToken;
+    public ModerationBridgeServer(BridgeSettings settings, ModerationBridgeHandler handler) {
+        this.settings = settings;
         this.handler = handler;
     }
 
     public void start() {
         try {
-            server = HttpServer.create(new InetSocketAddress(bindHost, port), 0);
+            if (settings.tlsEnabled()) {
+                server = createHttpsServer();
+                LOGGER.info("Moderation-Bridge-Server auf {}:{} gestartet (HTTPS, TLS 1.2/1.3{}).",
+                        settings.bindHost(), settings.port(), settings.mutualTlsEnabled() ? ", mTLS aktiv" : "");
+            } else {
+                server = HttpServer.create(new InetSocketAddress(settings.bindHost(), settings.port()), 0);
+                LOGGER.warn("Moderation-Bridge-Server auf {}:{} gestartet OHNE TLS (Klartext-HTTP). "
+                                + "Nur fuer localhost/vertrauenswuerdige, isolierte Netzwerke geeignet - "
+                                + "fuer Verbindungen ueber das Internet 'bridge.tls.enabled=true' setzen!",
+                        settings.bindHost(), settings.port());
+            }
             server.setExecutor(Executors.newCachedThreadPool(runnable -> {
                 Thread thread = new Thread(runnable, "moderation-bridge-server");
                 thread.setDaemon(true);
@@ -42,10 +55,26 @@ public final class ModerationBridgeServer {
             server.createContext("/bridge/v1/link/confirm", this::handleLinkConfirm);
             server.createContext("/bridge/v1/roles/sync", this::handleRoleSync);
             server.start();
-            LOGGER.info("Moderation-Bridge-Server auf {}:{} gestartet.", bindHost, port);
-        } catch (IOException e) {
-            LOGGER.error("Konnte Moderation-Bridge-Server nicht auf Port {} starten: {}", port, e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Konnte Moderation-Bridge-Server nicht auf Port {} starten: {}", settings.port(),
+                    e.getMessage());
         }
+    }
+
+    private HttpsServer createHttpsServer() throws Exception {
+        SSLContext sslContext = BridgeTlsSupport.buildServerContext(settings);
+        HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(settings.bindHost(), settings.port()), 0);
+        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+            @Override
+            public void configure(HttpsParameters params) {
+                SSLParameters sslParameters = BridgeTlsSupport.hardenedParameters(getSSLContext());
+                sslParameters.setNeedClientAuth(settings.mutualTlsEnabled());
+                params.setSSLParameters(sslParameters);
+                params.setProtocols(BridgeTlsSupport.ALLOWED_PROTOCOLS);
+                params.setNeedClientAuth(settings.mutualTlsEnabled());
+            }
+        });
+        return httpsServer;
     }
 
     public void stop() {
@@ -105,8 +134,14 @@ public final class ModerationBridgeServer {
             exchange.close();
             return false;
         }
+        if (settings.mutualTlsEnabled() && !hasVerifiedClientCertificate(exchange)) {
+            LOGGER.warn("Bridge-Anfrage ohne gueltiges Client-Zertifikat abgelehnt (mTLS erforderlich).");
+            exchange.sendResponseHeaders(401, -1);
+            exchange.close();
+            return false;
+        }
         String header = exchange.getRequestHeaders().getFirst("Authorization");
-        String expected = "Bearer " + authToken;
+        String expected = "Bearer " + settings.token();
         boolean valid = header != null
                 && java.security.MessageDigest.isEqual(header.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8));
         if (!valid) {
@@ -115,6 +150,17 @@ public final class ModerationBridgeServer {
             return false;
         }
         return true;
+    }
+
+    private boolean hasVerifiedClientCertificate(HttpExchange exchange) {
+        if (!(exchange instanceof HttpsExchange httpsExchange)) {
+            return false;
+        }
+        try {
+            return httpsExchange.getSSLSession().getPeerCertificates().length > 0;
+        } catch (SSLPeerUnverifiedException e) {
+            return false;
+        }
     }
 
     private JsonObject readJson(HttpExchange exchange) throws IOException {

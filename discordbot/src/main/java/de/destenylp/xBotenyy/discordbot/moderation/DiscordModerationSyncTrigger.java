@@ -39,7 +39,7 @@ public class DiscordModerationSyncTrigger {
         AccountLink link = linkOpt.get();
         BridgeActionRequest request = new BridgeActionRequest(link.twitchUserId(), link.twitchLogin(), action, reason,
                 durationSeconds, sourceModeratorName);
-        bridgeClient.sendAction(settings.peerUrl(), settings.token(), request).ifPresentOrElse(result -> {
+        bridgeClient.sendAction(settings, request).ifPresentOrElse(result -> {
             if (!result.success()) {
                 LOGGER.warn("Sync nach Twitch fuer {} fehlgeschlagen: {}", link.twitchLogin(), result.message());
             }

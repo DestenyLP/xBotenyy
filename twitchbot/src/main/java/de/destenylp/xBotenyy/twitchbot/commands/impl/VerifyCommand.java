@@ -40,7 +40,7 @@ public class VerifyCommand extends AbstractTwitchCommand {
             return;
         }
         String code = context.arg(0).trim().toUpperCase();
-        Optional<BridgeLinkConfirmResult> resultOpt = bridgeClient.sendLinkConfirm(settings.peerUrl(), settings.token(),
+        Optional<BridgeLinkConfirmResult> resultOpt = bridgeClient.sendLinkConfirm(settings,
                 new BridgeLinkConfirmRequest(code, context.message().userId(), context.message().userLogin(), null, null));
         if (resultOpt.isEmpty() || !resultOpt.get().success()) {
             String reason = resultOpt.map(BridgeLinkConfirmResult::message).orElse("Discord-Bot nicht erreichbar.");

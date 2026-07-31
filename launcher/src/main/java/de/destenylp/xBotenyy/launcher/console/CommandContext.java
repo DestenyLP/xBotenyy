@@ -2,6 +2,7 @@ package de.destenylp.xBotenyy.launcher.console;
 
 import de.destenylp.xBotenyy.launcher.LauncherSettings;
 import de.destenylp.xBotenyy.launcher.bot.BotRegistry;
+import de.destenylp.xBotenyy.launcher.scheduler.TaskScheduler;
 
 public final class CommandContext {
 
@@ -9,13 +10,19 @@ public final class CommandContext {
     private final LauncherSettings settings;
     private final ConsoleCommandRegistry commands;
     private final Runnable shutdownAction;
+    private final TaskScheduler scheduler;
 
     public CommandContext(BotRegistry bots, LauncherSettings settings, ConsoleCommandRegistry commands,
-                          Runnable shutdownAction) {
+                          Runnable shutdownAction, TaskScheduler scheduler) {
         this.bots = bots;
         this.settings = settings;
         this.commands = commands;
         this.shutdownAction = shutdownAction;
+        this.scheduler = scheduler;
+    }
+
+    public TaskScheduler scheduler() {
+        return scheduler;
     }
 
     public BotRegistry bots() {

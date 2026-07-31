@@ -155,8 +155,7 @@ public final class Bot extends AbstractBot {
             TwitchModerationBridgeHandler bridgeHandler = new TwitchModerationBridgeHandler(
                     properties.getModerationSyncChannel(), moderatorUserId, moderationApiClient,
                     moderationCaseRepository, accountLinkRepository, pendingLinkVerificationRepository);
-            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings.bindHost(), bridgeSettings.port(),
-                    bridgeSettings.token(), bridgeHandler);
+            moderationBridgeServer = new ModerationBridgeServer(bridgeSettings, bridgeHandler);
             moderationBridgeServer.start();
         }
 

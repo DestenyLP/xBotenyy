@@ -82,7 +82,7 @@ public class AccountLinkCommand extends AbstractGuildCommand {
         }
         String code = event.getOption("code").getAsString().trim().toUpperCase();
         event.deferReply(true).queue();
-        Optional<BridgeLinkConfirmResult> resultOpt = bridgeClient.sendLinkConfirm(settings.peerUrl(), settings.token(),
+        Optional<BridgeLinkConfirmResult> resultOpt = bridgeClient.sendLinkConfirm(settings,
                 new BridgeLinkConfirmRequest(code, null, null, event.getUser().getId(), event.getUser().getName()));
         if (resultOpt.isEmpty() || !resultOpt.get().success()) {
             String reason = resultOpt.map(BridgeLinkConfirmResult::message).orElse("Twitch-Bot nicht erreichbar.");

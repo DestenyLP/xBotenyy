@@ -380,8 +380,10 @@ Der Sync passiert auf zwei Wegen:
 ### Die Bridge (Discord ↔ Twitch)
 
 Da beide Bots als getrennte Prozesse - auch auf unterschiedlichen Servern - laufen können, sprechen sie über eine
-kleine, in beide Bots eingebaute HTTP-Schnittstelle miteinander ("Bridge"). Es wird **keine** zusätzliche Software
-benötigt; jeder Bot kann optional einen kleinen HTTP-Server starten und den des jeweils anderen Bots aufrufen.
+kleine, in beide Bots eingebaute HTTP(S)-Schnittstelle miteinander ("Bridge"). Es wird **keine** zusätzliche Software
+benötigt; jeder Bot kann optional einen kleinen HTTP(S)-Server starten und den des jeweils anderen Bots aufrufen.
+Die Bridge unterstützt **TLS-Verschlüsselung und optional mutual TLS (mTLS)** für die höchstmögliche Absicherung der
+Verbindung, insbesondere wenn beide Bots auf getrennten Servern laufen.
 
 | Property (beide Bots) | Standard | Bedeutung |
 |---|---|---|
@@ -404,15 +406,82 @@ Zusätzlich (jeweils nur auf einer Seite):
 
 **Setup über den Launcher / auf demselben Server (Standard, empfohlen):** `bridge.bind.host` auf beiden Seiten bei
 `127.0.0.1` belassen, `bridge.peer.url` jeweils auf `http://localhost:<port-des-anderen-bots>` setzen. Die Bridge ist
-damit ausschließlich lokal erreichbar, selbst wenn der Server eine öffentliche IP hat.
+damit ausschließlich lokal erreichbar, selbst wenn der Server eine öffentliche IP hat. TLS ist hier optional, da der
+Traffic den Rechner nie verlässt.
 
 **Setup für zwei getrennte Server:** `bridge.bind.host=0.0.0.0` auf der Seite setzen, die erreichbar sein muss,
 `bridge.token` auf beiden Seiten identisch setzen, `bridge.peer.url` auf die öffentlich erreichbare Adresse zeigen
-lassen. Da die Bridge außer dem Shared-Secret keine weitere Absicherung (kein TLS) hat, unbedingt zusätzlich per
-Firewall auf die IP des jeweils anderen Servers einschränken und/oder einen Reverse-Proxy mit HTTPS davorsetzen.
+lassen (mit `https://`, siehe unten). Zusätzlich unbedingt per Firewall auf die IP des jeweils anderen Servers
+einschränken.
 
 Ohne `bridge.peer.url` funktioniert alles andere (manuelle Commands, Rollen, Fall-Historie) weiterhin normal -
 es wird lediglich keine Aktion zur anderen Plattform gespiegelt.
+
+#### TLS-Verschlüsselung der Bridge (empfohlen bei getrennten Servern)
+
+Läuft die Bridge über das offene Internet (zwei getrennte Server), sollte sie **immer** verschlüsselt werden - sonst
+sind Shared-Secret, Discord-/Twitch-User-IDs und Moderationsaktionen im Klartext mitlesbar. Dafür stehen folgende
+zusätzliche Properties zur Verfügung (auf beiden Bots identisch benannt, aber pro Bot mit eigenem Zertifikat):
+
+| Property | Standard | Bedeutung |
+|---|---|---|
+| `bridge.tls.enabled` | `false` | Aktiviert HTTPS statt Klartext-HTTP für den eigenen Bridge-Server **und** für ausgehende Anfragen an den Peer |
+| `bridge.tls.keystore.path` | *(leer)* | Pfad zur eigenen PKCS12-Zertifikatsdatei (`.p12`), die der Bridge-Server beim Handshake präsentiert |
+| `bridge.tls.keystore.password` | *(leer)* | Passwort des Keystores. Unterstützt `env:VARNAME`, um das Passwort statt im Klartext über eine Umgebungsvariable bereitzustellen |
+| `bridge.tls.key.password` | *(leer)* | Passwort des privaten Schlüssels im Keystore, falls abweichend vom Keystore-Passwort. Ebenfalls `env:VARNAME` möglich |
+| `bridge.tls.truststore.path` | *(leer)* | Pfad zu einer PKCS12-Datei mit vertrauenswürdigen Zertifikaten. Nötig, sobald ein **selbstsigniertes** Zertifikat verwendet wird oder `mutual-auth` aktiv ist |
+| `bridge.tls.truststore.password` | *(leer)* | Passwort des Truststores. Ebenfalls `env:VARNAME` möglich |
+| `bridge.tls.mutual-auth` | `false` | Aktiviert mutual TLS (mTLS): Der Bridge-Server verlangt zusätzlich ein gültiges Client-Zertifikat vom Peer, nicht nur das Shared-Secret |
+
+Erlaubt sind ausschließlich **TLS 1.2 und TLS 1.3**; ältere, unsichere Protokollversionen werden von der Bridge
+grundsätzlich abgelehnt. Ist `bridge.tls.enabled=true`, muss `bridge.peer.url` mit `https://` beginnen - Anfragen an
+eine `http://`-Peer-URL werden dann automatisch verweigert, um ein versehentliches Downgrade auf Klartext zu
+verhindern.
+
+**Schritt 1 - Zertifikat je Bot erzeugen** (auf jedem der beiden Server einmal, `keytool` ist Teil jeder Java-Installation):
+
+```bash
+keytool -genkeypair -alias bridge -keyalg EC -keysize 256 -validity 825 \
+  -keystore bridge-keystore.p12 -storetype PKCS12 \
+  -dname "CN=discordbot-bridge"        # bzw. "CN=twitchbot-bridge" auf dem anderen Server
+```
+`keytool` fragt dabei nach einem Passwort für den Keystore - dieses in `bridge.tls.keystore.password` eintragen
+(oder besser per `env:BRIDGE_KEYSTORE_PASSWORD` als Umgebungsvariable setzen, siehe unten).
+
+**Schritt 2 - Zertifikat exportieren und dem jeweils anderen Bot als vertrauenswürdig hinzufügen**, da es
+selbstsigniert ist und nicht automatisch von der Standard-CA-Liste der JVM akzeptiert wird:
+
+```bash
+# Auf dem Discordbot-Server: eigenes Zertifikat exportieren ...
+keytool -exportcert -alias bridge -keystore bridge-keystore.p12 -storetype PKCS12 -file discordbot.crt
+
+# ... und auf den Twitchbot-Server kopieren (z. B. per scp), dort importieren:
+keytool -importcert -alias discordbot-peer -file discordbot.crt \
+  -keystore bridge-truststore.p12 -storetype PKCS12 -noprompt
+```
+Das Gleiche in die Gegenrichtung (Twitchbot-Zertifikat exportieren → auf dem Discordbot-Server in dessen
+`bridge-truststore.p12` importieren). Jeder Bot bekommt so einen eigenen Truststore, der nur das Zertifikat
+des jeweils anderen Bots enthält.
+
+**Schritt 3 - Konfiguration** (Beispiel `discordbot.properties`, `twitchbot.properties` spiegelbildlich):
+
+```properties
+bridge.enabled=true
+bridge.bind.host=0.0.0.0
+bridge.peer.url=https://twitchbot.example.com:8083
+bridge.tls.enabled=true
+bridge.tls.keystore.path=/pfad/zu/bridge-keystore.p12
+bridge.tls.keystore.password=env:BRIDGE_KEYSTORE_PASSWORD
+bridge.tls.truststore.path=/pfad/zu/bridge-truststore.p12
+bridge.tls.truststore.password=env:BRIDGE_TRUSTSTORE_PASSWORD
+bridge.tls.mutual-auth=true
+```
+und beim Start die zugehörigen Umgebungsvariablen setzen (z. B. `export BRIDGE_KEYSTORE_PASSWORD=...`), statt die
+Passwörter im Klartext in die Properties-Datei zu schreiben.
+
+**Für maximale Sicherheit** zusätzlich `bridge.tls.mutual-auth=true` auf **beiden** Bots setzen: Der Bridge-Server
+akzeptiert dann nur noch Anfragen, die sowohl ein gültiges, im Truststore hinterlegtes Client-Zertifikat als auch
+das korrekte Shared-Secret mitbringen - zwei unabhängige Sicherheitsebenen zusätzlich zur Verschlüsselung selbst.
 
 ---
 
@@ -459,7 +528,28 @@ Sobald der Launcher läuft, akzeptiert er interaktiv Befehle über die Standard-
 | `stop <discord\|twitch\|all> [timeoutSekunden]` | Bot(s) geordnet stoppen (kein Auto-Neustart danach) |
 | `restart <discord\|twitch\|all> [timeoutSekunden]` | Bot(s) stoppen und sofort wieder starten |
 | `set maxrestarts <n>` / `set restartdelay <sekunden>` | Neustart-Verhalten zur Laufzeit ändern (siehe unten) |
+| `schedule add <discord\|twitch\|all> <restart\|stop\|start> interval <wert> [timeoutSekunden]` | Wiederkehrende Aufgabe anlegen, z.B. `schedule add all restart interval 6h` |
+| `schedule add <discord\|twitch\|all> <restart\|stop\|start> daily <HH:mm> [timeoutSekunden]` | Tägliche Aufgabe anlegen, z.B. `schedule add discord restart daily 04:30` |
+| `schedule list` | Zeigt alle geplanten Aufgaben mit nächster/letzter Ausführung |
+| `schedule remove <id>` | Entfernt eine geplante Aufgabe |
+| `schedule enable <id>` / `schedule disable <id>` | Aktiviert/deaktiviert eine geplante Aufgabe |
 | `exit` | Alle Bots geordnet stoppen und den Launcher beenden |
+
+### Scheduler (automatische Restarts & mehr)
+
+Der Launcher enthält einen eingebauten Scheduler, mit dem sich wiederkehrende Aktionen (`restart`, `stop`, `start`)
+pro Bot oder für alle Bots gemeinsam planen lassen - z.B. ein täglicher Neustart um 04:30 Uhr oder ein Neustart alle
+6 Stunden. Aufgaben werden über den Konsolen-Befehl `schedule` verwaltet und in `scheduler-tasks.txt`
+(Pfad konfigurierbar über `LAUNCHER_SCHEDULER_FILE`) persistiert, sodass sie einen Neustart des Launchers
+überleben. Der Scheduler prüft alle 10 Sekunden, ob eine Aufgabe fällig ist.
+
+```
+schedule add all restart daily 04:30
+schedule add discord restart interval 6h 20
+schedule list
+schedule disable s1
+schedule remove s1
+```
 
 ### Logging im kombinierten Betrieb
 
