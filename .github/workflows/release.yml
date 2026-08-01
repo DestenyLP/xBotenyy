@@ -14,44 +14,47 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: check repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: JDK 21 setup
+      - name: Read version from pom.xml
+        id: version
+        run: |
+          VERSION=$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION (tag: $TAG)"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} already exists, skipping release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} is new, creating release."
+          fi
+
+      - name: Sync module parent versions
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          for module in common discordbot twitchbot launcher; do
+            perl -0777 -pi -e 's/(<parent>.*?<version>)[^<]*(<\/version>)/${1}'"${{ steps.version.outputs.version }}"'${2}/s' "$module/pom.xml"
+          done
+
+      - name: Set up JDK 21
+        if: steps.check.outputs.exists == 'false'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
 
-      - name: read version of pom.xml
-        id: version
-        run: |
-          VERSION=$(mvn -B -ntp -q -DforceStdout help:evaluate -Dexpression=project.version)
-          TAG="v$VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Ermittelte Version: $VERSION (Tag: $TAG)"
-
-      - name: check if Tag/Release already exists
-        id: check
-        run: |
-          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ steps.version.outputs.tag }} already exists - No new release."
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Tag ${{ steps.version.outputs.tag }} is new - Release will be created."
-          fi
-
-      - name: Parent-Reference synced in all modules
-        if: steps.check.outputs.exists == 'false'
-        run: |
-          mvn -B -ntp versions:set -DnewVersion=${{ steps.version.outputs.version }} -DprocessAllModules=true -DgenerateBackupPoms=false
-
-      - name: create tags and push
+      - name: Create and push tag
         if: steps.check.outputs.exists == 'false'
         run: |
           git config user.name "github-actions[bot]"
@@ -59,11 +62,11 @@ jobs:
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
-      - name: build Fat Jars
+      - name: Build fat jars
         if: steps.check.outputs.exists == 'false'
         run: mvn -B -ntp -DskipTests clean package
 
-      - name: publish releases
+      - name: Publish release
         if: steps.check.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
@@ -75,13 +78,13 @@ jobs:
             twitchbot/target/xBotenyyTwitchBot.jar
             launcher/target/xBotenyyLauncher.jar
 
-      - name: syncs main after committen
+      - name: Commit synced module versions
         if: steps.check.outputs.exists == 'false'
         run: |
           if ! git diff --quiet -- '**/pom.xml'; then
             git add '**/pom.xml' pom.xml
-            git commit -m "chore: Parent-Version-Reference to ${{ steps.version.outputs.version }} synced [skip ci]"
+            git commit -m "chore: sync parent version references to ${{ steps.version.outputs.version }} [skip ci]"
             git push origin HEAD:main
           else
-            echo "No changes need in Modul-pom.xml."
+            echo "No module pom.xml changes needed."
           fi
