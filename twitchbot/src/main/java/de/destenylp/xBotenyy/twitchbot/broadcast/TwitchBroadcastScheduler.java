@@ -40,7 +40,7 @@ public class TwitchBroadcastScheduler {
 
     public void start(ScheduledExecutorService scheduler, long checkIntervalSeconds) {
         scheduler.scheduleAtFixedRate(this::tick, checkIntervalSeconds, checkIntervalSeconds, TimeUnit.SECONDS);
-        LOGGER.info("Broadcast-System gestartet, Pruefintervall {}s.", checkIntervalSeconds);
+        LOGGER.info("Broadcast system started, check interval {}s.", checkIntervalSeconds);
     }
 
     private void tick() {
@@ -48,7 +48,7 @@ public class TwitchBroadcastScheduler {
             try {
                 checkChannel(channelLogin);
             } catch (Exception e) {
-                LOGGER.warn("Fehler beim Verarbeiten der Broadcasts fuer {}: {}", channelLogin, e.getMessage());
+                LOGGER.warn("Error processing broadcasts for {}: {}", channelLogin, e.getMessage());
             }
         }
     }

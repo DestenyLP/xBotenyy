@@ -16,7 +16,7 @@ public final class SetCommand implements ConsoleCommand {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(fieldName + " muss eine Ganzzahl sein, war: " + value);
+            throw new IllegalArgumentException(fieldName + " must be an integer, was: " + value);
         }
     }
 
@@ -24,7 +24,7 @@ public final class SetCommand implements ConsoleCommand {
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(fieldName + " muss eine Ganzzahl sein, war: " + value);
+            throw new IllegalArgumentException(fieldName + " must be an integer, was: " + value);
         }
     }
 
@@ -40,12 +40,12 @@ public final class SetCommand implements ConsoleCommand {
 
     @Override
     public String usage() {
-        return "set [maxrestarts <n> | restartdelay <sekunden>]";
+        return "set [maxrestarts <n> | restartdelay <seconds>]";
     }
 
     @Override
     public String description() {
-        return "Zeigt oder aendert die Neustart-Einstellungen (maxrestarts, restartdelay) zur Laufzeit.";
+        return "Shows or changes the restart settings (maxrestarts, restartdelay) at runtime.";
     }
 
     @Override
@@ -57,7 +57,7 @@ public final class SetCommand implements ConsoleCommand {
             return;
         }
         if (args.length != 2) {
-            throw new IllegalArgumentException("Verwendung: " + usage());
+            throw new IllegalArgumentException("Usage: " + usage());
         }
 
         String key = args[0].toLowerCase(Locale.ROOT);
@@ -67,27 +67,27 @@ public final class SetCommand implements ConsoleCommand {
             int newValue = parseInt(rawValue, "maxrestarts");
             int previous = settings.setMaxRestartAttempts(newValue);
             context.print("maxrestarts: " + previous + " -> " + newValue
-                    + " (gilt ab dem naechsten Absturz/Neustart eines Bots)");
+                    + " (applies from the next crash/restart of a bot)");
             return;
         }
         if (RESTART_DELAY_KEYS.contains(key)) {
             long newValue = parseLong(rawValue, "restartdelay");
             long previous = settings.setRestartDelaySeconds(newValue);
             context.print("restartdelay: " + previous + "s -> " + newValue + "s"
-                    + " (gilt ab dem naechsten Absturz/Neustart eines Bots)");
+                    + " (applies from the next crash/restart of a bot)");
             return;
         }
 
-        throw new IllegalArgumentException("Unbekannte Einstellung '" + args[0]
-                + "'. Gueltige Werte: maxrestarts, restartdelay.");
+        throw new IllegalArgumentException("Unknown setting '" + args[0]
+                + "'. Valid values: maxrestarts, restartdelay.");
     }
 
     private void printCurrent(CommandContext context, LauncherSettings settings) {
-        context.print("Aktuelle Einstellungen:");
+        context.print("Current settings:");
         context.print("  maxrestarts  = " + settings.getMaxRestartAttempts()
-                + "  (max. automatische Neustartversuche pro Absturz)");
+                + "  (max. automatic restart attempts per crash)");
         context.print("  restartdelay = " + settings.getRestartDelaySeconds() + "s"
-                + "  (Wartezeit vor einem automatischen Neustart)");
-        context.print("Aendern mit: set maxrestarts <n>  |  set restartdelay <sekunden>");
+                + "  (wait time before an automatic restart)");
+        context.print("Change with: set maxrestarts <n>  |  set restartdelay <seconds>");
     }
 }

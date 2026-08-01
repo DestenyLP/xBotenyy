@@ -31,7 +31,7 @@ public class WelcomeListener extends ListenerAdapter {
         try {
             handleGuildMemberJoin(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Willkommensnachricht für Guild {}: ", event.getGuild().getId(), e);
+            LOGGER.error("Unexpected error with welcome message for guild {}: ", event.getGuild().getId(), e);
         }
     }
 

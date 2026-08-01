@@ -1,547 +1,546 @@
 # xBotenyy
 
-Discord- und Twitch-Bot als eigenständige Maven-Module (`common`, `discordbot`, `twitchbot`). Über das zusätzliche
-Modul `launcher` können beide Bots auch gemeinsam in **einem** Prozess/Server gestartet werden. Beide Bots können
-optional über eine eingebaute Bridge miteinander sprechen (Moderations-Sync, Rollen-Sync, Account-Verknüpfung).
+Discord and Twitch bot as standalone Maven modules (`common`, `discordbot`, `twitchbot`). Via the additional
+module `launcher`, both bots can also be started together in **one** process/server. Both bots can
+optionally talk to each other via a built-in bridge (moderation sync, role sync, account linking).
 
-## Inhaltsverzeichnis
+## Table of contents
 
-- [Voraussetzungen](#voraussetzungen)
+- [Requirements](#requirements)
 - [Setup](#setup)
-- [Discord-Bot](#discord-bot)
-    - [Command-Referenz](#discord-command-referenz)
+- [Discord Bot](#discord-bot)
+    - [Command reference](#discord-command-reference)
     - [AutoMod](#discord-automod)
-    - [Event-Logging (`/serverlog`)](#event-logging-serverlog)
-    - [Interne Systeme](#interne-systeme)
-- [Twitch-Bot](#twitch-bot)
-    - [Command-Referenz](#twitch-command-referenz)
-    - [Zitat- & Umfrage-System](#zitat--und-umfrage-system)
-    - [Twitch-Autorisierung](#twitch-autorisierung-generierung-der-tokens)
-    - [AutoMod-Mapping](#automod-mapping)
-    - [Persistenz](#persistenz)
-- [Discord ↔ Twitch Integration](#discord--twitch-integration)
-    - [Discord-Logging (Twitch → Discord)](#discord-logging-twitch--discord)
-    - [Erweiterte Moderation](#erweiterte-moderation)
-    - [Accounts verknüpfen](#accounts-verknüpfen)
-    - [Twitch-Rollen synchronisieren](#twitch-rollen-mit-discord-synchronisieren)
-    - [Die Bridge](#die-bridge-discord--twitch)
-- [Kombinierter Start (`launcher`)](#kombinierter-start-launcher)
-- [Automatische Builds und Releases](#automatische-builds-und-releases)
+    - [Event logging (`/serverlog`)](#event-logging-serverlog)
+    - [Internal systems](#internal-systems)
+- [Twitch Bot](#twitch-bot)
+    - [Command reference](#twitch-command-reference)
+    - [Quote & poll system](#quote-and-poll-system)
+    - [Twitch authorization](#twitch-authorization-generating-the-tokens)
+    - [AutoMod mapping](#automod-mapping)
+    - [Persistence](#persistence)
+- [Discord ↔ Twitch integration](#discord--twitch-integration)
+    - [Discord logging (Twitch → Discord)](#discord-logging-twitch--discord)
+    - [Advanced moderation](#advanced-moderation)
+    - [Linking accounts](#linking-accounts)
+    - [Syncing Twitch roles](#syncing-twitch-roles-with-discord)
+    - [The bridge](#the-bridge-discord--twitch)
+- [Combined start (`launcher`)](#combined-start-launcher)
+- [Automatic builds and releases](#automatic-builds-and-releases)
 
 ---
 
-## Voraussetzungen
+## Requirements
 
 - JDK 21
 - Maven 3.9+
-- Discord-Bot-Token (für `discordbot`)
-- Twitch Client-ID + Client-Secret (für `twitchbot` & Twitch-Integration im `discordbot`)
+- Discord bot token (for `discordbot`)
+- Twitch client ID + client secret (for `twitchbot` & the Twitch integration in `discordbot`)
 
-### API-Portale konfigurieren
+### Configuring the API portals
 
-* **Discord Developer Portal:** `Server Members Intent` und `Message Content Intent` zwingend aktivieren.
-* **Twitch Developer Console:** App registrieren und `OAuth Redirect URL` auf `http://localhost:8080` (oder die URL
-  deines OAuth-Handlers) setzen.
+* **Discord Developer Portal:** you must enable `Server Members Intent` and `Message Content Intent`.
+* **Twitch Developer Console:** register an app and set the `OAuth Redirect URL` to `http://localhost:8080`
+  (or the URL of your OAuth handler).
 
 ## Setup
 
-1. Repository klonen.
-2. `.env` Datei im **Hauptverzeichnis (Projekt-Root)** erstellen. *Hinweis: Niemals unter `src/main/resources` ablegen,
-   da die Werte sonst in die JAR kompiliert werden!*
+1. Clone the repository.
+2. Create an `.env` file in the **root directory (project root)**. *Note: never place it under `src/main/resources`,
+   otherwise the values will be compiled into the JAR!*
 
    ```env
-   # Discord Konfiguration
+   # Discord configuration
    BOT_TOKEN=
    GROQ_API_KEY=
 
-   # Twitch App Credentials
+   # Twitch app credentials
    TWITCH_CLIENT_ID=
    TWITCH_CLIENT_SECRET=
 
-   # Twitch Bot-Account Tokens
+   # Twitch bot account tokens
    TWITCH_BOT_ACCESS_TOKEN=
    TWITCH_BOT_REFRESH_TOKEN=
 
-   # Twitch Broadcaster-Account Tokens (für EventSub, Mod-Aktionen & Rollen-Abgleich)
+   # Twitch broadcaster account tokens (for EventSub, mod actions & role sync)
    TWITCH_BROADCASTER_ACCESS_TOKEN=
    TWITCH_BROADCASTER_REFRESH_TOKEN=
    ```
 
-3. `discordbot.properties` / `twitchbot.properties` konfigurieren (werden beim ersten Start mit Standardwerten
-   automatisch im jeweiligen Modulordner angelegt).
+3. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
+   values in the respective module folder on first start).
 
 ---
 
-## Discord-Bot
+## Discord Bot
 
-Systeme: Support-Tickets, Report-System, Reaction-Roles, Gewinnspiele, Willkommensnachrichten, Event-Logging,
-YouTube-/Twitch-Ankündigungen, KI-gestütztes AutoMod, erweiterte manuelle Moderation mit Straf-Rollen und
-Discord-↔-Twitch-Verknüpfung.
+Systems: support tickets, report system, reaction roles, giveaways, welcome messages, event logging,
+YouTube/Twitch announcements, AI-powered AutoMod, advanced manual moderation with punishment roles and
+Discord ↔ Twitch linking.
 
-### Discord Command-Referenz
+### Discord command reference
 
-#### Server & Community
+#### Server & community
 
-| Command | Subcommands | Funktion |
+| Command | Subcommands | Function |
 |---|---|---|
-| `/ticket` | `panel`, `settings`, `list`, `claim`, `unclaim`, `close`, `priority`, `add`, `remove` | Support-Ticket-System mit Kategorien, Prioritäten, Claiming, Auto-Close und Transcript |
-| `/report` | `send`, `settings` | Report-System - Mitglieder melden Vorfälle über einen geführten Dialog, Team konfiguriert Kanal/Rolle |
-| `/reports` | – | Zeigt die eigenen eingereichten Reports und deren Status |
-| `/reactionrole` | `add`, `remove`, `list` | Reaction Roles per Emoji oder Button auf einer beliebigen Nachricht |
-| `/giveaway` | `start`, `end`, `reroll`, `cancel`, `list` | Gewinnspiel-System mit mehreren Gewinnern |
-| `/welcome` | `settings`, `add`, `edit`, `remove`, `list`, `test`, `placeholders` | Willkommensnachrichten mit mehreren Varianten und Platzhaltern |
-| `/socials` | `add`, `edit`, `message`, `remove`, `list`, `status`, `test`, `placeholders` | YouTube- & Twitch-Live-Ankündigungen |
-| `/message` | `create`, `edit`, `placeholders` | Freie Nachrichten mit Platzhaltern (z. B. als Basis für Reaction Roles) |
+| `/ticket` | `panel`, `settings`, `list`, `claim`, `unclaim`, `close`, `priority`, `add`, `remove` | Support ticket system with categories, priorities, claiming, auto-close and transcripts |
+| `/report` | `send`, `settings` | Report system - members report incidents via a guided dialog, the team configures the channel/role |
+| `/reports` | – | Shows your own submitted reports and their status |
+| `/reactionrole` | `add`, `remove`, `list` | Reaction roles via emoji or button on any message |
+| `/giveaway` | `start`, `end`, `reroll`, `cancel`, `list` | Giveaway system with multiple winners |
+| `/welcome` | `settings`, `add`, `edit`, `remove`, `list`, `test`, `placeholders` | Welcome messages with multiple variants and placeholders |
+| `/socials` | `add`, `edit`, `message`, `remove`, `list`, `status`, `test`, `placeholders` | YouTube & Twitch live announcements |
+| `/message` | `create`, `edit`, `placeholders` | Freeform messages with placeholders (e.g. as a basis for reaction roles) |
 
 #### Moderation
 
-| Command | Subcommands | Funktion |
+| Command | Subcommands | Function |
 |---|---|---|
-| `/mod` | `warn`, `timeout`, `untimeout`, `kick`, `ban`, `unban`, `cases` | Manuelle Moderation mit Fall-Historie (siehe [Erweiterte Moderation](#erweiterte-moderation)) |
-| `/modroles` | `warn-role`, `mute-role`, `ban-role`, `add-moderator`, `remove-moderator`, `add-admin`, `remove-admin`, `sync-role`, `status` | Konfiguriert Straf-Rollen, wer `/mod` nutzen darf, und den Twitch-Rollen-Sync |
-| `/link` | `twitch`, `verify`, `status`, `unlink`, `panel` | Discord-↔-Twitch-Account-Verknüpfung (freiwillig, siehe [Accounts verknüpfen](#accounts-verknüpfen)) |
-| `/automod` | `status`, `test` | AutoMod-Diagnose (Konfiguration ausschließlich über `discordbot.properties`) |
-| `/serverlog` | `setup`, `channel`, `toggle`, `event-channel`, `status` | Event-Logging konfigurieren (siehe [Event-Logging](#event-logging-serverlog)) |
+| `/mod` | `warn`, `timeout`, `untimeout`, `kick`, `ban`, `unban`, `cases` | Manual moderation with case history (see [Advanced moderation](#advanced-moderation)) |
+| `/modroles` | `warn-role`, `mute-role`, `ban-role`, `add-moderator`, `remove-moderator`, `add-admin`, `remove-admin`, `sync-role`, `status` | Configures punishment roles, who may use `/mod`, and the Twitch role sync |
+| `/link` | `twitch`, `verify`, `status`, `unlink`, `panel` | Discord ↔ Twitch account linking (optional, see [Linking accounts](#linking-accounts)) |
+| `/automod` | `status`, `test` | AutoMod diagnostics (configuration exclusively via `discordbot.properties`) |
+| `/serverlog` | `setup`, `channel`, `toggle`, `event-channel`, `status` | Configures event logging (see [Event logging](#event-logging-serverlog)) |
 
 #### Utility
 
-| Command | Funktion |
+| Command | Function |
 |---|---|
-| `/info` | Bot-Informationen |
-| `/ping` | Bot-Latenz |
+| `/info` | Bot information |
+| `/ping` | Bot latency |
 
-*Berechtigungen: `/mod` steht Mitgliedern mit `ADMINISTRATOR`/`Mitglieder moderieren` sowie allen über
-`/modroles add-moderator` freigegebenen Rollen offen. `/modroles`, `/serverlog`, `/automod` und die
-Team-Subcommands von `/ticket`/`/report` erfordern `ADMINISTRATOR`/`Server verwalten` (bzw. bei `/modroles` auch
-über `add-admin` freigegebene Rollen).*
+*Permissions: `/mod` is available to members with `ADMINISTRATOR`/`Moderate Members` as well as any
+role granted via `/modroles add-moderator`. `/modroles`, `/serverlog`, `/automod` and the
+team subcommands of `/ticket`/`/report` require `ADMINISTRATOR`/`Manage Server` (or, in the case of `/modroles`,
+also roles granted via `add-admin`).*
 
 ### Discord AutoMod
 
-Wortfilter, Invite-/Link-Erkennung, Mention-Spam, Caps-Filter, Spam-/Duplikat-Erkennung, KI-Moderation (Groq,
-`gpt-oss-safeguard-20b`), Strike-Eskalation (Warn → Timeout → Kick → Ban). Konfiguration ausschließlich über
-`automod.*` in `discordbot.properties`. Diagnose und Testen einzelner Texte über `/automod status` / `/automod test`.
+Word filter, invite/link detection, mention spam, caps filter, spam/duplicate detection, AI moderation (Groq,
+`gpt-oss-safeguard-20b`), strike escalation (warn → timeout → kick → ban). Configuration exclusively via
+`automod.*` in `discordbot.properties`. Diagnostics and testing of individual texts via `/automod status` / `/automod test`.
 
-### Event-Logging (`/serverlog`)
+### Event logging (`/serverlog`)
 
-Frei konfigurierbar pro Event-Typ: Standard-Kanal, individueller Kanal je Typ, sowie einzeln an-/abschaltbar.
-`/serverlog setup` richtet alles mit einem Standardkanal ein, `/serverlog status` zeigt die aktuelle Konfiguration.
+Freely configurable per event type: default channel, an individual channel per type, and can be toggled on/off individually.
+`/serverlog setup` sets everything up with a default channel, `/serverlog status` shows the current configuration.
 
-| Event-Typ | Bedeutung |
+| Event type | Meaning |
 |---|---|
-| Mitglied beigetreten / verlassen | Server-Beitritte und -Austritte |
-| Server geboostet / Boost entfernt | Nitro-Boost-Aktivität |
-| Mitglied gebannt / Bann aufgehoben | Discord meldet dies nativ, unabhängig von der Quelle (AutoMod, `/mod`, manuell) |
-| Mitglied Timeout / Timeout aufgehoben | Ebenfalls nativ erfasst, unabhängig von der Quelle |
-| Mitglied gekickt | Nur über `/mod kick`, da Discord Kicks nicht nativ von normalen Austritten unterscheidet |
-| Mitglied verwarnt | Nur über `/mod warn`, da Warnungen kein natives Discord-Konzept sind |
-| Nickname geändert | Änderungen am Servernamen eines Mitglieds |
-| Rollen aktualisiert | Rollenänderungen an einem Mitglied |
-| Voice-Aktivität | Beitritt/Verlassen von Sprachkanälen |
-| Channel erstellt / gelöscht | Serverstruktur-Änderungen |
-| Nachricht gelöscht | Gelöschte Nachrichten inkl. Inhalt (bis zu `eventlog.message-delete.content-max-length` Zeichen) |
-| Command-Nutzung | Jede Slash-Command-Ausführung inkl. Status (ausgeführt/keine Berechtigung/Cooldown/Fehler) |
+| Member joined / left | Server joins and leaves |
+| Server boosted / boost removed | Nitro boost activity |
+| Member banned / ban lifted | Discord reports this natively, regardless of the source (AutoMod, `/mod`, manual) |
+| Member timed out / timeout lifted | Also captured natively, regardless of the source |
+| Member kicked | Only via `/mod kick`, since Discord does not natively distinguish kicks from normal leaves |
+| Member warned | Only via `/mod warn`, since warnings are not a native Discord concept |
+| Nickname changed | Changes to a member's server name |
+| Roles updated | Role changes on a member |
+| Voice activity | Joining/leaving voice channels |
+| Channel created / deleted | Server structure changes |
+| Message deleted | Deleted messages including content (up to `eventlog.message-delete.content-max-length` characters) |
+| Command usage | Every slash command execution including status (executed/no permission/cooldown/error) |
 
-### Interne Systeme
+### Internal systems
 
-- SQLite-Database mit automatischer Schema-Migration beim Start
-- Automatische Backups (Rotation über `backup.*`)
-- Audit-Log für administrative Aktionen
-- Retry-Handling für Discord-API-Aufrufe
-- Heartbeat-Logging mit Metriken pro Feature
-- Automatische Bereinigung veralteter Datensätze
+- SQLite database with automatic schema migration on startup
+- Automatic backups (rotation via `backup.*`)
+- Audit log for administrative actions
+- Retry handling for Discord API calls
+- Heartbeat logging with metrics per feature
+- Automatic cleanup of stale records
 
 ---
 
-## Twitch-Bot
+## Twitch Bot
 
-Eigenständiges Modul. Verbindet sich per moderner Helix-Chat-API + EventSub-Websockets. Systeme: Custom-Commands,
-Zitate, Umfragen, wiederkehrende Ansagen, Watchtime-Tracking, KI-gestütztes AutoMod, erweiterte manuelle
-Moderation, sowie optionale Discord-Integration (Logging, Moderations-Sync, Rollen-Sync).
+Standalone module. Connects via the modern Helix chat API + EventSub websockets. Systems: custom commands,
+quotes, polls, recurring announcements, watchtime tracking, AI-powered AutoMod, advanced manual
+moderation, as well as optional Discord integration (logging, moderation sync, role sync).
 
-### Twitch Command-Referenz
+### Twitch command reference
 
-Prefix konfigurierbar (`twitch.chat.command.prefix`, Standard `!`):
+Prefix configurable (`twitch.chat.command.prefix`, default `!`):
 
-| Befehl | Berechtigung | Funktion |
+| Command | Permission | Function |
 |---|---|---|
-| `!ping` | alle | Erreichbarkeits-Check |
-| `!uptime` | alle | Laufzeit des Bots |
-| `!strikes` | alle | Eigene AutoMod-Strikes |
-| `!watchtime [nutzer]` | alle | Watchtime des Nutzers |
-| `!followage [nutzer]` | alle | Seit wann jemand folgt |
-| `!link` | alle | Startet die Verknüpfung mit dem eigenen Discord-Account |
-| `!verify <code>` | alle | Bestätigt einen auf Discord mit `/link twitch` erzeugten Code |
-| `!automod` / `!mod` | Moderator | AutoMod-Status abfragen |
-| `!command add/remove/list/cooldown` | Moderator | Custom-Commands verwalten (inkl. Cooldown je Command) |
-| `!commands` / `!help` | alle | Listet Befehle auf |
-| `!broadcast add/remove/list` | Moderator | Wiederkehrende Chat-Ansagen |
-| `!eventlog` | Moderator | Event-Log-Einstellungen |
-| `!warn <nutzer> [grund]` | Moderator | Verwarnt einen Nutzer manuell |
-| `!timeout <nutzer> <sek> [grund]` | Moderator | Timeoutet einen Nutzer |
-| `!ban <nutzer> [grund]` | Moderator | Bannt einen Nutzer dauerhaft |
-| `!unban <nutzer>` | Moderator | Hebt Bann/Timeout auf |
-| `!purge` / `!clear` | Moderator | Leert den kompletten Chat |
-| `!permit <nutzer> [sek]` | Moderator | Vorübergehende AutoMod-Ausnahme für einen Nutzer |
-| `!title [neuer titel]` | Moderator | Zeigt/ändert den Stream-Titel |
-| `!game [kategorie]` | Moderator | Zeigt/ändert die Stream-Kategorie |
-| `!so <kanal>` | Moderator | Shoutout für einen anderen Streamer |
-| `!clip` | alle | Erstellt einen Clip vom aktuellen Moment |
-| `!quote [nummer]` | alle | Zeigt ein zufälliges oder gezieltes Zitat |
-| `!quote add <text>` | Moderator | Speichert ein neues Zitat |
-| `!quote del <nummer>` | Moderator | Entfernt ein gespeichertes Zitat |
-| `!quote list` | alle | Zeigt Anzahl und erste gespeicherte Zitate |
-| `!poll start <frage> \| <opt1> \| <opt2> [\| ...]` | Moderator | Startet eine Chat-Umfrage (max. 5 Optionen) |
-| `!poll results` | alle | Zeigt den aktuellen Zwischenstand der Umfrage |
-| `!poll end` | Moderator | Beendet die Umfrage und zeigt das Endergebnis |
-| `!vote <nummer>` | alle | Stimmt bei der laufenden Umfrage ab |
+| `!ping` | everyone | Reachability check |
+| `!uptime` | everyone | Bot uptime |
+| `!strikes` | everyone | Your own AutoMod strikes |
+| `!watchtime [user]` | everyone | Watchtime of the user |
+| `!followage [user]` | everyone | How long someone has been following |
+| `!link` | everyone | Starts linking with your own Discord account |
+| `!verify <code>` | everyone | Confirms a code generated on Discord with `/link twitch` |
+| `!automod` / `!mod` | moderator | Queries AutoMod status |
+| `!command add/remove/list/cooldown` | moderator | Manages custom commands (incl. cooldown per command) |
+| `!commands` / `!help` | everyone | Lists commands |
+| `!broadcast add/remove/list` | moderator | Recurring chat announcements |
+| `!eventlog` | moderator | Event log settings |
+| `!warn <user> [reason]` | moderator | Manually warns a user |
+| `!timeout <user> <sec> [reason]` | moderator | Times out a user |
+| `!ban <user> [reason]` | moderator | Permanently bans a user |
+| `!unban <user>` | moderator | Lifts a ban/timeout |
+| `!purge` / `!clear` | moderator | Clears the entire chat |
+| `!permit <user> [sec]` | moderator | Temporary AutoMod exemption for a user |
+| `!title [new title]` | moderator | Shows/changes the stream title |
+| `!game [category]` | moderator | Shows/changes the stream category |
+| `!so <channel>` | moderator | Shoutout for another streamer |
+| `!clip` | everyone | Creates a clip of the current moment |
+| `!quote [number]` | everyone | Shows a random or specific quote |
+| `!quote add <text>` | moderator | Saves a new quote |
+| `!quote del <number>` | moderator | Removes a saved quote |
+| `!quote list` | everyone | Shows the count and first saved quotes |
+| `!poll start <question> \| <opt1> \| <opt2> [\| ...]` | moderator | Starts a chat poll (max. 5 options) |
+| `!poll results` | everyone | Shows the current interim results of the poll |
+| `!poll end` | moderator | Ends the poll and shows the final result |
+| `!vote <number>` | everyone | Votes in the running poll |
 
-*Custom-Command-Antworten unterstützen die Platzhalter `{user}` und `{channel}`. Cooldown je Custom-Command
-über `!command cooldown <name> <sekunden>`, Standard 5 Sekunden. `!ban`/`!timeout`/`!unban`/`!warn` schreiben
-zusätzlich in die gemeinsame Fall-Historie und lösen - falls konfiguriert - eine Synchronisation zum verknüpften
-Discord-Account aus (siehe [Erweiterte Moderation](#erweiterte-moderation)).*
+*Custom command responses support the placeholders `{user}` and `{channel}`. Cooldown per custom command
+via `!command cooldown <name> <seconds>`, default 5 seconds. `!ban`/`!timeout`/`!unban`/`!warn` also write
+to the shared case history and - if configured - trigger a sync to the linked
+Discord account (see [Advanced moderation](#advanced-moderation)).*
 
-### Zitat- und Umfrage-System
+### Quote and poll system
 
-**Zitate (`!quote`):** Zitate werden pro Kanal fortlaufend nummeriert und dauerhaft in der SQLite-Datenbank
-gespeichert (Tabelle `twitch_quotes`). `!quote` ohne Argument liefert ein zufälliges Zitat, `!quote <nummer>` ein
-bestimmtes. Hinzufügen und Entfernen ist Moderatoren vorbehalten, jeder Vorgang wird im Event-Log festgehalten.
+**Quotes (`!quote`):** Quotes are numbered sequentially per channel and stored permanently in the SQLite database
+(table `twitch_quotes`). `!quote` without an argument returns a random quote, `!quote <number>` a
+specific one. Adding and removing is reserved for moderators, and every action is recorded in the event log.
 
-**Umfragen (`!poll` / `!vote`):** Pro Kanal kann jeweils eine Umfrage aktiv sein (2-5 Antwortoptionen, durch `|`
-getrennt). Zuschauer stimmen mit `!vote <nummer>` ab, Mehrfachstimmen desselben Nutzers ersetzen die vorherige
-Stimme. Umfragen leben nur im Arbeitsspeicher des laufenden Prozesses (kein Neustart-Überdauern) und werden beim
-Start/Ende ins Event-Log geschrieben.
+**Polls (`!poll` / `!vote`):** One poll can be active per channel at a time (2-5 answer options, separated by `|`).
+Viewers vote with `!vote <number>`; multiple votes from the same user replace the previous
+vote. Polls live only in the running process's memory (they do not survive a restart) and are written to
+the event log on start/end.
 
-### Twitch-Autorisierung (Generierung der Tokens)
+### Twitch authorization (generating the tokens)
 
-Da der Bot über die moderne Helix-API agiert, müssen **sowohl der Broadcaster als auch der Bot-Account** autorisiert
-werden.
+Since the bot operates via the modern Helix API, **both the broadcaster and the bot account** need to be
+authorized.
 
-#### 1. Autorisierung durch den Broadcaster (Streamer)
+#### 1. Authorization by the broadcaster (streamer)
 
-Führe diesen URL-Aufruf im Browser aus, während du im **Streamer-Account** eingeloggt bist. Erlaube dem Bot den Zugriff
-auf Mod- und Follower-Daten sowie auf das Ändern von Titel/Kategorie:
+Run this URL call in your browser while logged into the **streamer account**. Grant the bot access
+to mod and follower data as well as to changing the title/category:
 
 ```text
 https://id.twitch.tv/oauth2/authorize?client_id=<TWITCH_CLIENT_ID>&redirect_uri=http://localhost:8080&response_type=code&scope=channel:bot+moderation:read+channel:read:subscriptions+channel:read:vips+channel:manage:broadcast+moderator:read:followers+moderator:read:chatters+moderator:manage:chat_messages+moderator:manage:banned_users&force_verify=true
 ```
 
-*Tausche den empfangenen `?code=` aus der Adresszeile gegen das Access- und Refresh-Token für den **Broadcaster** und
-trage es unter `TWITCH_BROADCASTER_ACCESS_TOKEN`/`TWITCH_BROADCASTER_REFRESH_TOKEN` in die `.env` ein. Dieses Token wird
-für `!title`/`!game` sowie für den periodischen Twitch-Rollen-Abgleich (Subscriber/VIP/Moderator, siehe
-[Twitch-Rollen synchronisieren](#twitch-rollen-mit-discord-synchronisieren)) benötigt - ohne dieses Token bleiben
-`!title`/`!game` im Lesemodus und der periodische Abgleich wird übersprungen (der laufende Chat-basierte Sync
-funktioniert trotzdem weiter).*
+*Exchange the `?code=` received in the address bar for the access and refresh token for the **broadcaster** and
+enter it under `TWITCH_BROADCASTER_ACCESS_TOKEN`/`TWITCH_BROADCASTER_REFRESH_TOKEN` in the `.env` file. This token is
+required for `!title`/`!game` as well as for the periodic Twitch role sync (subscriber/VIP/moderator, see
+[Syncing Twitch roles](#syncing-twitch-roles-with-discord)) - without this token,
+`!title`/`!game` stay in read-only mode and the periodic sync is skipped (the ongoing chat-based sync
+still works).*
 
-#### 2. Autorisierung durch den Bot-Account
+#### 2. Authorization by the bot account
 
-Logge dich im Browser in den **Bot-Account** ein und rufe folgende URL auf:
+Log into your browser with the **bot account** and open the following URL:
 
 ```text
 https://id.twitch.tv/oauth2/authorize?client_id=<TWITCH_CLIENT_ID>&redirect_uri=http://localhost:8080&response_type=code&scope=user:bot+user:write:chat+user:read:chat+clips:edit+moderator:manage:shoutouts+moderator:manage:automod&force_verify=true
 ```
 
-*Tausche den empfangenen `?code=` gegen das Access- und Refresh-Token für den **Bot** und trage es in die `.env`
-ein. `clips:edit` wird für `!clip`, `moderator:manage:shoutouts` für `!so`, `moderator:manage:automod` für das
-native Twitch-AutoMod-Logging (siehe [Discord-Logging](#discord-logging-twitch--discord)) benötigt.*
+*Exchange the received `?code=` for the access and refresh token for the **bot** and enter it in the `.env`
+file. `clips:edit` is required for `!clip`, `moderator:manage:shoutouts` for `!so`, `moderator:manage:automod` for the
+native Twitch AutoMod logging (see [Discord logging](#discord-logging-twitch--discord)).*
 
-#### 3. Code gegen Access- und Refresh-Token tauschen
+#### 3. Exchanging the code for an access and refresh token
 
-Nachdem du in Schritt 1 oder 2 auf "Autorisieren" geklickt hast, leitet Twitch dich zu `http://localhost:8080/?code=...`
-weiter (die Seite lädt nicht, das ist normal). Kopiere den Wert hinter `code=` aus der Adresszeile und tausche ihn
-**sofort** (Codes sind nur kurz gültig) gegen die Tokens ein.
+After clicking "Authorize" in step 1 or 2, Twitch redirects you to `http://localhost:8080/?code=...`
+(the page won't load, that's normal). Copy the value after `code=` from the address bar and exchange it
+**immediately** (codes are only valid briefly) for the tokens.
 
 **Windows / PowerShell:**
 
 ```powershell
-Invoke-RestMethod -Uri "https://id.twitch.tv/oauth2/token" -Method Post -Body @{ client_id="<TWITCH_CLIENT_ID>"; client_secret="<TWITCH_CLIENT_SECRET>"; code="<CODE_AUS_DER_URL>"; grant_type="authorization_code"; redirect_uri="http://localhost:8080" }
+Invoke-RestMethod -Uri "https://id.twitch.tv/oauth2/token" -Method Post -Body @{ client_id="<TWITCH_CLIENT_ID>"; client_secret="<TWITCH_CLIENT_SECRET>"; code="<CODE_FROM_THE_URL>"; grant_type="authorization_code"; redirect_uri="http://localhost:8080" }
 ```
 
-**macOS / Linux (oder `curl.exe` unter Windows):**
+**macOS / Linux (or `curl.exe` on Windows):**
 
 ```bash
-curl -X POST https://id.twitch.tv/oauth2/token -d client_id=<TWITCH_CLIENT_ID> -d client_secret=<TWITCH_CLIENT_SECRET> -d code=<CODE_AUS_DER_URL> -d grant_type=authorization_code -d redirect_uri=http://localhost:8080
+curl -X POST https://id.twitch.tv/oauth2/token -d client_id=<TWITCH_CLIENT_ID> -d client_secret=<TWITCH_CLIENT_SECRET> -d code=<CODE_FROM_THE_URL> -d grant_type=authorization_code -d redirect_uri=http://localhost:8080
 ```
 
-Die Antwort enthält `access_token` und `refresh_token`. Trage beide je nach Flow unter
-`TWITCH_BROADCASTER_ACCESS_TOKEN`/`TWITCH_BROADCASTER_REFRESH_TOKEN` (Schritt 1) bzw. `TWITCH_BOT_ACCESS_TOKEN`/
-`TWITCH_BOT_REFRESH_TOKEN` (Schritt 2) in die `.env` ein.
+The response contains `access_token` and `refresh_token`. Enter both, depending on the flow, under
+`TWITCH_BROADCASTER_ACCESS_TOKEN`/`TWITCH_BROADCASTER_REFRESH_TOKEN` (step 1) or `TWITCH_BOT_ACCESS_TOKEN`/
+`TWITCH_BOT_REFRESH_TOKEN` (step 2) in the `.env` file.
 
-*Hinweis: Das Refresh-Token muss danach nicht mehr manuell erneuert werden - der Bot aktualisiert den Access-Token
-automatisch im Hintergrund, solange das Refresh-Token gültig bleibt (siehe `TwitchUserTokenManager`).*
+*Note: The refresh token does not need to be renewed manually afterwards - the bot automatically refreshes the access token
+in the background as long as the refresh token remains valid (see `TwitchUserTokenManager`).*
 
-#### 4. Kanal-Rechte vergeben
+#### 4. Granting channel permissions
 
-1. Trage den Bot-Account im Kanal des Broadcasters als Moderator ein (`/mod <botname>`).
-2. Trage den Zielkanal in den `twitchbot.properties` unter `twitch.chat.channels` ein.
+1. Add the bot account as a moderator in the broadcaster's channel (`/mod <botname>`).
+2. Enter the target channel in `twitchbot.properties` under `twitch.chat.channels`.
 
-### AutoMod-Mapping
+### AutoMod mapping
 
-| Discord-Key | Twitch-Bedeutung |
+| Discord key | Twitch meaning |
 |---|---|
-| `automod.exempt.role.ids` | Ausgenommene Twitch-Logins (Usernames) |
-| `automod.exempt.channel.ids` | Ausgenommene Twitch-Kanäle |
-| `automod.bypass.manage-server` | Bypass für Channel-Moderatoren |
-| `automod.bypass.administrator` | Bypass für den Broadcaster (Kanalinhaber) |
+| `automod.exempt.role.ids` | Exempt Twitch logins (usernames) |
+| `automod.exempt.channel.ids` | Exempt Twitch channels |
+| `automod.bypass.manage-server` | Bypass for channel moderators |
+| `automod.bypass.administrator` | Bypass for the broadcaster (channel owner) |
 
-### Persistenz
+### Persistence
 
-Eigene SQLite-DB (`twitch.database.file`), nutzt die identische `Database`/`Jdbc`/`SchemaMigrator`-Schicht wie der
-Discord-Bot.
-Tabellen: `twitch_channels`, `twitch_custom_commands` (inkl. `cooldown_seconds`), `twitch_watchtime`,
+Own SQLite DB (`twitch.database.file`), uses the identical `Database`/`Jdbc`/`SchemaMigrator` layer as the
+Discord bot.
+Tables: `twitch_channels`, `twitch_custom_commands` (incl. `cooldown_seconds`), `twitch_watchtime`,
 `twitch_broadcasts`, `twitch_event_log`, `twitch_quotes`, `moderation_cases`, `account_links`,
 `pending_link_verifications`.
 
-### Weitere Einstellungen
+### Other settings
 
-- `twitch.automod.permit.default.seconds` (Standard `30`): Dauer der AutoMod-Ausnahme, wenn `!permit <nutzer>` ohne
-  Sekundenangabe genutzt wird.
+- `twitch.automod.permit.default.seconds` (default `30`): duration of the AutoMod exemption when `!permit <user>` is used
+  without specifying seconds.
 
 ---
 
-## Discord ↔ Twitch Integration
+## Discord ↔ Twitch integration
 
-### Discord-Logging (Twitch → Discord)
+### Discord logging (Twitch → Discord)
 
-Der Twitch-Bot kann Chat-Nachrichten, AutoMod-Ereignisse (das eigene AutoMod **und** Twitchs natives AutoMod) sowie
-Command-Nutzungen live per Discord-Webhook in einen Discord-Channel spiegeln. Da der Twitch-Bot als eigener Prozess
-ohne Discord-Verbindung läuft, geschieht das unabhängig vom Discord-Bot über einen klassischen Discord-Webhook.
+The Twitch bot can mirror chat messages, AutoMod events (both its own AutoMod **and** Twitch's native AutoMod) as well as
+command usages live to a Discord channel via a Discord webhook. Since the Twitch bot runs as its own process
+without a Discord connection, this happens independently of the Discord bot via a classic Discord webhook.
 
-1. Lege in Discord im gewünschten Log-Channel einen Webhook an (Channel-Einstellungen → Integrationen →
-   Webhooks → Neuer Webhook) und kopiere die Webhook-URL.
-2. Trage die URL in `twitchbot.properties` unter `discord.log.webhook.url` ein.
-3. Steuere über folgende Schalter, was geloggt wird:
+1. Create a webhook in Discord in the desired log channel (channel settings → integrations →
+   webhooks → new webhook) and copy the webhook URL.
+2. Enter the URL in `twitchbot.properties` under `discord.log.webhook.url`.
+3. Control what gets logged via the following switches:
 
-| Property | Standard | Bedeutung |
+| Property | Default | Meaning |
 |---|---|---|
-| `discord.log.webhook.url` | *(leer)* | Discord-Webhook-URL, ohne URL ist das Feature deaktiviert |
-| `discord.log.messages.enabled` | `false` | Loggt jede Chat-Nachricht (kann sehr viel Traffic erzeugen) |
-| `discord.log.automod.enabled` | `true` | Loggt eigenes AutoMod **und** natives Twitch-AutoMod |
-| `discord.log.commands.enabled` | `true` | Loggt jede Nutzung eines eingebauten oder Custom-Commands |
+| `discord.log.webhook.url` | *(empty)* | Discord webhook URL; without a URL the feature is disabled |
+| `discord.log.messages.enabled` | `false` | Logs every chat message (can generate a lot of traffic) |
+| `discord.log.automod.enabled` | `true` | Logs both its own AutoMod **and** native Twitch AutoMod |
+| `discord.log.commands.enabled` | `true` | Logs every use of a built-in or custom command |
 
-Für das native Twitch-AutoMod (Nachrichten, die Twitch selbst zur Prüfung zurückhält) abonniert der Bot
-automatisch die EventSub-Typen `automod.message.hold` und `automod.message.update`. Dafür wird der Scope
-`moderator:manage:automod` auf dem Bot-Account-Token benötigt (siehe Schritt 2 der Twitch-Autorisierung oben).
+For native Twitch AutoMod (messages that Twitch itself holds back for review) the bot
+automatically subscribes to the EventSub types `automod.message.hold` and `automod.message.update`. For this, the scope
+`moderator:manage:automod` is required on the bot account token (see step 2 of the Twitch authorization above).
 
-Auf der Discord-Bot-Seite wird die Nutzung von Discord-Slash-Commands über das bestehende Event-Log-System
-geloggt (`/serverlog`, Event-Typ "Command-Nutzung") und benötigt keine zusätzliche Konfiguration.
+On the Discord bot side, the use of Discord slash commands is logged via the existing event log system
+(`/serverlog`, event type "Command usage") and requires no additional configuration.
 
-### Erweiterte Moderation
+### Advanced moderation
 
-Zusätzlich zum automatischen AutoMod gibt es ein vollständiges manuelles Moderationssystem mit eigener
-Fall-Historie, konfigurierbaren Straf-/Moderator-Rollen und optionaler Synchronisation zwischen Discord und Twitch.
+In addition to the automatic AutoMod, there is a full manual moderation system with its own
+case history, configurable punishment/moderator roles, and optional synchronization between Discord and Twitch.
 
-**Discord:** `/mod warn|timeout|untimeout|kick|ban|unban|cases` - Details siehe [Command-Referenz](#discord-command-referenz)
-weiter oben. `/mod`-Befehle dürfen von Mitgliedern mit `ADMINISTRATOR`/`Mitglieder moderieren`-Rechten sowie allen
-über `/modroles add-moderator` freigegebenen Rollen genutzt werden. `/modroles` selbst erfordert `ADMINISTRATOR`
-oder eine über `add-admin` freigegebene Rolle. Bans und Timeouts erscheinen automatisch auch im normalen
-`/serverlog` (Discord meldet diese Events selbst); Kicks und Verwarnungen werden zusätzlich als eigene Log-Typen
-erfasst. Über `/modroles warn-role`/`mute-role`/`ban-role` legst du fest, welche Rolle bei Verwarnung/Timeout/Bann
-automatisch vergeben (und bei Aufhebung wieder entfernt) wird.
+**Discord:** `/mod warn|timeout|untimeout|kick|ban|unban|cases` - see [command reference](#discord-command-reference)
+above for details. `/mod` commands may be used by members with `ADMINISTRATOR`/`Moderate Members` permissions as well as any
+role granted via `/modroles add-moderator`. `/modroles` itself requires `ADMINISTRATOR`
+or a role granted via `add-admin`. Bans and timeouts also automatically appear in the normal
+`/serverlog` (Discord reports these events itself); kicks and warnings are additionally
+recorded as their own log types. Via `/modroles warn-role`/`mute-role`/`ban-role` you define which role is
+automatically granted on warn/timeout/ban (and removed again when it is lifted).
 
-**Twitch:** `!warn`, `!ban`, `!timeout`/`!to`, `!unban`/`!untimeout` schreiben in dieselbe gemeinsame Fall-Historie
-und lösen - falls die Bridge konfiguriert ist - eine Synchronisation zum verknüpften Discord-Account aus. Ein Kick
-hat kein Twitch-Äquivalent und wird nicht synchronisiert.
+**Twitch:** `!warn`, `!ban`, `!timeout`/`!to`, `!unban`/`!untimeout` write to the same shared case history
+and - if the bridge is configured - trigger a synchronization to the linked Discord account. A kick
+has no Twitch equivalent and is not synchronized.
 
-### Accounts verknüpfen
+### Linking accounts
 
-Die Verknüpfung ist für Nutzer komplett **freiwillig** - ohne sie funktionieren Server, Kanal und alle anderen
-Features normal weiter. Sie lohnt sich, weil dadurch Twitch-Rollen (Subscriber, VIP, Moderator, Broadcaster)
-automatisch als Discord-Rolle gespiegelt werden können und - falls die Bridge aktiviert ist - Moderationsmaßnahmen
-zwischen Discord und Twitch synchronisiert werden. Gespeichert wird dabei ausschließlich die Zuordnung
-Discord-ID ↔ Twitch-ID/-Login, keine Passwörter oder Tokens.
+Linking is completely **optional** for users - without it, the server, channel, and all other
+features continue to work normally. It's worthwhile because it allows Twitch roles (subscriber, VIP, moderator, broadcaster)
+to be automatically mirrored as a Discord role and - if the bridge is enabled - moderation actions
+to be synchronized between Discord and Twitch. Only the mapping between the
+Discord ID and Twitch ID/login is stored, no passwords or tokens.
 
-Die Verknüpfung funktioniert in beide Richtungen und erfordert immer eine Bestätigung auf der jeweils anderen
-Plattform (kein reines Vertrauen auf Zuruf):
+Linking works in both directions and always requires confirmation on the respective other
+platform (no relying purely on the person's word):
 
-- **Panel (empfohlen):** `/link panel channel:<kanal>` (Admin) postet ein Embed mit einem "🔗 Verknüpfen"-Button
-  in den angegebenen Kanal - ähnlich wie beim Ticket-System. Klick auf den Button öffnet ein kleines Formular
-  für den Twitch-Loginnamen, der Rest läuft wie unten beschrieben weiter.
-- **Start auf Discord (Command):** `/link twitch login:<name>` → Bot nennt einen Code → Nutzer postet
-  `!verify <code>` im Twitch-Chat des angegebenen Kanals.
-- **Start auf Twitch:** `!link` im Chat → Bot nennt einen Code → Nutzer führt `/link verify code:<code>` auf
-  Discord aus.
-- `/link status` / `/link unlink` verwalten die eigene Verknüpfung auf Discord-Seite.
+- **Panel (recommended):** `/link panel channel:<channel>` (admin) posts an embed with a "🔗 Link"
+  button in the specified channel - similar to the ticket system. Clicking the button opens a small form
+  for the Twitch login name; the rest continues as described below.
+- **Starting on Discord (command):** `/link twitch login:<name>` → the bot provides a code → the user posts
+  `!verify <code>` in the Twitch chat of the specified channel.
+- **Starting on Twitch:** `!link` in chat → the bot provides a code → the user runs `/link verify code:<code>` on
+  Discord.
+- `/link status` / `/link unlink` manage your own link on the Discord side.
 
-### Twitch-Rollen mit Discord synchronisieren
+### Syncing Twitch roles with Discord
 
-Über `/modroles sync-role status:<subscriber|vip|moderator|broadcaster> role:<@rolle>` legst du fest, welche
-Discord-Rolle für welchen Twitch-Status automatisch vergeben werden soll (Aufruf ohne `role` entfernt die
-Zuordnung wieder). `/modroles status` zeigt die aktuelle Konfiguration.
+Via `/modroles sync-role status:<subscriber|vip|moderator|broadcaster> role:<@role>` you define which
+Discord role should be automatically granted for which Twitch status (calling it without `role` removes the
+mapping again). `/modroles status` shows the current configuration.
 
-Der Sync passiert auf zwei Wegen:
-- **Sofort beim Schreiben:** Der Twitch-Bot erkennt den Status eines verknüpften Nutzers anhand der Chat-Badges,
-  sobald dieser im Twitch-Chat schreibt, und gleicht die Discord-Rolle direkt ab.
-- **Periodischer Abgleich:** Damit z. B. ein auslaufendes Abo auch dann erkannt wird, wenn die Person nicht mehr
-  schreibt, fragt der Twitch-Bot zusätzlich alle `moderation.sync.reconcile.interval.minutes` (Standard `15`)
-  die aktuelle Subscriber-/VIP-/Moderatoren-Liste per Twitch-API ab und gleicht **alle** verknüpften Accounts ab.
-  Dafür wird der `TWITCH_BROADCASTER_ACCESS_TOKEN` benötigt (siehe oben) - ohne ihn fällt nur der periodische
-  Abgleich weg, der Chat-basierte Sync funktioniert trotzdem.
+The sync happens in two ways:
+- **Immediately on chat message:** The Twitch bot recognizes the status of a linked user from the chat badges
+  as soon as they write in Twitch chat, and syncs the Discord role directly.
+- **Periodic reconciliation:** So that, for example, an expiring subscription is also detected when the person no longer
+  writes in chat, the Twitch bot additionally queries the current subscriber/VIP/moderator list via the Twitch API every
+  `moderation.sync.reconcile.interval.minutes` (default `15`) and syncs **all** linked accounts.
+  This requires the `TWITCH_BROADCASTER_ACCESS_TOKEN` (see above) - without it, only the periodic
+  reconciliation is skipped; the chat-based sync still works.
 
-### Die Bridge (Discord ↔ Twitch)
+### The bridge (Discord ↔ Twitch)
 
-Da beide Bots als getrennte Prozesse - auch auf unterschiedlichen Servern - laufen können, sprechen sie über eine
-kleine, in beide Bots eingebaute HTTP(S)-Schnittstelle miteinander ("Bridge"). Es wird **keine** zusätzliche Software
-benötigt; jeder Bot kann optional einen kleinen HTTP(S)-Server starten und den des jeweils anderen Bots aufrufen.
-Die Bridge unterstützt **TLS-Verschlüsselung und optional mutual TLS (mTLS)** für die höchstmögliche Absicherung der
-Verbindung, insbesondere wenn beide Bots auf getrennten Servern laufen.
+Since both bots can run as separate processes - even on different servers - they talk to each other via a
+small HTTP(S) interface built into both bots ("bridge"). **No** additional software is
+required; each bot can optionally start a small HTTP(S) server and call the other bot's server.
+The bridge supports **TLS encryption and optionally mutual TLS (mTLS)** for the highest possible security of the
+connection, especially when both bots run on separate servers.
 
-| Property (beide Bots) | Standard | Bedeutung |
+| Property (both bots) | Default | Meaning |
 |---|---|---|
-| `bridge.enabled` | `false` | Startet den eigenen Bridge-Server (muss vom Peer erreichbar sein) |
-| `bridge.bind.host` | `127.0.0.1` | Netzwerk-Interface, an das der Bridge-Server gebunden wird |
-| `bridge.port` | `8082`/`8083` | Port des eigenen Bridge-Servers |
-| `bridge.token` | *(leer)* | Gemeinsames Shared-Secret - **muss auf beiden Bots identisch sein** |
-| `bridge.peer.url` | *(leer)* | Basis-URL des jeweils anderen Bots, z. B. `http://localhost:8083` |
+| `bridge.enabled` | `false` | Starts its own bridge server (must be reachable by the peer) |
+| `bridge.bind.host` | `127.0.0.1` | Network interface the bridge server binds to |
+| `bridge.port` | `8082`/`8083` | Port of its own bridge server |
+| `bridge.token` | *(empty)* | Shared secret - **must be identical on both bots** |
+| `bridge.peer.url` | *(empty)* | Base URL of the respective other bot, e.g. `http://localhost:8083` |
 
-Zusätzlich (jeweils nur auf einer Seite):
+Additionally (only on one side each):
 
-- **Discordbot:** `moderation.sync.guild.id` - die **Server-ID** (nicht Channel-ID!) des Discord-Servers, in dem
-  synchronisierte Aktionen ausgeführt werden (dieses Bot-Setup ist auf eine Community/einen Server ausgelegt).
-  Die ID bekommst du per Rechtsklick auf den **Servernamen** (nicht auf einen Kanal) → "ID kopieren"
-  (Entwicklermodus muss dafür in den Discord-Einstellungen aktiviert sein).
-- **Twitchbot:** `moderation.sync.channel` - der Twitch-Kanal-**Login** (Text, z. B. `xdestenyyy` - keine Zahl!),
-  in dem synchronisierte Aktionen ausgeführt werden (leer = erster Kanal aus `twitch.chat.channels`).
-- **Twitchbot:** `moderation.sync.reconcile.interval.minutes` (Standard `15`) - Intervall für den periodischen
-  Rollen-Abgleich (siehe oben).
+- **Discordbot:** `moderation.sync.guild.id` - the **server ID** (not channel ID!) of the Discord server in which
+  synchronized actions are executed (this bot setup is designed for one community/server).
+  You get the ID by right-clicking on the **server name** (not a channel) → "Copy ID"
+  (Developer Mode must be enabled in Discord settings for this).
+- **Twitchbot:** `moderation.sync.channel` - the Twitch channel **login** (text, e.g. `xdestenyyy` - not a number!),
+  in which synchronized actions are executed (empty = first channel from `twitch.chat.channels`).
+- **Twitchbot:** `moderation.sync.reconcile.interval.minutes` (default `15`) - interval for the periodic
+  role reconciliation (see above).
 
-**Setup über den Launcher / auf demselben Server (Standard, empfohlen):** `bridge.bind.host` auf beiden Seiten bei
-`127.0.0.1` belassen, `bridge.peer.url` jeweils auf `http://localhost:<port-des-anderen-bots>` setzen. Die Bridge ist
-damit ausschließlich lokal erreichbar, selbst wenn der Server eine öffentliche IP hat. TLS ist hier optional, da der
-Traffic den Rechner nie verlässt.
+**Setup via the launcher / on the same server (default, recommended):** leave `bridge.bind.host` on both sides at
+`127.0.0.1`, set `bridge.peer.url` to `http://localhost:<port-of-the-other-bot>` respectively. The bridge is
+then only reachable locally, even if the server has a public IP. TLS is optional here, since the
+traffic never leaves the machine.
 
-**Setup für zwei getrennte Server:** `bridge.bind.host=0.0.0.0` auf der Seite setzen, die erreichbar sein muss,
-`bridge.token` auf beiden Seiten identisch setzen, `bridge.peer.url` auf die öffentlich erreichbare Adresse zeigen
-lassen (mit `https://`, siehe unten). Zusätzlich unbedingt per Firewall auf die IP des jeweils anderen Servers
-einschränken.
+**Setup for two separate servers:** set `bridge.bind.host=0.0.0.0` on the side that needs to be reachable,
+set `bridge.token` identically on both sides, and point `bridge.peer.url` to the publicly reachable
+address (with `https://`, see below). Additionally, be sure to restrict access via firewall to the IP of the
+respective other server.
 
-Ohne `bridge.peer.url` funktioniert alles andere (manuelle Commands, Rollen, Fall-Historie) weiterhin normal -
-es wird lediglich keine Aktion zur anderen Plattform gespiegelt.
+Without `bridge.peer.url`, everything else (manual commands, roles, case history) continues to work normally -
+it just means no action is mirrored to the other platform.
 
-#### TLS-Verschlüsselung der Bridge (empfohlen bei getrennten Servern)
+#### TLS encryption for the bridge (recommended for separate servers)
 
-Läuft die Bridge über das offene Internet (zwei getrennte Server), sollte sie **immer** verschlüsselt werden - sonst
-sind Shared-Secret, Discord-/Twitch-User-IDs und Moderationsaktionen im Klartext mitlesbar. Dafür stehen folgende
-zusätzliche Properties zur Verfügung (auf beiden Bots identisch benannt, aber pro Bot mit eigenem Zertifikat):
+If the bridge runs over the open internet (two separate servers), it should **always** be encrypted - otherwise
+the shared secret, Discord/Twitch user IDs, and moderation actions can be read in plaintext. The following
+additional properties are available for this (named identically on both bots, but with its own certificate per bot):
 
-| Property | Standard | Bedeutung |
+| Property | Default | Meaning |
 |---|---|---|
-| `bridge.tls.enabled` | `false` | Aktiviert HTTPS statt Klartext-HTTP für den eigenen Bridge-Server **und** für ausgehende Anfragen an den Peer |
-| `bridge.tls.keystore.path` | *(leer)* | Pfad zur eigenen PKCS12-Zertifikatsdatei (`.p12`), die der Bridge-Server beim Handshake präsentiert |
-| `bridge.tls.keystore.password` | *(leer)* | Passwort des Keystores. Unterstützt `env:VARNAME`, um das Passwort statt im Klartext über eine Umgebungsvariable bereitzustellen |
-| `bridge.tls.key.password` | *(leer)* | Passwort des privaten Schlüssels im Keystore, falls abweichend vom Keystore-Passwort. Ebenfalls `env:VARNAME` möglich |
-| `bridge.tls.truststore.path` | *(leer)* | Pfad zu einer PKCS12-Datei mit vertrauenswürdigen Zertifikaten. Nötig, sobald ein **selbstsigniertes** Zertifikat verwendet wird oder `mutual-auth` aktiv ist |
-| `bridge.tls.truststore.password` | *(leer)* | Passwort des Truststores. Ebenfalls `env:VARNAME` möglich |
-| `bridge.tls.mutual-auth` | `false` | Aktiviert mutual TLS (mTLS): Der Bridge-Server verlangt zusätzlich ein gültiges Client-Zertifikat vom Peer, nicht nur das Shared-Secret |
+| `bridge.tls.enabled` | `false` | Enables HTTPS instead of plaintext HTTP for its own bridge server **and** for outgoing requests to the peer |
+| `bridge.tls.keystore.path` | *(empty)* | Path to its own PKCS12 certificate file (`.p12`) that the bridge server presents during the handshake |
+| `bridge.tls.keystore.password` | *(empty)* | Password of the keystore. Supports `env:VARNAME` to provide the password via an environment variable instead of in plaintext |
+| `bridge.tls.key.password` | *(empty)* | Password of the private key in the keystore, if different from the keystore password. `env:VARNAME` is also possible |
+| `bridge.tls.truststore.path` | *(empty)* | Path to a PKCS12 file with trusted certificates. Needed as soon as a **self-signed** certificate is used or `mutual-auth` is active |
+| `bridge.tls.truststore.password` | *(empty)* | Password of the truststore. `env:VARNAME` is also possible |
+| `bridge.tls.mutual-auth` | `false` | Enables mutual TLS (mTLS): the bridge server additionally requires a valid client certificate from the peer, not just the shared secret |
 
-Erlaubt sind ausschließlich **TLS 1.2 und TLS 1.3**; ältere, unsichere Protokollversionen werden von der Bridge
-grundsätzlich abgelehnt. Ist `bridge.tls.enabled=true`, muss `bridge.peer.url` mit `https://` beginnen - Anfragen an
-eine `http://`-Peer-URL werden dann automatisch verweigert, um ein versehentliches Downgrade auf Klartext zu
-verhindern.
+Only **TLS 1.2 and TLS 1.3** are allowed; older, insecure protocol versions are always
+rejected by the bridge. If `bridge.tls.enabled=true`, `bridge.peer.url` must start with `https://` - requests to
+an `http://` peer URL are then automatically refused, to prevent an accidental downgrade to plaintext.
 
-**Schritt 1 - Zertifikat je Bot erzeugen** (auf jedem der beiden Server einmal, `keytool` ist Teil jeder Java-Installation):
+**Step 1 - Generate a certificate per bot** (once on each of the two servers, `keytool` is part of every Java installation):
 
 ```bash
 keytool -genkeypair -alias bridge -keyalg EC -keysize 256 -validity 825 \
   -keystore bridge-keystore.p12 -storetype PKCS12 \
-  -dname "CN=discordbot-bridge"        # bzw. "CN=twitchbot-bridge" auf dem anderen Server
+  -dname "CN=discordbot-bridge"        # or "CN=twitchbot-bridge" on the other server
 ```
-`keytool` fragt dabei nach einem Passwort für den Keystore - dieses in `bridge.tls.keystore.password` eintragen
-(oder besser per `env:BRIDGE_KEYSTORE_PASSWORD` als Umgebungsvariable setzen, siehe unten).
+`keytool` will ask for a password for the keystore - enter this in `bridge.tls.keystore.password`
+(or better, set it as an environment variable via `env:BRIDGE_KEYSTORE_PASSWORD`, see below).
 
-**Schritt 2 - Zertifikat exportieren und dem jeweils anderen Bot als vertrauenswürdig hinzufügen**, da es
-selbstsigniert ist und nicht automatisch von der Standard-CA-Liste der JVM akzeptiert wird:
+**Step 2 - Export the certificate and add it to the other bot as trusted**, since it is
+self-signed and is not automatically accepted by the JVM's default CA list:
 
 ```bash
-# Auf dem Discordbot-Server: eigenes Zertifikat exportieren ...
+# On the Discordbot server: export its own certificate ...
 keytool -exportcert -alias bridge -keystore bridge-keystore.p12 -storetype PKCS12 -file discordbot.crt
 
-# ... und auf den Twitchbot-Server kopieren (z. B. per scp), dort importieren:
+# ... and copy it to the Twitchbot server (e.g. via scp), then import it there:
 keytool -importcert -alias discordbot-peer -file discordbot.crt \
   -keystore bridge-truststore.p12 -storetype PKCS12 -noprompt
 ```
-Das Gleiche in die Gegenrichtung (Twitchbot-Zertifikat exportieren → auf dem Discordbot-Server in dessen
-`bridge-truststore.p12` importieren). Jeder Bot bekommt so einen eigenen Truststore, der nur das Zertifikat
-des jeweils anderen Bots enthält.
+The same in the opposite direction (export the Twitchbot certificate → import it on the Discordbot server into its
+`bridge-truststore.p12`). Each bot thus gets its own truststore that contains only the certificate
+of the respective other bot.
 
-**Schritt 3 - Konfiguration** (Beispiel `discordbot.properties`, `twitchbot.properties` spiegelbildlich):
+**Step 3 - Configuration** (example `discordbot.properties`, `twitchbot.properties` is a mirror image):
 
 ```properties
 bridge.enabled=true
 bridge.bind.host=0.0.0.0
 bridge.peer.url=https://twitchbot.example.com:8083
 bridge.tls.enabled=true
-bridge.tls.keystore.path=/pfad/zu/bridge-keystore.p12
+bridge.tls.keystore.path=/path/to/bridge-keystore.p12
 bridge.tls.keystore.password=env:BRIDGE_KEYSTORE_PASSWORD
-bridge.tls.truststore.path=/pfad/zu/bridge-truststore.p12
+bridge.tls.truststore.path=/path/to/bridge-truststore.p12
 bridge.tls.truststore.password=env:BRIDGE_TRUSTSTORE_PASSWORD
 bridge.tls.mutual-auth=true
 ```
-und beim Start die zugehörigen Umgebungsvariablen setzen (z. B. `export BRIDGE_KEYSTORE_PASSWORD=...`), statt die
-Passwörter im Klartext in die Properties-Datei zu schreiben.
+and set the corresponding environment variables at startup (e.g. `export BRIDGE_KEYSTORE_PASSWORD=...`), instead of writing the
+passwords in plaintext in the properties file.
 
-**Für maximale Sicherheit** zusätzlich `bridge.tls.mutual-auth=true` auf **beiden** Bots setzen: Der Bridge-Server
-akzeptiert dann nur noch Anfragen, die sowohl ein gültiges, im Truststore hinterlegtes Client-Zertifikat als auch
-das korrekte Shared-Secret mitbringen - zwei unabhängige Sicherheitsebenen zusätzlich zur Verschlüsselung selbst.
+**For maximum security**, additionally set `bridge.tls.mutual-auth=true` on **both** bots: the bridge server
+will then only accept requests that carry both a valid client certificate stored in the truststore and
+the correct shared secret - two independent layers of security in addition to the encryption itself.
 
 ---
 
-## Kombinierter Start (`launcher`)
+## Combined start (`launcher`)
 
-Standardmäßig ist jeder Bot ein eigenständiger Prozess (eigene JAR, eigenes Logging). Wer Discord- und Twitch-Bot
-auf demselben Server **in einem einzigen Prozess** betreiben möchte, nutzt stattdessen das Modul `launcher`.
+By default, each bot is a standalone process (its own JAR, its own logging). Anyone who wants to run the Discord and Twitch bot
+on the same server **in a single process** should use the `launcher` module instead.
 
-Der Launcher enthält **keine eigene Bot-Logik**, sondern instanziiert und startet lediglich die bestehenden
-`Bot`-Klassen aus `xBotenyyDiscordBot` und `xBotenyyTwitchBot` jeweils in einem eigenen Thread. Zusätzlich bringt
-er eine interaktive **Konsole** mit, über die beide Bots zur Laufzeit gestartet, gestoppt und neugestartet werden
-können, sowie Logging-Bündelung für beide Bots in einem Prozess. Die Konfiguration (`.env`, `discordbot.properties`,
-`twitchbot.properties`) bleibt unverändert dieselbe wie beim getrennten Betrieb.
+The launcher contains **no bot logic of its own**, but merely instantiates and starts the existing
+`Bot` classes from `xBotenyyDiscordBot` and `xBotenyyTwitchBot`, each in its own thread. In addition, it
+comes with an interactive **console** through which both bots can be started, stopped, and restarted
+at runtime, as well as combined logging for both bots in one process. The configuration (`.env`, `discordbot.properties`,
+`twitchbot.properties`) remains unchanged, the same as in separate operation.
 
-**Vollständige Dokumentation (Konsolen-Befehle, Architektur,
-Logging-Details): [`launcher/README.md`](launcher/README.md)**
+**Full documentation (console commands, architecture,
+logging details): [`launcher/README.md`](launcher/README.md)**
 
-### Bauen und starten
+### Building and starting
 
 ```bash
 mvn -pl launcher -am -DskipTests package
 java -jar launcher/target/xBotenyyLauncher.jar
 ```
 
-Optional kann über ein Startargument nur einer der beiden Bots aktiviert werden (der jeweils andere lässt sich
-danach trotzdem jederzeit über die Konsole mit `start <bot>` dazu starten):
+Optionally, only one of the two bots can be enabled via a startup argument (the respective other one can
+still be started at any time afterwards via the console with `start <bot>`):
 
 ```bash
 java -jar launcher/target/xBotenyyLauncher.jar --mode=discord
 java -jar launcher/target/xBotenyyLauncher.jar --mode=twitch
 ```
 
-Ohne Argument (oder mit `--mode=both`) starten beide Bots gemeinsam.
+Without an argument (or with `--mode=both`), both bots start together.
 
-### Konsolen-Befehle
+### Console commands
 
-Sobald der Launcher läuft, akzeptiert er interaktiv Befehle über die Standard-Eingabe:
+Once the launcher is running, it interactively accepts commands via standard input:
 
-| Befehl | Beschreibung |
+| Command | Description |
 |---|---|
-| `help` | Übersicht aller Befehle |
-| `status` | Status, Neustart-Zähler und letzter Start pro Bot, aktuelle Einstellungen |
-| `start <discord\|twitch\|all>` | Bot(s) starten |
-| `stop <discord\|twitch\|all> [timeoutSekunden]` | Bot(s) geordnet stoppen (kein Auto-Neustart danach) |
-| `restart <discord\|twitch\|all> [timeoutSekunden]` | Bot(s) stoppen und sofort wieder starten |
-| `set maxrestarts <n>` / `set restartdelay <sekunden>` | Neustart-Verhalten zur Laufzeit ändern (siehe unten) |
-| `schedule add <discord\|twitch\|all> <restart\|stop\|start> interval <wert> [timeoutSekunden]` | Wiederkehrende Aufgabe anlegen, z.B. `schedule add all restart interval 6h` |
-| `schedule add <discord\|twitch\|all> <restart\|stop\|start> daily <HH:mm> [timeoutSekunden]` | Tägliche Aufgabe anlegen, z.B. `schedule add discord restart daily 04:30` |
-| `schedule list` | Zeigt alle geplanten Aufgaben mit nächster/letzter Ausführung |
-| `schedule remove <id>` | Entfernt eine geplante Aufgabe |
-| `schedule enable <id>` / `schedule disable <id>` | Aktiviert/deaktiviert eine geplante Aufgabe |
-| `exit` | Alle Bots geordnet stoppen und den Launcher beenden |
+| `help` | Overview of all commands |
+| `status` | Status, restart counter, and last start per bot, current settings |
+| `start <discord\|twitch\|all>` | Start bot(s) |
+| `stop <discord\|twitch\|all> [timeoutSeconds]` | Stop bot(s) gracefully (no auto-restart afterward) |
+| `restart <discord\|twitch\|all> [timeoutSeconds]` | Stop bot(s) and immediately start them again |
+| `set maxrestarts <n>` / `set restartdelay <seconds>` | Change restart behavior at runtime (see below) |
+| `schedule add <discord\|twitch\|all> <restart\|stop\|start> interval <value> [timeoutSeconds]` | Create a recurring task, e.g. `schedule add all restart interval 6h` |
+| `schedule add <discord\|twitch\|all> <restart\|stop\|start> daily <HH:mm> [timeoutSeconds]` | Create a daily task, e.g. `schedule add discord restart daily 04:30` |
+| `schedule list` | Shows all scheduled tasks with next/last execution |
+| `schedule remove <id>` | Removes a scheduled task |
+| `schedule enable <id>` / `schedule disable <id>` | Enables/disables a scheduled task |
+| `exit` | Stops all bots gracefully and shuts down the launcher |
 
-### Scheduler (automatische Restarts & mehr)
+### Scheduler (automatic restarts & more)
 
-Der Launcher enthält einen eingebauten Scheduler, mit dem sich wiederkehrende Aktionen (`restart`, `stop`, `start`)
-pro Bot oder für alle Bots gemeinsam planen lassen - z.B. ein täglicher Neustart um 04:30 Uhr oder ein Neustart alle
-6 Stunden. Aufgaben werden über den Konsolen-Befehl `schedule` verwaltet und in `scheduler-tasks.txt`
-(Pfad konfigurierbar über `LAUNCHER_SCHEDULER_FILE`) persistiert, sodass sie einen Neustart des Launchers
-überleben. Der Scheduler prüft alle 10 Sekunden, ob eine Aufgabe fällig ist.
+The launcher includes a built-in scheduler with which recurring actions (`restart`, `stop`, `start`)
+can be scheduled per bot or for all bots together - e.g. a daily restart at 04:30 or a restart every
+6 hours. Tasks are managed via the console command `schedule` and persisted in `scheduler-tasks.txt`
+(path configurable via `LAUNCHER_SCHEDULER_FILE`), so they survive a restart of the launcher.
+The scheduler checks every 10 seconds whether a task is due.
 
 ```
 schedule add all restart daily 04:30
@@ -551,67 +550,67 @@ schedule disable s1
 schedule remove s1
 ```
 
-### Logging im kombinierten Betrieb
+### Logging in combined operation
 
-Da beide Bots im selben Prozess laufen, bringt der Launcher ein eigenes, nach Modul getrenntes Logback-Setup mit
-(`launcher/src/main/resources/logback.xml`), das anhand des Java-Package-Namens automatisch zuordnet, statt alles
-unstrukturiert in eine Datei zu schreiben:
+Since both bots run in the same process, the launcher comes with its own Logback setup that is separated by module
+(`launcher/src/main/resources/logback.xml`), which automatically routes logs based on the Java package name instead of
+writing everything unstructured into one file:
 
-| Datei | Inhalt |
+| File | Content |
 |---|---|
-| `logs/xbotenyy-discord.log` | Alle Logs aus `discordbot` sowie der JDA-Bibliothek |
-| `logs/xbotenyy-twitch.log` | Alle Logs aus `twitchbot` |
-| `logs/xbotenyy-launcher.log` | Gemeinsame Infrastruktur aus `common` sowie der Launcher selbst |
-| `logs/audit.log` | Audit-Log beider Bots (wie im getrennten Betrieb auch gemeinsam) |
+| `logs/xbotenyy-discord.log` | All logs from `discordbot` as well as the JDA library |
+| `logs/xbotenyy-twitch.log` | All logs from `twitchbot` |
+| `logs/xbotenyy-launcher.log` | Shared infrastructure from `common` as well as the launcher itself |
+| `logs/audit.log` | Audit log of both bots (shared, as in separate operation too) |
 
-Beim Bau der JAR sorgt ein eigener Assembly-Descriptor (`launcher/src/main/assembly/with-dependencies.xml`) dafür,
-dass die `logback.xml`-Dateien von `discordbot` und `twitchbot` **nicht** mit ins Fat-Jar gepackt werden - so bleibt
-ausschließlich die Konfiguration des `launcher`-Moduls aktiv und es entsteht keine Ressourcen-Kollision im Classpath.
+When building the JAR, a dedicated assembly descriptor (`launcher/src/main/assembly/with-dependencies.xml`) ensures
+that the `logback.xml` files from `discordbot` and `twitchbot` are **not** packed into the fat JAR - this way,
+only the `launcher` module's configuration remains active and there is no resource collision on the classpath.
 
-### Ausfallsicherheit
+### Fault tolerance
 
-Jeder Bot läuft in einem eigenen, vom Launcher überwachten Thread. Stürzt ein Bot ab (z. B. durch einen
-Programmierfehler oder eine unerwartete Exception), betrifft das **ausschließlich diesen einen Bot** - der jeweils
-andere läuft unbeeinflusst weiter, und der Prozess selbst bleibt am Leben. Der Launcher startet den abgestürzten Bot
-zusätzlich automatisch neu (Standard: bis zu 5 Versuche, 15 Sekunden Pause dazwischen). Beide Werte lassen sich ohne
-Neubau der JAR per Umgebungsvariable vorbelegen **und zusätzlich zur Laufzeit über die Konsole ändern**
-(`set maxrestarts <n>`, `set restartdelay <sekunden>`):
+Each bot runs in its own thread, supervised by the launcher. If a bot crashes (e.g. due to a
+programming error or an unexpected exception), this affects **exclusively that one bot** - the
+other one keeps running unaffected, and the process itself stays alive. The launcher additionally automatically
+restarts the crashed bot (default: up to 5 attempts, 15 seconds pause in between). Both values can be pre-set via
+environment variable without rebuilding the JAR, **and can also be changed at runtime via the console**
+(`set maxrestarts <n>`, `set restartdelay <seconds>`):
 
 ```env
 LAUNCHER_MAX_RESTART_ATTEMPTS=5
 LAUNCHER_RESTART_DELAY_SECONDS=15
 ```
 
-Sind alle automatischen Versuche aufgebraucht, bleibt der Bot stehen und kann jederzeit manuell per Konsolen-Befehl
-(`start <bot>`) neugestartet werden - der Neustart-Zähler wird dabei zurückgesetzt.
+Once all automatic attempts are exhausted, the bot stays stopped and can be restarted manually at any time via a console command
+(`start <bot>`) - the restart counter is reset in the process.
 
-*Einzige Grenze: Läuft die JVM selbst gegen ein hartes Problem (z. B. `OutOfMemoryError` durch zu wenig
-zugewiesenen Arbeitsspeicher), kann das trotzdem den gesamten Prozess und damit beide Bots betreffen - das lässt sich
-nur durch ausreichend RAM für den kombinierten Betrieb vermeiden, nicht durch Code.*
+*The only limit: if the JVM itself hits a hard problem (e.g. an `OutOfMemoryError` due to too little
+allocated memory), that can still affect the entire process and thus both bots - this can
+only be avoided with sufficient RAM for combined operation, not through code.*
 
-### Reicht die Launcher-JAR allein aus?
+### Is the launcher JAR alone sufficient?
 
-Ja. `xBotenyyLauncher.jar` ist bereits ein eigenständiges Fat-Jar und enthält `common`, `discordbot` und `twitchbot`
-vollständig. Es müssen **keine** zusätzlichen JARs (`xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`) auf den Server
-kopiert werden - nur `xBotenyyLauncher.jar` sowie wie gewohnt `.env`, `discordbot.properties` und
-`twitchbot.properties` im selben Verzeichnis.
+Yes. `xBotenyyLauncher.jar` is already a standalone fat JAR and contains `common`, `discordbot`, and `twitchbot`
+in full. **No** additional JARs (`xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`) need to be
+copied to the server - only `xBotenyyLauncher.jar` as well as, as usual, `.env`, `discordbot.properties`, and
+`twitchbot.properties` in the same directory.
 
 ---
 
-## Automatische Builds und Releases
+## Automatic builds and releases
 
-Drei GitHub-Actions-Workflows unter `.github/workflows/` bauen alle drei Fat-Jars automatisch:
+Three GitHub Actions workflows under `.github/workflows/` automatically build all three fat JARs:
 
-- **`build.yml`** läuft bei jedem Push und Pull Request auf `main` (`mvn clean verify`, inkl. Tests, Checkstyle,
-  SpotBugs) und lädt `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar` sowie `xBotenyyLauncher.jar` als
-  Workflow-Artefakte hoch (14 Tage abrufbar unter dem jeweiligen Workflow-Lauf, **kein** GitHub-Release).
-- **`latest-release.yml`** läuft ebenfalls bei jedem Push auf `main` und aktualisiert automatisch eine rollierende
-  Vorab-Release namens „Latest Build" (Tag `latest`) mit den drei aktuellen Fat-Jars - so bekommst du auch ohne
-  eigenes Tagging nach jedem Push sofort eine herunterladbare Release.
-- **`release.yml`** läuft **nur** bei einem echten Versions-Tag (z. B. `v3.0.0`) oder manuell über
-  „Run workflow" und veröffentlicht ein offizielles GitHub-Release mit allen drei Fat-Jars als Anhang.
+- **`build.yml`** runs on every push and pull request to `main` (`mvn clean verify`, incl. tests, Checkstyle,
+  SpotBugs) and uploads `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`, and `xBotenyyLauncher.jar` as
+  workflow artifacts (retrievable for 14 days under the respective workflow run, **not** a GitHub release).
+- **`latest-release.yml`** also runs on every push to `main` and automatically updates a rolling
+  pre-release named "Latest Build" (tag `latest`) with the three current fat JARs - so you get an immediately
+  downloadable release after every push, even without your own tagging.
+- **`release.yml`** runs **only** on an actual version tag (e.g. `v3.0.0`) or manually via
+  "Run workflow" and publishes an official GitHub release with all three fat JARs attached.
 
-Ein offizielles, versioniertes Release erstellst du also per:
+You create an official, versioned release via:
 
 ```bash
 git tag v3.0.0

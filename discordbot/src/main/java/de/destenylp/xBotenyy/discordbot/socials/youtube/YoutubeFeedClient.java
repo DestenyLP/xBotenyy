@@ -47,13 +47,13 @@ public class YoutubeFeedClient extends AbstractHttpApiClient {
                     LOGGER, "YouTube Feed fuer Kanal " + channelId);
             if (response.statusCode() != 200) {
                 String message = "Kanal " + channelId + ": HTTP " + response.statusCode();
-                LOGGER.warn("YouTube Feed fuer Kanal {} antwortete mit Status {}", channelId, response.statusCode());
+                LOGGER.warn("YouTube feed for channel {} responded with status {}", channelId, response.statusCode());
                 SocialsPollStatus.recordYoutubeError(message);
                 return Optional.empty();
             }
             return parseLatestEntry(response.body());
         } catch (Exception e) {
-            LOGGER.warn("Konnte YouTube Feed fuer Kanal {} nicht abrufen: {}", channelId, e.getMessage());
+            LOGGER.warn("Could not fetch YouTube feed for channel {}: {}", channelId, e.getMessage());
             SocialsPollStatus.recordYoutubeError("Kanal " + channelId + ": " + e.getMessage());
             return Optional.empty();
         }
@@ -77,7 +77,7 @@ public class YoutubeFeedClient extends AbstractHttpApiClient {
             String thumbnail = resolveBestThumbnail(videoId);
             return Optional.of(new YoutubeVideo(videoId, title != null ? title : "", url, thumbnail));
         } catch (Exception e) {
-            LOGGER.warn("Konnte YouTube Feed nicht parsen: {}", e.getMessage());
+            LOGGER.warn("Could not parse YouTube feed: {}", e.getMessage());
             return Optional.empty();
         }
     }

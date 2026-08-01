@@ -50,7 +50,7 @@ public class TicketListener extends ListenerAdapter {
         try {
             service.recordActivity(event.getGuild().getId(), event.getChannel().getId());
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler beim Erfassen der Ticket-Aktivitaet (Guild: {}, Channel: {}): ",
+            LOGGER.error("Unexpected error while recording ticket activity (guild: {}, channel: {}): ",
                     event.getGuild().getId(), event.getChannel().getId(), e);
         }
     }
@@ -60,7 +60,7 @@ public class TicketListener extends ListenerAdapter {
         try {
             handleStringSelect(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Ticket-Select-Interaktion {}: ", event.getComponentId(), e);
+            LOGGER.error("Unexpected error in ticket select interaction {}: ", event.getComponentId(), e);
             replyGenericError(event);
         }
     }
@@ -141,7 +141,7 @@ public class TicketListener extends ListenerAdapter {
         try {
             handleModal(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Ticket-Modal-Interaktion {}: ", event.getModalId(), e);
+            LOGGER.error("Unexpected error in ticket modal interaction {}: ", event.getModalId(), e);
             replyGenericError(event);
         }
     }
@@ -218,7 +218,7 @@ public class TicketListener extends ListenerAdapter {
                                 BotMetrics.incrementTicketsCreated();
                             });
                 }, failure -> {
-                    LOGGER.error("Ticket-Kanal für Ticket {} konnte nicht erstellt werden: {}", ticket.getId(), failure.getMessage());
+                    LOGGER.error("Ticket channel for ticket {} could not be created: {}", ticket.getId(), failure.getMessage());
                     event.getHook().sendMessage("Dein Ticket wurde gespeichert, der Kanal konnte aber nicht erstellt werden. Bitte informiere einen Admin.")
                             .setEphemeral(true).queue();
                 });
@@ -256,7 +256,7 @@ public class TicketListener extends ListenerAdapter {
         try {
             handleButton(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Ticket-Button-Interaktion {}: ", event.getComponentId(), e);
+            LOGGER.error("Unexpected error in ticket button interaction {}: ", event.getComponentId(), e);
             replyGenericError(event);
         }
     }

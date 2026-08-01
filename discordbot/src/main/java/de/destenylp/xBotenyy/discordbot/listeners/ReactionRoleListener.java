@@ -32,7 +32,7 @@ public class ReactionRoleListener extends ListenerAdapter {
         try {
             handleReactionAdd(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Reaction-Add auf Nachricht {}: ", event.getMessageId(), e);
+            LOGGER.error("Unexpected error on reaction-add for message {}: ", event.getMessageId(), e);
         }
     }
 
@@ -75,7 +75,7 @@ public class ReactionRoleListener extends ListenerAdapter {
         try {
             handleReactionRemove(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Reaction-Remove auf Nachricht {}: ", event.getMessageId(), e);
+            LOGGER.error("Unexpected error on reaction-remove for message {}: ", event.getMessageId(), e);
         }
     }
 
@@ -117,7 +117,7 @@ public class ReactionRoleListener extends ListenerAdapter {
         try {
             handleButtonInteraction(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Reaction-Role-Button {} in Guild {}: ",
+            LOGGER.error("Unexpected error with reaction-role button {} in guild {}: ",
                     event.getComponentId(), event.getGuild() != null ? event.getGuild().getId() : "unknown", e);
             if (!event.isAcknowledged()) {
                 event.reply("Es ist ein unerwarteter Fehler aufgetreten.").setEphemeral(true).queue();

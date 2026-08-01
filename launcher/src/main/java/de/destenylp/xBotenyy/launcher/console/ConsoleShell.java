@@ -34,14 +34,14 @@ public final class ConsoleShell {
 
     private void loop() {
         context.print("");
-        context.print("xBotenyy Launcher-Konsole bereit. Tippe 'help' fuer eine Liste aller Befehle.");
+        context.print("xBotenyy Launcher console ready. Type 'help' for a list of all commands.");
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
             String line;
             while (running && (line = reader.readLine()) != null) {
                 handleLine(line);
             }
         } catch (IOException e) {
-            logger.error("Konsolen-Eingabe konnte nicht gelesen werden, die Konsole ist nun deaktiviert: ", e);
+            logger.error("Console input could not be read, the console is now disabled: ", e);
         }
     }
 
@@ -57,17 +57,17 @@ public final class ConsoleShell {
 
         Optional<ConsoleCommand> command = commands.find(commandName);
         if (command.isEmpty()) {
-            context.print("Unbekannter Befehl: '" + commandName + "'. Tippe 'help' fuer eine Uebersicht.");
+            context.print("Unknown command: '" + commandName + "'. Type 'help' for an overview.");
             return;
         }
 
         try {
             command.get().execute(args, context);
         } catch (IllegalArgumentException e) {
-            context.print("Fehler: " + e.getMessage());
+            context.print("Error: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Unerwarteter Fehler bei der Ausfuehrung des Befehls '{}': ", commandName, e);
-            context.print("Unerwarteter Fehler bei der Ausfuehrung von '" + commandName + "', siehe Log fuer Details.");
+            logger.error("Unexpected error while executing command '{}': ", commandName, e);
+            context.print("Unexpected error while executing '" + commandName + "', see log for details.");
         }
     }
 }

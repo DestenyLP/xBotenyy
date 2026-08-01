@@ -86,10 +86,10 @@ public class Bot extends AbstractBot {
         services = new ServiceContainer(properties);
         commandManager = new DiscordCommandManager(services.getEventLogService());
 
-        LOGGER.info("Konfiguration geladen: Twitch-Integration={} Groq-Moderation-Key={} AutoMod-KI-Feature={}",
-                config.hasTwitchAppCredentials() ? "erkannt" : "nicht gesetzt",
-                config.hasGroqApiKey() ? "erkannt" : "nicht gesetzt",
-                services.getAutomodService().getSettings().getAiFilter().enabled() ? "aktiviert" : "deaktiviert");
+        LOGGER.info("Configuration loaded: Twitch integration={} Groq moderation key={} AutoMod AI feature={}",
+                config.hasTwitchAppCredentials() ? "detected" : "not set",
+                config.hasGroqApiKey() ? "detected" : "not set",
+                services.getAutomodService().getSettings().getAiFilter().enabled() ? "enabled" : "disabled");
 
         Duration socialsHttpTimeout = Duration.ofSeconds(properties.getSocialsHttpTimeoutSeconds());
         int retryMaxAttempts = properties.getRestActionMaxAttempts();
@@ -221,7 +221,7 @@ public class Bot extends AbstractBot {
         try {
             long timeoutSeconds = properties.getJdaShutdownTimeoutSeconds();
             if (!jda.awaitShutdown(Duration.ofSeconds(timeoutSeconds))) {
-                LOGGER.warn("JDA konnte nicht innerhalb von {}s sauber beendet werden, erzwinge Shutdown.", timeoutSeconds);
+                LOGGER.warn("JDA could not shut down cleanly within {}s, forcing shutdown.", timeoutSeconds);
                 jda.shutdownNow();
             }
         } catch (InterruptedException e) {

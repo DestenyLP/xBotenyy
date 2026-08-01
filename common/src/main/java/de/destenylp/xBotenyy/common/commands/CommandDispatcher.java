@@ -50,7 +50,7 @@ public final class CommandDispatcher<C> {
             command.execute(context);
             return CommandDispatchResult.EXECUTED;
         } catch (Exception e) {
-            LOGGER.error("Fehler bei der Ausfuehrung des Befehls '{}': ", command.getName(), e);
+            LOGGER.error("Error while executing command '{}': ", command.getName(), e);
             return CommandDispatchResult.ERROR;
         }
     }

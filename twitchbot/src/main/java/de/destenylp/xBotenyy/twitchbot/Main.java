@@ -16,14 +16,14 @@ public final class Main {
         CommonConfig config = CommonConfig.load().orElseThrow();
 
         if (!config.hasTwitchChatCredentials()) {
-            LOGGER.error("Twitch-Chat-Zugangsdaten fehlen. Bitte TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET "
-                    + "und TWITCH_BOT_USERNAME in der .env setzen (siehe README).");
+            LOGGER.error("Twitch chat credentials are missing. Please set TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, "
+                    + "and TWITCH_BOT_USERNAME in the .env file (see README).");
             return;
         }
         if (!config.hasTwitchModeratorAccessToken() && !config.hasTwitchBotRefreshToken()) {
-            LOGGER.error("Weder TWITCH_MODERATOR_ACCESS_TOKEN noch TWITCH_BOT_REFRESH_TOKEN gesetzt - ohne "
-                    + "einen davon kann AutoMod keine Nachrichten löschen oder Nutzer timeouten/bannen "
-                    + "(siehe README, TWITCH_BOT_REFRESH_TOKEN wird empfohlen da er sich selbst erneuert).");
+            LOGGER.error("Neither TWITCH_MODERATOR_ACCESS_TOKEN nor TWITCH_BOT_REFRESH_TOKEN is set - without "
+                    + "one of these, AutoMod cannot delete messages or time out/ban users "
+                    + "(see README; TWITCH_BOT_REFRESH_TOKEN is recommended since it refreshes itself).");
             return;
         }
 
@@ -32,7 +32,7 @@ public final class Main {
         try {
             bot.start();
         } catch (Exception e) {
-            LOGGER.error("Fehler beim Starten des Twitch-Bots: ", e);
+            LOGGER.error("Error while starting the Twitch bot: ", e);
             return;
         }
 

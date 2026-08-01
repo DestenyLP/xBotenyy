@@ -71,7 +71,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
     public final void start() {
         synchronized (lifecycleLock) {
             if (status == BotStatus.RUNNING || status == BotStatus.STARTING) {
-                logger.warn("{} laeuft bereits (Status={}), Start-Befehl wird ignoriert.", displayName, status);
+                logger.warn("{} is already running (status={}), start command is ignored.", displayName, status);
                 return;
             }
             manualStopRequested = false;
@@ -79,7 +79,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             status = BotStatus.STARTING;
             Thread supervisorThread = new Thread(this::runSupervised, id.primaryName() + "-supervisor");
             supervisorThread.setUncaughtExceptionHandler((thread, error) -> {
-                logger.error("{} wurde durch einen fatalen, unbehandelten Fehler im Supervisor-Thread beendet: ",
+                logger.error("{} was terminated by a fatal, unhandled error in the supervisor thread: ",
                         displayName, error);
                 status = BotStatus.FAILED;
             });
@@ -91,7 +91,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
     public final boolean stop(long timeoutSeconds) {
         synchronized (lifecycleLock) {
             if (status == BotStatus.STOPPED) {
-                logger.info("{} ist bereits gestoppt.", displayName);
+                logger.info("{} is already stopped.", displayName);
                 return true;
             }
             manualStopRequested = true;
@@ -116,10 +116,10 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
         boolean stoppedInTime = !stopWorker.isAlive();
         if (stoppedInTime) {
             status = BotStatus.STOPPED;
-            logger.info("{} wurde erfolgreich gestoppt.", displayName);
+            logger.info("{} was stopped successfully.", displayName);
         } else {
-            logger.warn("{} antwortet nicht innerhalb von {}s auf den Stop-Befehl - der Shutdown laeuft im "
-                            + "Hintergrund weiter, der Status wird aktualisiert sobald er abgeschlossen ist.",
+            logger.warn("{} did not respond to the stop command within {}s - the shutdown continues in the "
+                            + "background, the status will be updated once it completes.",
                     displayName, timeoutSeconds);
         }
         return stoppedInTime;
@@ -133,7 +133,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             try {
                 instance = createInstance();
             } catch (Throwable configFailure) {
-                logger.error("{} konnte nicht gestartet werden, Konfiguration ist ungueltig: {}",
+                logger.error("{} could not be started, configuration is invalid: {}",
                         displayName, configFailure.getMessage());
                 status = BotStatus.FAILED;
                 return;
@@ -144,7 +144,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
                 performStart(instance);
                 lastStartedAtMillis = System.currentTimeMillis();
                 status = BotStatus.RUNNING;
-                logger.info("{} wurde erfolgreich (Versuch {}) gestartet.", displayName, attempt);
+                logger.info("{} was started successfully (attempt {}).", displayName, attempt);
 
                 instance.awaitShutdown();
 
@@ -152,7 +152,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
                 return;
             } catch (Throwable failure) {
                 int maxAttempts = settings.getMaxRestartAttempts();
-                logger.error("{} ist abgestuerzt (Versuch {}/{}), der andere Bot laeuft unabhaengig davon weiter: ",
+                logger.error("{} has crashed (attempt {}/{}), the other bot keeps running independently: ",
                         displayName, attempt, maxAttempts, failure);
 
                 if (manualStopRequested) {
@@ -160,8 +160,8 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
                     return;
                 }
                 if (attempt >= maxAttempts) {
-                    logger.error("{} wird nach {} fehlgeschlagenen Versuchen nicht mehr automatisch neugestartet. "
-                                    + "Mit 'start {}' kann manuell neugestartet werden.",
+                    logger.error("{} will no longer be restarted automatically after {} failed attempts. "
+                                    + "Use 'start {}' to restart it manually.",
                             displayName, maxAttempts, id.primaryName());
                     status = BotStatus.FAILED;
                     return;
@@ -176,7 +176,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
                     status = BotStatus.STOPPED;
                     return;
                 }
-                logger.info("Starte {} erneut (Versuch {}/{}, Wartezeit war {}s)...",
+                logger.info("Restarting {} (attempt {}/{}, wait time was {}s)...",
                         displayName, attempt + 1, maxAttempts, delay.toSeconds());
             }
         }

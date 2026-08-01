@@ -106,8 +106,8 @@ public class TwitchRoleSyncService {
                     if (result.success()) {
                         lastSyncedStatuses.put(link.twitchUserId(), statuses);
                     } else {
-                        LOGGER.warn("Rollen-Sync fuer Discord-Nutzer {} fehlgeschlagen: {}", link.discordUserId(), result.message());
+                        LOGGER.warn("Role sync for Discord user {} failed: {}", link.discordUserId(), result.message());
                     }
-                }, () -> LOGGER.warn("Discord-Bridge nicht erreichbar, Rollen-Sync uebersprungen."));
+                }, () -> LOGGER.warn("Discord bridge unreachable, role sync skipped."));
     }
 }

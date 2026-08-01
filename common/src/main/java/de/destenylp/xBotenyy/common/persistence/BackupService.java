@@ -50,7 +50,7 @@ public final class BackupService implements AutoCloseable {
         try {
             createBackup();
         } catch (Exception e) {
-            LOGGER.error("Fehler beim Erstellen des Datenbank-Backups: ", e);
+            LOGGER.error("Error creating the database backup: ", e);
         }
     }
 
@@ -65,7 +65,7 @@ public final class BackupService implements AutoCloseable {
         Path target = backupDirectory.resolve(fileName);
 
         database.backupInto(target);
-        LOGGER.info("Datenbank-Backup erstellt: {}", target);
+        LOGGER.info("Database backup created: {}", target);
 
         enforceRetention();
         return target;
@@ -79,9 +79,9 @@ public final class BackupService implements AutoCloseable {
         for (Path stale : backups.subList(maxBackupsToKeep, backups.size())) {
             try {
                 Files.deleteIfExists(stale);
-                LOGGER.info("Altes Backup entfernt: {}", stale);
+                LOGGER.info("Old backup removed: {}", stale);
             } catch (IOException e) {
-                LOGGER.warn("Konnte altes Backup {} nicht entfernen: {}", stale, e.getMessage());
+                LOGGER.warn("Could not remove old backup {}: {}", stale, e.getMessage());
             }
         }
     }
@@ -97,7 +97,7 @@ public final class BackupService implements AutoCloseable {
                     .sorted(Comparator.comparing(this::lastModifiedSafely).reversed())
                     .toList();
         } catch (IOException e) {
-            LOGGER.warn("Konnte Backup-Verzeichnis {} nicht lesen: {}", backupDirectory, e.getMessage());
+            LOGGER.warn("Could not read backup directory {}: {}", backupDirectory, e.getMessage());
             return List.of();
         }
     }

@@ -95,7 +95,7 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
             return new BridgeLinkConfirmResult(false, null, null, null, null, "Code wurde nicht auf Twitch erzeugt.");
         }
         accountLinkRepository.save(request.discordUserId(), pending.twitchUserId(), pending.twitchLogin());
-        LOGGER.info("Account-Verknuepfung bestaetigt: Twitch {} <-> Discord {}", pending.twitchLogin(), request.discordUserId());
+        LOGGER.info("Account link confirmed: Twitch {} <-> Discord {}", pending.twitchLogin(), request.discordUserId());
         return new BridgeLinkConfirmResult(true, request.discordUserId(), request.discordUsername(),
                 pending.twitchUserId(), pending.twitchLogin(), "Verknuepfung erfolgreich.");
     }

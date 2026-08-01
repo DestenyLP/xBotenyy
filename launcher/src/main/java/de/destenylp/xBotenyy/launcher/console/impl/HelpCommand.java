@@ -24,18 +24,18 @@ public final class HelpCommand implements ConsoleCommand {
 
     @Override
     public String description() {
-        return "Zeigt diese Uebersicht aller verfuegbaren Befehle.";
+        return "Shows this overview of all available commands.";
     }
 
     @Override
     public void execute(String[] args, CommandContext context) {
-        context.print("Verfuegbare Befehle:");
+        context.print("Available commands:");
         int longestUsage = context.commands().all().stream()
                 .mapToInt(command -> command.usage().length())
                 .max().orElse(0);
         for (ConsoleCommand command : context.commands().all()) {
             context.print(String.format("  %-" + longestUsage + "s  - %s", command.usage(), command.description()));
         }
-        context.print("Bot-Bezeichner: discord (Alias: dc, discordbot) | twitch (Alias: tw, twitchbot) | all");
+        context.print("Bot identifiers: discord (alias: dc, discordbot) | twitch (alias: tw, twitchbot) | all");
     }
 }

@@ -29,7 +29,7 @@ public final class SchemaMigrator {
     public static void migrate(Database database, String migrationsResourcePath) {
         List<Migration> migrations = discoverMigrations(migrationsResourcePath);
         if (migrations.isEmpty()) {
-            LOGGER.warn("Keine Migrationsdateien unter {} gefunden.", migrationsResourcePath);
+            LOGGER.warn("No migration files found under {}.", migrationsResourcePath);
             return;
         }
 
@@ -45,7 +45,7 @@ public final class SchemaMigrator {
     }
 
     private static void applyMigration(Database database, Migration migration) {
-        LOGGER.info("Wende Migration V{} ({}) an ...", migration.version(), migration.description());
+        LOGGER.info("Applying migration V{} ({}) ...", migration.version(), migration.description());
         database.runInTransaction(connection -> {
             for (String statement : splitStatements(migration.sql())) {
                 try (Statement stmt = connection.createStatement()) {
@@ -60,7 +60,7 @@ public final class SchemaMigrator {
                 insert.executeUpdate();
             }
         });
-        LOGGER.info("Migration V{} erfolgreich angewendet.", migration.version());
+        LOGGER.info("Migration V{} applied successfully.", migration.version());
     }
 
     private static void ensureMigrationsTable(Connection connection) throws SQLException {

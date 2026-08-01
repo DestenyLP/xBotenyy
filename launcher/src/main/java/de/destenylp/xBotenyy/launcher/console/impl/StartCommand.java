@@ -26,14 +26,14 @@ public final class StartCommand implements ConsoleCommand {
 
     @Override
     public String description() {
-        return "Startet den angegebenen Bot (oder alle) asynchron neu, falls er nicht bereits laeuft.";
+        return "Starts the specified bot (or all) asynchronously if it is not already running.";
     }
 
     @Override
     public void execute(String[] args, CommandContext context) {
         List<ManagedBot> targets = BotTargetResolver.resolve(args, context.bots(), name());
         for (ManagedBot bot : targets) {
-            context.print("Starte " + bot.getDisplayName() + " ...");
+            context.print("Starting " + bot.getDisplayName() + " ...");
             bot.start();
         }
     }

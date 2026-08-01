@@ -24,12 +24,12 @@ public final class ExitCommand implements ConsoleCommand {
 
     @Override
     public String description() {
-        return "Stoppt alle laufenden Bots geordnet und beendet den Launcher-Prozess.";
+        return "Stops all running bots gracefully and terminates the launcher process.";
     }
 
     @Override
     public void execute(String[] args, CommandContext context) {
-        context.print("Faehre Launcher herunter, stoppe alle Bots geordnet...");
+        context.print("Shutting down launcher, stopping all bots gracefully...");
         context.requestLauncherShutdown();
     }
 }

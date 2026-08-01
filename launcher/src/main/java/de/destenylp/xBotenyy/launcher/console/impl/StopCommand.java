@@ -22,7 +22,7 @@ public final class StopCommand implements ConsoleCommand {
             }
             return value;
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("timeoutSekunden muss eine positive Ganzzahl sein, war: " + args[1]);
+            throw new IllegalArgumentException("timeoutSeconds must be a positive integer, was: " + args[1]);
         }
     }
 
@@ -38,12 +38,12 @@ public final class StopCommand implements ConsoleCommand {
 
     @Override
     public String usage() {
-        return "stop <discord|twitch|all> [timeoutSekunden]";
+        return "stop <discord|twitch|all> [timeoutSeconds]";
     }
 
     @Override
     public String description() {
-        return "Stoppt den angegebenen Bot (oder alle) geordnet, ohne dass er automatisch neustartet.";
+        return "Stops the specified bot (or all) gracefully, without it restarting automatically.";
     }
 
     @Override
@@ -51,12 +51,12 @@ public final class StopCommand implements ConsoleCommand {
         List<ManagedBot> targets = BotTargetResolver.resolve(args, context.bots(), name());
         long timeoutSeconds = parseTimeout(args);
         for (ManagedBot bot : targets) {
-            context.print("Stoppe " + bot.getDisplayName() + " (Timeout " + timeoutSeconds + "s) ...");
+            context.print("Stopping " + bot.getDisplayName() + " (timeout " + timeoutSeconds + "s) ...");
             boolean stopped = bot.stop(timeoutSeconds);
             if (stopped) {
-                context.print(bot.getDisplayName() + " wurde gestoppt.");
+                context.print(bot.getDisplayName() + " was stopped.");
             } else {
-                context.print(bot.getDisplayName() + " antwortet nicht rechtzeitig, Shutdown laeuft im Hintergrund weiter.");
+                context.print(bot.getDisplayName() + " did not respond in time, shutdown continues in the background.");
             }
         }
     }

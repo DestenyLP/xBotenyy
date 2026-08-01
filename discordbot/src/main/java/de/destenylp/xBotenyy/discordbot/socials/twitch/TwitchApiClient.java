@@ -80,7 +80,7 @@ public class TwitchApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Helix Streams-Abfrage");
             if (response.statusCode() == 401) {
-                LOGGER.info("Twitch Access-Token abgelaufen, erneuere Token");
+                LOGGER.info("Twitch access token expired, refreshing token");
                 invalidateToken();
                 String refreshed = ensureAccessToken();
                 if (refreshed == null) {
@@ -89,14 +89,14 @@ public class TwitchApiClient extends AbstractHttpApiClient {
                 return fetchBatch(logins, refreshed);
             }
             if (response.statusCode() != 200) {
-                LOGGER.warn("Twitch Helix API antwortete mit Status {}", response.statusCode());
+                LOGGER.warn("Twitch Helix API responded with status {}", response.statusCode());
                 SocialsPollStatus.recordTwitchError("Helix API HTTP " + response.statusCode());
                 return Map.of();
             }
 
             return parseStreams(response.body());
         } catch (Exception e) {
-            LOGGER.warn("Konnte Twitch Streams nicht abrufen: {}", e.getMessage());
+            LOGGER.warn("Could not fetch Twitch streams: {}", e.getMessage());
             SocialsPollStatus.recordTwitchError(e.getMessage());
             return Map.of();
         }

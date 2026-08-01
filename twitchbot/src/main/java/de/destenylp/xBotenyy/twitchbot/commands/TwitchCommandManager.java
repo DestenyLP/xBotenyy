@@ -88,9 +88,9 @@ public class TwitchCommandManager {
         Metrics.increment("twitch.commands_executed");
         CommandDispatchResult result = dispatcher.dispatch(commandName, context);
         switch (result) {
-            case NO_PERMISSION -> LOGGER.debug("Befehl '{}' von {} in {} abgelehnt: fehlende Berechtigung.",
+            case NO_PERMISSION -> LOGGER.debug("Command '{}' from {} in {} rejected: missing permission.",
                     commandName, context.message().userLogin(), context.message().channelLogin());
-            case ON_COOLDOWN -> LOGGER.debug("Befehl '{}' von {} in {} ist im Cooldown.",
+            case ON_COOLDOWN -> LOGGER.debug("Command '{}' from {} in {} is on cooldown.",
                     commandName, context.message().userLogin(), context.message().channelLogin());
             case ERROR -> eventLogService.record(context.message().channelLogin(), context.message().userId(),
                     "COMMAND_ERROR", "command=" + commandName);
@@ -121,7 +121,7 @@ public class TwitchCommandManager {
         if (cooldownSeconds > 0) {
             String cooldownKey = message.channelLogin() + ":" + commandName + ":" + message.userId();
             if (!customCommandCooldownManager.tryAcquire(cooldownKey, cooldownSeconds)) {
-                LOGGER.debug("Custom-Befehl '{}' von {} in {} ist im Cooldown.",
+                LOGGER.debug("Custom command '{}' from {} in {} is on cooldown.",
                         commandName, message.userLogin(), message.channelLogin());
                 return true;
             }

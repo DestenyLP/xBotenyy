@@ -53,10 +53,10 @@ public final class DiscordWebhookClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Discord-Webhook-Log");
             if (response.statusCode() >= 300) {
-                LOGGER.warn("Discord-Webhook lieferte Status {}: {}", response.statusCode(), response.body());
+                LOGGER.warn("Discord webhook returned status {}: {}", response.statusCode(), response.body());
             }
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Senden des Discord-Webhook-Logs: {}", e.getMessage());
+            LOGGER.warn("Error sending the Discord webhook log: {}", e.getMessage());
         }
     }
 

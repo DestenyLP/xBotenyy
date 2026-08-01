@@ -14,7 +14,7 @@ public final class ConsoleCommandRegistry {
     public void register(ConsoleCommand command) {
         String primary = normalize(command.name());
         if (byName.containsKey(primary)) {
-            throw new IllegalStateException("Befehl '" + primary + "' ist bereits registriert.");
+            throw new IllegalStateException("Command '" + primary + "' is already registered.");
         }
         byName.put(primary, command);
         for (String alias : command.aliases()) {

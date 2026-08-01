@@ -37,7 +37,7 @@ public class AutomodListener extends ListenerAdapter {
         try {
             handleMessage(event.getMessage());
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler im AutoMod für Guild {}: ", event.getGuild().getId(), e);
+            LOGGER.error("Unexpected error in AutoMod for guild {}: ", event.getGuild().getId(), e);
         }
     }
 
@@ -49,7 +49,7 @@ public class AutomodListener extends ListenerAdapter {
         try {
             handleMessage(event.getMessage());
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler im AutoMod für Guild {}: ", event.getGuild().getId(), e);
+            LOGGER.error("Unexpected error in AutoMod for guild {}: ", event.getGuild().getId(), e);
         }
     }
 
@@ -84,7 +84,7 @@ public class AutomodListener extends ListenerAdapter {
 
         if (finalAction.deletesMessage()) {
             message.delete().queue(success -> {
-            }, failure -> LOGGER.warn("Konnte AutoMod-Nachricht {} nicht löschen: {}", message.getId(), failure.getMessage()));
+            }, failure -> LOGGER.warn("Could not delete AutoMod message {}: {}", message.getId(), failure.getMessage()));
         }
 
         String reason = "AutoMod: " + verdict.reason();
@@ -93,18 +93,18 @@ public class AutomodListener extends ListenerAdapter {
             case WARN -> notifyMember(member, verdict, guild);
             case TIMEOUT -> member.timeoutFor(service.getTimeoutDuration()).reason(reason).queue(
                     success -> {
-                    }, failure -> LOGGER.warn("Konnte Mitglied {} nicht timeouten: {}", member.getId(), failure.getMessage()));
+                    }, failure -> LOGGER.warn("Could not time out member {}: {}", member.getId(), failure.getMessage()));
             case KICK -> guild.kick(member).reason(reason).queue(
                     success -> {
-                    }, failure -> LOGGER.warn("Konnte Mitglied {} nicht kicken: {}", member.getId(), failure.getMessage()));
+                    }, failure -> LOGGER.warn("Could not kick member {}: {}", member.getId(), failure.getMessage()));
             case BAN -> guild.ban(member, 0, TimeUnit.SECONDS).reason(reason).queue(
                     success -> {
-                    }, failure -> LOGGER.warn("Konnte Mitglied {} nicht bannen: {}", member.getId(), failure.getMessage()));
+                    }, failure -> LOGGER.warn("Could not ban member {}: {}", member.getId(), failure.getMessage()));
             default -> {
             }
         }
 
-        LOGGER.info("AutoMod: {} durch {} in Guild {} (Aktion: {}, Strikes: {})",
+        LOGGER.info("AutoMod: {} by {} in guild {} (action: {}, strikes: {})",
                 verdict.ruleType(), member.getId(), guild.getId(), finalAction, strikes);
         AuditLog.record(guild.getId(), member.getId(), "AUTOMOD_" + verdict.ruleType(),
                 "action=" + finalAction + " strikes=" + strikes + " reason=" + verdict.reason());
@@ -118,8 +118,8 @@ public class AutomodListener extends ListenerAdapter {
                 privateChannel -> privateChannel.sendMessage("⚠️ Deine Nachricht auf **" + guild.getName()
                         + "** wurde durch AutoMod entfernt.\nGrund: " + verdict.reason()).queue(
                         success -> {
-                        }, failure -> LOGGER.warn("Konnte Mitglied {} nicht per DM verwarnen: {}", member.getId(), failure.getMessage())),
-                failure -> LOGGER.warn("Konnte keinen DM-Kanal zu {} öffnen: {}", member.getId(), failure.getMessage()));
+                        }, failure -> LOGGER.warn("Could not warn member {} via DM: {}", member.getId(), failure.getMessage())),
+                failure -> LOGGER.warn("Could not open a DM channel to {}: {}", member.getId(), failure.getMessage()));
     }
 
     private void logToChannel(Message message, Member member, AutomodVerdict verdict, AutomodAction finalAction, int strikes) {
@@ -135,6 +135,6 @@ public class AutomodListener extends ListenerAdapter {
         logChannel.sendMessageEmbeds(AutomodEmbedFactory.buildLogEmbed(member, sourceChannel, verdict, finalAction,
                 strikes, message.getContentRaw())).queue(
                 success -> {
-                }, failure -> LOGGER.warn("Konnte AutoMod-Log nicht senden: {}", failure.getMessage()));
+                }, failure -> LOGGER.warn("Could not send AutoMod log: {}", failure.getMessage()));
     }
 }

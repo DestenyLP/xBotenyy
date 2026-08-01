@@ -25,7 +25,7 @@ public final class Main {
     public static void main(String[] args) throws InterruptedException {
         LaunchMode mode = LaunchMode.fromArgs(args);
         LauncherSettings settings = LauncherSettings.loadFromEnvironment();
-        LOGGER.info("xBotenyy Launcher startet im Modus {} ({})", mode, settings);
+        LOGGER.info("xBotenyy Launcher starting in mode {} ({})", mode, settings);
 
         BotRegistry registry = new BotRegistry();
         if (mode.includesDiscord()) {
@@ -36,7 +36,7 @@ public final class Main {
         }
 
         if (registry.isEmpty()) {
-            LOGGER.error("Modus {} aktiviert keinen Bot, Launcher wird beendet.", mode);
+            LOGGER.error("Mode {} does not enable any bot, launcher is shutting down.", mode);
             return;
         }
 
@@ -60,7 +60,7 @@ public final class Main {
         consoleShell.start();
 
         shutdownLatch.await();
-        LOGGER.info("xBotenyy Launcher wurde beendet.");
+        LOGGER.info("xBotenyy Launcher has been shut down.");
     }
 
     private static ConsoleCommandRegistry buildCommandRegistry() {
@@ -81,7 +81,7 @@ public final class Main {
         if (shutdownLatch.getCount() == 0) {
             return;
         }
-        LOGGER.info("Launcher-Shutdown angefordert, stoppe alle Bots geordnet...");
+        LOGGER.info("Launcher shutdown requested, stopping all bots gracefully...");
         scheduler.stop();
         for (ManagedBot bot : registry.all()) {
             bot.stop(SHUTDOWN_STOP_TIMEOUT_SECONDS);

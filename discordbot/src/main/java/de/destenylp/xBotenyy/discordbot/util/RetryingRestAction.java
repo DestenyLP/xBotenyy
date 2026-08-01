@@ -43,7 +43,7 @@ public final class RetryingRestAction {
         actionSupplier.get().queue(onSuccess, failure -> {
             if (isRetryable(failure) && attemptNumber < maxAttempts) {
                 long delay = baseDelaySeconds * (1L << (attemptNumber - 1));
-                logger.warn("{} fehlgeschlagen (Versuch {}/{}), erneuter Versuch in {}s: {}",
+                logger.warn("{} failed (attempt {}/{}), retrying in {}s: {}",
                         description, attemptNumber, maxAttempts, delay, failure.getMessage());
                 SCHEDULER.schedule(
                         () -> attempt(actionSupplier, onSuccess, onFailure, logger, description, attemptNumber + 1),

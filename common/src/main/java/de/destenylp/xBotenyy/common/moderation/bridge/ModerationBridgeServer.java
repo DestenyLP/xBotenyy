@@ -37,13 +37,13 @@ public final class ModerationBridgeServer {
         try {
             if (settings.tlsEnabled()) {
                 server = createHttpsServer();
-                LOGGER.info("Moderation-Bridge-Server auf {}:{} gestartet (HTTPS, TLS 1.2/1.3{}).",
-                        settings.bindHost(), settings.port(), settings.mutualTlsEnabled() ? ", mTLS aktiv" : "");
+                LOGGER.info("Moderation bridge server started on {}:{} (HTTPS, TLS 1.2/1.3{}).",
+                        settings.bindHost(), settings.port(), settings.mutualTlsEnabled() ? ", mTLS active" : "");
             } else {
                 server = HttpServer.create(new InetSocketAddress(settings.bindHost(), settings.port()), 0);
-                LOGGER.warn("Moderation-Bridge-Server auf {}:{} gestartet OHNE TLS (Klartext-HTTP). "
-                                + "Nur fuer localhost/vertrauenswuerdige, isolierte Netzwerke geeignet - "
-                                + "fuer Verbindungen ueber das Internet 'bridge.tls.enabled=true' setzen!",
+                LOGGER.warn("Moderation bridge server started on {}:{} WITHOUT TLS (plaintext HTTP). "
+                                + "Only suitable for localhost/trusted, isolated networks - "
+                                + "set 'bridge.tls.enabled=true' for connections over the internet!",
                         settings.bindHost(), settings.port());
             }
             server.setExecutor(Executors.newCachedThreadPool(runnable -> {
@@ -56,7 +56,7 @@ public final class ModerationBridgeServer {
             server.createContext("/bridge/v1/roles/sync", this::handleRoleSync);
             server.start();
         } catch (Exception e) {
-            LOGGER.error("Konnte Moderation-Bridge-Server nicht auf Port {} starten: {}", settings.port(),
+            LOGGER.error("Could not start the moderation bridge server on port {}: {}", settings.port(),
                     e.getMessage());
         }
     }
@@ -93,7 +93,7 @@ public final class ModerationBridgeServer {
             BridgeActionResult result = handler.applyAction(request);
             respond(exchange, 200, result.toJson());
         } catch (Exception e) {
-            LOGGER.warn("Fehler bei eingehender Bridge-Aktion: {}", e.getMessage());
+            LOGGER.warn("Error processing incoming bridge action: {}", e.getMessage());
             respond(exchange, 500, new BridgeActionResult(false, "Interner Fehler").toJson());
         }
     }
@@ -108,7 +108,7 @@ public final class ModerationBridgeServer {
             BridgeLinkConfirmResult result = handler.confirmLink(request);
             respond(exchange, 200, result.toJson());
         } catch (Exception e) {
-            LOGGER.warn("Fehler bei eingehender Bridge-Link-Bestaetigung: {}", e.getMessage());
+            LOGGER.warn("Error processing incoming bridge link confirmation: {}", e.getMessage());
             respond(exchange, 500, new BridgeLinkConfirmResult(false, null, null, null, null, "Interner Fehler").toJson());
         }
     }
@@ -123,7 +123,7 @@ public final class ModerationBridgeServer {
             BridgeRoleSyncResult result = handler.syncRoles(request);
             respond(exchange, 200, result.toJson());
         } catch (Exception e) {
-            LOGGER.warn("Fehler bei eingehender Rollen-Sync-Anfrage: {}", e.getMessage());
+            LOGGER.warn("Error processing incoming role-sync request: {}", e.getMessage());
             respond(exchange, 500, new BridgeRoleSyncResult(false, "Interner Fehler").toJson());
         }
     }
@@ -135,7 +135,7 @@ public final class ModerationBridgeServer {
             return false;
         }
         if (settings.mutualTlsEnabled() && !hasVerifiedClientCertificate(exchange)) {
-            LOGGER.warn("Bridge-Anfrage ohne gueltiges Client-Zertifikat abgelehnt (mTLS erforderlich).");
+            LOGGER.warn("Bridge request rejected due to missing valid client certificate (mTLS required).");
             exchange.sendResponseHeaders(401, -1);
             exchange.close();
             return false;

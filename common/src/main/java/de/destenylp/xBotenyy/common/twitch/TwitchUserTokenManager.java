@@ -99,7 +99,7 @@ public final class TwitchUserTokenManager {
                 persistRefreshToken(newRefreshToken);
             }
 
-            LOGGER.info("Twitch-Access-Token erneuert, gueltig fuer {} Sekunden.", expiresIn);
+            LOGGER.info("Twitch access token refreshed, valid for {} seconds.", expiresIn);
             return accessToken;
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) {
@@ -130,10 +130,10 @@ public final class TwitchUserTokenManager {
                 lines.add(prefix + newRefreshToken);
             }
             Files.write(envFilePath, lines, StandardCharsets.UTF_8);
-            LOGGER.debug("Neuen Twitch-Refresh-Token in {} gespeichert.", envFilePath);
+            LOGGER.debug("New Twitch refresh token saved in {}.", envFilePath);
         } catch (IOException e) {
-            LOGGER.warn("Konnte neuen Twitch-Refresh-Token nicht in {} speichern - beim naechsten Neustart "
-                    + "muss ggf. der Token in der .env manuell aktualisiert werden: {}", envFilePath, e.getMessage());
+            LOGGER.warn("Could not save the new Twitch refresh token in {} - on the next restart, "
+                    + "the token in the .env file may need to be updated manually: {}", envFilePath, e.getMessage());
         }
     }
 }

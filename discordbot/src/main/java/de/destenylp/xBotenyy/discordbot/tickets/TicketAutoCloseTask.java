@@ -28,7 +28,7 @@ public final class TicketAutoCloseTask implements Runnable {
             sendWarnings();
             closeInactiveTickets();
         } catch (Exception e) {
-            LOGGER.error("Fehler beim automatischen Schließen inaktiver Tickets: ", e);
+            LOGGER.error("Error while automatically closing inactive tickets: ", e);
         }
     }
 
@@ -62,7 +62,7 @@ public final class TicketAutoCloseTask implements Runnable {
             Ticket closedTicket = service.getTicket(guildId, ticket.getId()).orElse(ticket);
             closeCoordinator.finalizeClose(channel, closedTicket);
             BotMetrics.incrementTicketsAutoClosed();
-            LOGGER.info("Ticket {} in guild {} automatisch wegen Inaktivität geschlossen", ticket.getId(), guildId);
+            LOGGER.info("Ticket {} in guild {} automatically closed due to inactivity", ticket.getId(), guildId);
         }));
     }
 
@@ -72,7 +72,7 @@ public final class TicketAutoCloseTask implements Runnable {
         }
         TextChannel channel = jda.getChannelById(TextChannel.class, ticket.getChannelId());
         if (channel == null) {
-            LOGGER.warn("Ticket-Kanal {} für Ticket {} existiert nicht mehr", ticket.getChannelId(), ticket.getId());
+            LOGGER.warn("Ticket channel {} for ticket {} no longer exists", ticket.getChannelId(), ticket.getId());
         }
         return channel;
     }

@@ -174,14 +174,14 @@ public class EventLogListener extends ListenerAdapter {
             }
             TextChannel channel = jda.getChannelById(TextChannel.class, channelIdOpt.get());
             if (channel == null) {
-                LOGGER.warn("Log-Kanal {} für {} in Guild {} nicht gefunden", channelIdOpt.get(), type, guildId);
+                LOGGER.warn("Log channel {} for {} not found in guild {}", channelIdOpt.get(), type, guildId);
                 return;
             }
             channel.sendMessageEmbeds(supplier.get())
                     .queue(success -> BotMetrics.incrementEventLogsSent(),
-                            failure -> LOGGER.warn("Log-Nachricht ({}) konnte nicht gesendet werden: {}", type, failure.getMessage()));
+                            failure -> LOGGER.warn("Log message ({}) could not be sent: {}", type, failure.getMessage()));
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler beim Event-Logging ({}) für Guild {}: ", type, guildId, e);
+            LOGGER.error("Unexpected error during event logging ({}) for guild {}: ", type, guildId, e);
         }
     }
 

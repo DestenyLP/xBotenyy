@@ -29,7 +29,7 @@ public class TicketCloseCoordinator {
         channel.sendMessageEmbeds(TicketEmbedFactory.buildTicketEmbed(ticket))
                 .setComponents(TicketEmbedFactory.buildTicketComponents(ticket))
                 .queue(success -> {
-                }, failure -> LOGGER.warn("Abschluss-Embed konnte nicht gepostet werden: {}", failure.getMessage()));
+                }, failure -> LOGGER.warn("Closing embed could not be posted: {}", failure.getMessage()));
 
         TicketTranscriptService.generate(channel, ticket).thenAccept(transcript -> {
             if (transcript != null) {
@@ -47,7 +47,7 @@ public class TicketCloseCoordinator {
     private void postToLogChannel(JDA jda, Ticket ticket, TicketTranscriptService.TranscriptFile transcript) {
         TicketSettings settings = service.getSettings(ticket.getGuildId()).orElse(null);
         if (settings == null) {
-            LOGGER.warn("Keine Ticket-Einstellungen für Guild {} gefunden, Ticket {} wird nicht archiviert", ticket.getGuildId(), ticket.getId());
+            LOGGER.warn("No ticket settings found for guild {}, ticket {} will not be archived", ticket.getGuildId(), ticket.getId());
             return;
         }
 
@@ -55,7 +55,7 @@ public class TicketCloseCoordinator {
         String transcriptChannelId = settings.getTranscriptChannelId();
 
         if (logChannelId == null && transcriptChannelId == null) {
-            LOGGER.warn("Für Ticket {} in Guild {} ist weder ein Log- noch ein Transcript-Kanal konfiguriert. Nutze /ticket settings logchannel:#kanal, damit geschlossene Tickets protokolliert werden.",
+            LOGGER.warn("Neither a log nor a transcript channel is configured for ticket {} in guild {}. Use /ticket settings logchannel:#channel so closed tickets get logged.",
                     ticket.getId(), ticket.getGuildId());
             return;
         }
@@ -63,7 +63,7 @@ public class TicketCloseCoordinator {
         if (logChannelId != null) {
             TextChannel logChannel = jda.getChannelById(TextChannel.class, logChannelId);
             if (logChannel == null) {
-                LOGGER.warn("Konfigurierter Log-Kanal {} für Ticket {} existiert nicht mehr", logChannelId, ticket.getId());
+                LOGGER.warn("Configured log channel {} for ticket {} no longer exists", logChannelId, ticket.getId());
             } else {
                 var action = logChannel.sendMessageEmbeds(TicketEmbedFactory.buildLogEmbed(ticket));
                 boolean attachTranscriptHere = transcript != null && (transcriptChannelId == null || transcriptChannelId.equals(logChannelId));
@@ -72,7 +72,7 @@ public class TicketCloseCoordinator {
                 }
                 action.queue(
                         message -> service.attachLogMessage(ticket.getGuildId(), ticket.getId(), logChannelId, message.getId()),
-                        failure -> LOGGER.error("Log-Eintrag für Ticket {} konnte nicht in Kanal {} gepostet werden: {}",
+                        failure -> LOGGER.error("Log entry for ticket {} could not be posted in channel {}: {}",
                                 ticket.getId(), logChannelId, failure.getMessage()));
             }
         }
@@ -80,12 +80,12 @@ public class TicketCloseCoordinator {
         if (transcript != null && transcriptChannelId != null && !transcriptChannelId.equals(logChannelId)) {
             TextChannel transcriptChannel = jda.getChannelById(TextChannel.class, transcriptChannelId);
             if (transcriptChannel == null) {
-                LOGGER.warn("Konfigurierter Transcript-Kanal {} für Ticket {} existiert nicht mehr", transcriptChannelId, ticket.getId());
+                LOGGER.warn("Configured transcript channel {} for ticket {} no longer exists", transcriptChannelId, ticket.getId());
             } else {
                 transcriptChannel.sendMessage("Transcript für Ticket #" + ticket.getId() + " · " + ticket.getSubject())
                         .setFiles(transcript.toFileUpload())
                         .queue(success -> {
-                        }, failure -> LOGGER.error("Transcript für Ticket {} konnte nicht in Kanal {} gepostet werden: {}",
+                        }, failure -> LOGGER.error("Transcript for ticket {} could not be posted in channel {}: {}",
                                 ticket.getId(), transcriptChannelId, failure.getMessage()));
             }
         }
@@ -97,12 +97,12 @@ public class TicketCloseCoordinator {
         }
         TextChannel logChannel = jda.getChannelById(TextChannel.class, ticket.getLogChannelId());
         if (logChannel == null) {
-            LOGGER.warn("Log-Kanal {} für Ticket {} existiert nicht mehr, Bewertung konnte nicht nachgetragen werden", ticket.getLogChannelId(), ticket.getId());
+            LOGGER.warn("Log channel {} for ticket {} no longer exists, rating could not be added", ticket.getLogChannelId(), ticket.getId());
             return;
         }
         logChannel.editMessageEmbedsById(ticket.getLogMessageId(), TicketEmbedFactory.buildLogEmbed(ticket))
                 .queue(success -> {
-                }, failure -> LOGGER.warn("Log-Eintrag {} für Ticket {} konnte nicht mit Bewertung aktualisiert werden: {}",
+                }, failure -> LOGGER.warn("Log entry {} for ticket {} could not be updated with the rating: {}",
                         ticket.getLogMessageId(), ticket.getId(), failure.getMessage()));
     }
 
@@ -112,10 +112,10 @@ public class TicketCloseCoordinator {
                         dm -> dm.sendMessageEmbeds(TicketEmbedFactory.buildRatingRequestEmbed(ticket))
                                 .setComponents(TicketEmbedFactory.buildRatingComponents(ticket))
                                 .queue(success -> {
-                                }, failure -> LOGGER.debug("Konnte Bewertungsanfrage nicht an {} senden: {}",
+                                }, failure -> LOGGER.debug("Could not send rating request to {}: {}",
                                         ticket.getAuthorId(), failure.getMessage())),
-                        failure -> LOGGER.debug("Konnte keinen DM-Kanal mit {} öffnen: {}", ticket.getAuthorId(), failure.getMessage())),
-                failure -> LOGGER.debug("Konnte Nutzer {} nicht auflösen: {}", ticket.getAuthorId(), failure.getMessage()));
+                        failure -> LOGGER.debug("Could not open a DM channel with {}: {}", ticket.getAuthorId(), failure.getMessage())),
+                failure -> LOGGER.debug("Could not resolve user {}: {}", ticket.getAuthorId(), failure.getMessage()));
     }
 
     private void scheduleChannelDeletion(TextChannel channel, Ticket ticket) {
@@ -127,6 +127,6 @@ public class TicketCloseCoordinator {
                 .reason("Ticket #" + ticket.getId() + " geschlossen")
                 .queueAfter(channelDeleteDelaySeconds, TimeUnit.SECONDS, success -> {
                         },
-                        failure -> LOGGER.warn("Ticket-Kanal {} konnte nicht gelöscht werden: {}", channel.getId(), failure.getMessage()));
+                        failure -> LOGGER.warn("Ticket channel {} could not be deleted: {}", channel.getId(), failure.getMessage()));
     }
 }

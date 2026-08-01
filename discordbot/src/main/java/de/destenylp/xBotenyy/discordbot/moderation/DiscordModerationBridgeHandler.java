@@ -56,7 +56,7 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
                 "Sync von Twitch: " + request.reason(), request.durationSeconds(),
                 () -> future.complete(new BridgeActionResult(true, "OK")),
                 failure -> {
-                    LOGGER.warn("Synchronisierte Aktion {} fuer {} fehlgeschlagen: {}", request.action(),
+                    LOGGER.warn("Synchronized action {} for {} failed: {}", request.action(),
                             request.targetUserId(), failure.getMessage());
                     future.complete(new BridgeActionResult(false, failure.getMessage()));
                 });
@@ -82,7 +82,7 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
             return new BridgeLinkConfirmResult(false, null, null, null, null, "Twitch-Account stimmt nicht mit der Anfrage ueberein.");
         }
         accountLinkRepository.save(pending.discordUserId(), request.twitchUserId(), request.twitchLogin());
-        LOGGER.info("Account-Verknuepfung bestaetigt: Discord {} <-> Twitch {}", pending.discordUserId(), request.twitchLogin());
+        LOGGER.info("Account link confirmed: Discord {} <-> Twitch {}", pending.discordUserId(), request.twitchLogin());
         return new BridgeLinkConfirmResult(true, pending.discordUserId(), pending.discordUsername(),
                 request.twitchUserId(), request.twitchLogin(), "Verknuepfung erfolgreich.");
     }

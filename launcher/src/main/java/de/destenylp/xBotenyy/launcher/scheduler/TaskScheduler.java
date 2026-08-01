@@ -57,7 +57,7 @@ public final class TaskScheduler {
         });
         tickFuture = executor.scheduleAtFixedRate(this::tick, DEFAULT_TICK_SECONDS, DEFAULT_TICK_SECONDS,
                 TimeUnit.SECONDS);
-        logger.info("TaskScheduler gestartet ({} gespeicherte Aufgaben geladen).", tasks.size());
+        logger.info("TaskScheduler started ({} saved tasks loaded).", tasks.size());
     }
 
     public void stop() {
@@ -70,7 +70,7 @@ public final class TaskScheduler {
         if (actionExecutor != null) {
             actionExecutor.shutdown();
         }
-        logger.info("TaskScheduler gestoppt.");
+        logger.info("TaskScheduler stopped.");
     }
 
     private void trackId(String id) {
@@ -166,13 +166,13 @@ public final class TaskScheduler {
     private void runTask(ScheduledTask task) {
         List<ManagedBot> targets = resolveTargets(task.getTarget());
         if (targets.isEmpty()) {
-            logger.warn("Geplante Aufgabe {} hat keine passenden Bots gefunden (Ziel={}).", task.getId(),
+            logger.warn("Scheduled task {} found no matching bots (target={}).", task.getId(),
                     task.getTarget());
             return;
         }
         long timeoutSeconds = task.getTimeoutSeconds() > 0 ? task.getTimeoutSeconds() : DEFAULT_TIMEOUT_SECONDS;
         for (ManagedBot bot : targets) {
-            logger.info("Fuehre geplante Aufgabe {} aus: {} {}", task.getId(), task.getAction(),
+            logger.info("Executing scheduled task {}: {} {}", task.getId(), task.getAction(),
                     bot.getDisplayName());
             switch (task.getAction()) {
                 case RESTART -> {

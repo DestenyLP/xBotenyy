@@ -35,9 +35,9 @@ public final class Database implements AutoCloseable {
             try {
                 connection = openConnection(databaseFile, SQLiteConfig.JournalMode.WAL);
             } catch (SQLException e) {
-                LOGGER.warn("Konnte SQLite im WAL-Modus nicht oeffnen ({}), falle auf DELETE-Journal zurueck. "
-                        + "Das deutet meist auf ein Dateisystem hin, das kein Shared-Memory-Mapping unterstuetzt "
-                        + "(z.B. Netzwerk-Storage bei manchen Hostern).", e.getMessage());
+                LOGGER.warn("Could not open SQLite in WAL mode ({}), falling back to DELETE journal mode. "
+                        + "This usually indicates a file system that does not support shared-memory mapping "
+                        + "(e.g. network storage with some hosting providers).", e.getMessage());
                 deleteQuietly(Path.of(databaseFile + "-wal"));
                 deleteQuietly(Path.of(databaseFile + "-shm"));
                 connection = openConnection(databaseFile, SQLiteConfig.JournalMode.DELETE);
@@ -45,7 +45,7 @@ public final class Database implements AutoCloseable {
 
             Database database = new Database(connection, databaseFile);
             SchemaMigrator.migrate(database, migrationsResourcePath);
-            LOGGER.info("SQLite Datenbank geoeffnet: {}", databaseFile.toAbsolutePath());
+            LOGGER.info("SQLite database opened: {}", databaseFile.toAbsolutePath());
             return database;
         } catch (IOException | SQLException e) {
             throw new IllegalStateException("Konnte SQLite Datenbank " + databaseFile + " nicht oeffnen", e);
@@ -56,7 +56,7 @@ public final class Database implements AutoCloseable {
         try {
             Files.deleteIfExists(file);
         } catch (IOException e) {
-            LOGGER.debug("Konnte {} nicht loeschen: {}", file, e.getMessage());
+            LOGGER.debug("Could not delete {}: {}", file, e.getMessage());
         }
     }
 
@@ -165,7 +165,7 @@ public final class Database implements AutoCloseable {
         try {
             connection.close();
         } catch (SQLException e) {
-            LOGGER.warn("Fehler beim Schliessen der Datenbank: {}", e.getMessage());
+            LOGGER.warn("Error closing the database: {}", e.getMessage());
         } finally {
             lock.unlock();
         }

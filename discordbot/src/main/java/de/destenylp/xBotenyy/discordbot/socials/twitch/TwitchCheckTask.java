@@ -39,14 +39,14 @@ public final class TwitchCheckTask implements Runnable {
             checkStreams();
         } catch (Exception e) {
             SocialsPollStatus.recordTwitchError(e.getMessage());
-            LOGGER.error("Fehler bei der Ueberpruefung der Twitch Streams: ", e);
+            LOGGER.error("Error while checking Twitch streams: ", e);
         }
     }
 
     private void checkStreams() {
         if (apiClient == null) {
             if (missingCredentialsWarned.compareAndSet(false, true)) {
-                LOGGER.warn("Twitch Anmeldedaten sind nicht konfiguriert, Twitch Ueberwachung wird uebersprungen.");
+                LOGGER.warn("Twitch credentials are not configured, Twitch monitoring is skipped.");
             }
             SocialsPollStatus.recordTwitchError("Twitch Anmeldedaten sind nicht konfiguriert.");
             return;
@@ -101,7 +101,7 @@ public final class TwitchCheckTask implements Runnable {
         }
         TextChannel channel = jda.getChannelById(TextChannel.class, account.getChannelId());
         if (channel == null) {
-            LOGGER.warn("Ankuendigungskanal {} fuer Social-Account {} in Guild {} existiert nicht mehr",
+            LOGGER.warn("Announcement channel {} for social account {} in guild {} no longer exists",
                     account.getChannelId(), account.getId(), guildId);
             return;
         }
@@ -109,9 +109,9 @@ public final class TwitchCheckTask implements Runnable {
         RenderedMessage message = SocialMessageFactory.buildTwitchMessage(account, stream, guild);
         MessageDispatcher.prepare(channel, message).ifPresent(action -> action.queue(
                 success -> BotMetrics.incrementTwitchStreamsAnnounced(),
-                failure -> LOGGER.warn("Konnte Twitch Ankuendigung fuer Account {} nicht senden: {}",
+                failure -> LOGGER.warn("Could not send Twitch announcement for account {}: {}",
                         account.getId(), failure.getMessage())));
-        LOGGER.info("Twitch Livestream fuer Account {} in Guild {} angekuendigt: {}", account.getId(), guildId, stream.id());
+        LOGGER.info("Twitch livestream for account {} announced in guild {}: {}", account.getId(), guildId, stream.id());
     }
 
     private record GuildAccount(String guildId, SocialAccount account) {

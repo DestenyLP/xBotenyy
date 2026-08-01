@@ -43,7 +43,7 @@ public abstract class AbstractBot {
                 logger.info("Heartbeat: heapUsedMb={} heapCommittedMb={} heapMaxMb={} threads={} {}",
                         usedMb, committedMb, maxMb, Thread.activeCount(), heartbeatSummary());
             } catch (Exception e) {
-                logger.error("Fehler beim Schreiben des Heartbeats: ", e);
+                logger.error("Error writing the heartbeat: ", e);
             }
         }, intervalMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
@@ -67,21 +67,21 @@ public abstract class AbstractBot {
                     }
                 }
                 if (total > 0) {
-                    logger.info("Datenbereinigung: {} aelter als {}h entfernt.", summary, retention.toHours());
+                    logger.info("Data cleanup: removed {} older than {}h.", summary, retention.toHours());
                 }
             } catch (Exception e) {
-                logger.error("Fehler bei der Datenbereinigung: ", e);
+                logger.error("Error during data cleanup: ", e);
             }
         }, initialDelayMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
 
     protected final void scheduleBackup(BackupSettings settings, BackupService service) {
         if (!settings.enabled()) {
-            logger.info("Automatische Datenbank-Backups sind deaktiviert (backup.enabled=false).");
+            logger.info("Automatic database backups are disabled (backup.enabled=false).");
             return;
         }
         service.start(settings.interval());
-        logger.info("Backup-Zeitplan gestartet: alle {}h, {} Kopien werden aufbewahrt.",
+        logger.info("Backup schedule started: every {}h, {} copies are kept.",
                 settings.interval().toHours(), settings.maxBackupsToKeep());
     }
 
@@ -99,14 +99,14 @@ public abstract class AbstractBot {
         if (!shuttingDown.compareAndSet(false, true)) {
             return;
         }
-        logger.info("Shutdown angefordert, beende Bot geordnet...");
+        logger.info("Shutdown requested, stopping bot gracefully...");
         scheduler.shutdownNow();
         try {
             onShutdown();
         } catch (Exception e) {
-            logger.error("Fehler beim Beenden des Bots: ", e);
+            logger.error("Error stopping the bot: ", e);
         }
-        logger.info("Bot wurde beendet.");
+        logger.info("Bot has been stopped.");
         shutdownLatch.countDown();
     }
 

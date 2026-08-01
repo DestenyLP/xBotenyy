@@ -136,7 +136,7 @@ public class TwitchAutomodAdapter {
         AutomodAction finalAction = engine.registerViolationAndEscalate(message.channelLogin(), message.userId(), verdict.action());
         int strikes = engine.getCurrentStrikes(message.channelLogin(), message.userId());
 
-        LOGGER.info("AutoMod: {} durch {} in Kanal {} (Aktion: {}, Strikes: {})",
+        LOGGER.info("AutoMod: {} by {} in channel {} (action: {}, strikes: {})",
                 verdict.ruleType(), message.userLogin(), message.channelLogin(), finalAction, strikes);
         eventLogService.record(message.channelLogin(), message.userId(), "AUTOMOD_" + verdict.ruleType(),
                 finalAction + " (Strikes: " + strikes + ") - " + verdict.reason());
@@ -146,7 +146,7 @@ public class TwitchAutomodAdapter {
         moderationExecutor.submit(() -> {
             String broadcasterId = resolveBroadcasterId(message.channelLogin());
             if (broadcasterId == null) {
-                LOGGER.warn("Konnte Broadcaster-ID fuer Kanal {} nicht aufloesen, Aktion wird uebersprungen.", message.channelLogin());
+                LOGGER.warn("Could not resolve broadcaster ID for channel {}, action skipped.", message.channelLogin());
                 return;
             }
 

@@ -73,7 +73,7 @@ public final class TwitchAppAccessTokenManager extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch App-Access-Token Anfrage");
             if (response.statusCode() != 200) {
-                LOGGER.warn("Twitch App-Access-Token konnte nicht abgerufen werden, Status {}: {}",
+                LOGGER.warn("Twitch app access token could not be retrieved, status {}: {}",
                         response.statusCode(), response.body());
                 return null;
             }
@@ -86,7 +86,7 @@ public final class TwitchAppAccessTokenManager extends AbstractHttpApiClient {
             expiresAt = Instant.now().plusSeconds(expiresIn);
             return token;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Abrufen des Twitch App-Access-Tokens: {}", e.getMessage());
+            LOGGER.warn("Error retrieving the Twitch app access token: {}", e.getMessage());
             return null;
         }
     }

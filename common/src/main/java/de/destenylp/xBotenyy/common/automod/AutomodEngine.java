@@ -168,9 +168,9 @@ public class AutomodEngine implements Prunable {
         aiExecutor.submit(() -> {
             Optional<GroqSafeguardClient.ModerationResult> result = moderationClient.moderate(content);
             if (result.isEmpty()) {
-                LOGGER.warn("Groq Content-Moderation lieferte kein Ergebnis fuer eine Nachricht (API-Fehler oder Timeout, siehe vorherige Logzeile)");
+                LOGGER.warn("Groq content moderation returned no result for a message (API error or timeout, see previous log line)");
             } else {
-                LOGGER.debug("Groq Content-Moderation Ergebnis: flagged={} topCategory={}",
+                LOGGER.debug("Groq content moderation result: flagged={} topCategory={}",
                         result.get().flagged(), result.get().topCategory());
             }
             Optional<AutomodVerdict> verdict = result

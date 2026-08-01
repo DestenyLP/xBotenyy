@@ -358,7 +358,7 @@ public class SocialsCommand extends AbstractGuildCommand {
                         sendPreview(event, platform, id, built);
                     })
                     .exceptionally(ex -> {
-                        LOGGER.warn("Fehler beim Abrufen echter YouTube-Daten fuer Test-Vorschau: {}", ex.getMessage());
+                        LOGGER.warn("Error fetching real YouTube data for test preview: {}", ex.getMessage());
                         event.getHook().sendMessage("Es ist ein Fehler beim Abrufen der echten Video-Daten aufgetreten.").queue();
                         return null;
                     });
@@ -387,7 +387,7 @@ public class SocialsCommand extends AbstractGuildCommand {
                         sendPreview(event, platform, id, built);
                     })
                     .exceptionally(ex -> {
-                        LOGGER.warn("Fehler beim Abrufen echter Twitch-Daten fuer Test-Vorschau: {}", ex.getMessage());
+                        LOGGER.warn("Error fetching real Twitch data for test preview: {}", ex.getMessage());
                         event.getHook().sendMessage("Es ist ein Fehler beim Abrufen der echten Stream-Daten aufgetreten.").queue();
                         return null;
                     });

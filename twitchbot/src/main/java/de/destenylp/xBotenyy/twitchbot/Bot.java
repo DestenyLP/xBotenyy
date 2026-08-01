@@ -84,7 +84,7 @@ public final class Bot extends AbstractBot {
     public void start() {
         channels = properties.getChatChannels();
         if (channels.isEmpty()) {
-            LOGGER.error("Keine Twitch-Kanäle konfiguriert (twitch.chat.channels in twitchbot.properties). Beende.");
+            LOGGER.error("No Twitch channels configured (twitch.chat.channels in twitchbot.properties). Shutting down.");
             return;
         }
 
@@ -119,11 +119,11 @@ public final class Bot extends AbstractBot {
                 .orElse(config::twitchModeratorAccessToken);
 
         if (tokenManager.isPresent()) {
-            LOGGER.info("Twitch-Refresh-Token gefunden, Access-Token wird automatisch erneuert.");
+            LOGGER.info("Twitch refresh token found, access token will be refreshed automatically.");
             tokenManager.get().refreshNow();
         } else {
-            LOGGER.warn("Kein TWITCH_BOT_REFRESH_TOKEN gesetzt - Access-Token laeuft alle paar Stunden ab "
-                    + "und muss dann manuell erneuert werden. Siehe README fuer automatisches Setup.");
+            LOGGER.warn("No TWITCH_BOT_REFRESH_TOKEN set - the access token expires every few hours "
+                    + "and must then be renewed manually. See the README for automatic setup.");
         }
 
         TwitchModerationApiClient moderationApiClient = new TwitchModerationApiClient(
@@ -135,14 +135,14 @@ public final class Bot extends AbstractBot {
                 config.envFilePath(), "TWITCH_BROADCASTER_REFRESH_TOKEN");
 
         if (broadcasterTokenManager.isPresent()) {
-            LOGGER.info("Twitch-Broadcaster-Refresh-Token gefunden, Kanalinfo-Befehle sind verfuegbar.");
+            LOGGER.info("Twitch broadcaster refresh token found, channel info commands are available.");
             broadcasterTokenManager.get().refreshNow();
             moderationApiClient.setBroadcasterAccessTokenSupplier(broadcasterTokenManager.get()::getAccessToken);
         } else if (config.hasTwitchBroadcasterAccessToken()) {
             moderationApiClient.setBroadcasterAccessTokenSupplier(config::twitchBroadcasterAccessToken);
         } else {
-            LOGGER.warn("Kein TWITCH_BROADCASTER_REFRESH_TOKEN gesetzt - !title und !game sind deaktiviert. "
-                    + "Siehe README fuer das Setup des Broadcaster-Tokens.");
+            LOGGER.warn("No TWITCH_BROADCASTER_REFRESH_TOKEN set - !title and !game are disabled. "
+                    + "See the README for setting up the broadcaster token.");
         }
 
         moderatorUserId = moderationApiClient.resolveUserId(config.twitchChatBotUsername())
@@ -197,7 +197,7 @@ public final class Bot extends AbstractBot {
                     commandManager.handleMessage(message);
                 }
             } catch (Exception e) {
-                LOGGER.error("Unerwarteter Fehler bei der Verarbeitung einer Twitch-Nachricht in Kanal {}: ",
+                LOGGER.error("Unexpected error while processing a Twitch message in channel {}: ",
                         message.channelLogin(), e);
             }
         });
@@ -208,7 +208,7 @@ public final class Bot extends AbstractBot {
                 discordLogService.logNativeAutomodHold(held.channelLogin(), held.userLogin(), held.content(),
                         held.category(), held.level());
             } catch (Exception e) {
-                LOGGER.error("Unerwarteter Fehler bei der Verarbeitung eines Twitch-AutoMod-Holds in Kanal {}: ",
+                LOGGER.error("Unexpected error while processing a Twitch AutoMod hold in channel {}: ",
                         held.channelLogin(), e);
             }
         });
@@ -219,11 +219,11 @@ public final class Bot extends AbstractBot {
                 discordLogService.logNativeAutomodUpdate(update.channelLogin(), update.userLogin(), update.status(),
                         update.moderatorLogin());
             } catch (Exception e) {
-                LOGGER.error("Unerwarteter Fehler bei der Verarbeitung eines Twitch-AutoMod-Updates in Kanal {}: ",
+                LOGGER.error("Unexpected error while processing a Twitch AutoMod update in channel {}: ",
                         update.channelLogin(), e);
             }
         });
-        chatClient.onConnected(() -> LOGGER.info("Twitch-Bot ist in {} Kanälen aktiv: {}", channels.size(), channels));
+        chatClient.onConnected(() -> LOGGER.info("Twitch bot is active in {} channels: {}", channels.size(), channels));
 
         startDataRetentionTask();
         startHeartbeat();
@@ -233,7 +233,7 @@ public final class Bot extends AbstractBot {
 
         registerShutdownHook();
 
-        LOGGER.info("Starte Twitch-Bot als {} fuer Kanäle: {}", config.twitchChatBotUsername(), channels);
+        LOGGER.info("Starting Twitch bot as {} for channels: {}", config.twitchChatBotUsername(), channels);
         chatClient.connect();
     }
 
@@ -264,7 +264,7 @@ public final class Bot extends AbstractBot {
         commandManager.register(new VoteCommand(pollManager));
         commandManager.register(new LinkCommand(pendingLinkVerificationRepository));
         commandManager.register(new VerifyCommand(accountLinkRepository, moderationBridgeClient, properties::getBridgeSettings));
-        LOGGER.info("{} eingebaute Befehle registriert.", commandManager.getRegistry().size());
+        LOGGER.info("{} built-in commands registered.", commandManager.getRegistry().size());
     }
 
     private void recordActivityQuietly(String channelLogin) {
@@ -272,7 +272,7 @@ public final class Bot extends AbstractBot {
             channelRepository.recordActivity(channelLogin);
             broadcastScheduler.recordActivity(channelLogin);
         } catch (Exception e) {
-            LOGGER.warn("Konnte Aktivitaet fuer Kanal {} nicht speichern (Watchtime/Broadcast-Tracking betroffen): {}",
+            LOGGER.warn("Could not save activity for channel {} (watchtime/broadcast tracking affected): {}",
                     channelLogin, e.getMessage());
         }
     }
@@ -304,7 +304,7 @@ public final class Bot extends AbstractBot {
                     }
                     Metrics.increment("twitch.watchtime_polls");
                 } catch (Exception e) {
-                    LOGGER.warn("Fehler beim Erfassen der Watchtime fuer {}: {}", channelLogin, e.getMessage());
+                    LOGGER.warn("Error recording watchtime for {}: {}", channelLogin, e.getMessage());
                 }
             }
         }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
@@ -317,7 +317,7 @@ public final class Bot extends AbstractBot {
                 try {
                     roleSyncService.reconcile(channelLogin, moderationApiClient);
                 } catch (Exception e) {
-                    LOGGER.warn("Fehler beim Rollen-Abgleich fuer {}: {}", channelLogin, e.getMessage());
+                    LOGGER.warn("Error during role sync for {}: {}", channelLogin, e.getMessage());
                 }
             }
         }, intervalMinutes, intervalMinutes, TimeUnit.MINUTES);

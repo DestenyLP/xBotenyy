@@ -26,15 +26,15 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onSessionDisconnect(SessionDisconnectEvent event) {
-        LOGGER.warn("Discord-Verbindung getrennt (Code: {}, Grund: {}, durch Server geschlossen: {})",
-                event.getCloseCode() != null ? event.getCloseCode().getCode() : "unbekannt",
-                event.getCloseCode() != null ? event.getCloseCode().getMeaning() : "unbekannt",
+        LOGGER.warn("Discord connection lost (code: {}, reason: {}, closed by server: {})",
+                event.getCloseCode() != null ? event.getCloseCode().getCode() : "unknown",
+                event.getCloseCode() != null ? event.getCloseCode().getMeaning() : "unknown",
                 event.isClosedByServer());
     }
 
     @Override
     public void onSessionResume(SessionResumeEvent event) {
-        LOGGER.info("Discord-Verbindung wiederhergestellt.");
+        LOGGER.info("Discord connection restored.");
     }
 
     @Override

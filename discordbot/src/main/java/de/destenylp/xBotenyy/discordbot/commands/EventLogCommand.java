@@ -105,7 +105,7 @@ public class EventLogCommand extends AbstractGuildCommand {
         boolean enabled = event.getOption("enabled").getAsBoolean();
         LogEventType type = typeOpt.get();
         service.setEventEnabled(guild.getId(), type, enabled);
-        event.reply(type.getEmoji() + " **" + type.getLabel() + "** wurde " + (enabled ? "aktiviert" : "deaktiviert") + ".")
+        event.reply(type.getEmoji() + " **" + type.getLabel() + "** wurde " + (enabled ? "enabled" : "disabled") + ".")
                 .setEphemeral(true).queue();
         LOGGER.info("Event log type {} set to {} for guild {}", type, enabled, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "EVENTLOG_TOGGLE", "type=" + type.getKey() + " enabled=" + enabled);

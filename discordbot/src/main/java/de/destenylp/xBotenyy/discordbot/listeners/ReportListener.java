@@ -41,7 +41,7 @@ public class ReportListener extends ListenerAdapter {
         try {
             handleStringSelectInteraction(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Report-Select-Interaktion {} in Guild {}: ",
+            LOGGER.error("Unexpected error in report select interaction {} in guild {}: ",
                     event.getComponentId(), event.getGuild() != null ? event.getGuild().getId() : "unknown", e);
             replyGenericError(event);
         }
@@ -99,7 +99,7 @@ public class ReportListener extends ListenerAdapter {
         try {
             handleModalInteraction(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Report-Modal-Interaktion {} in Guild {}: ",
+            LOGGER.error("Unexpected error in report modal interaction {} in guild {}: ",
                     event.getModalId(), event.getGuild() != null ? event.getGuild().getId() : "unknown", e);
             replyGenericError(event);
         }
@@ -178,7 +178,7 @@ public class ReportListener extends ListenerAdapter {
         try {
             handleReportButtonInteraction(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Report-Button-Interaktion {} in Guild {}: ",
+            LOGGER.error("Unexpected error in report button interaction {} in guild {}: ",
                     event.getComponentId(), event.getGuild() != null ? event.getGuild().getId() : "unknown", e);
             replyGenericError(event);
         }

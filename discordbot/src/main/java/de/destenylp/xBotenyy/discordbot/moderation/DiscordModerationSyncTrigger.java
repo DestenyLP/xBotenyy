@@ -41,8 +41,8 @@ public class DiscordModerationSyncTrigger {
                 durationSeconds, sourceModeratorName);
         bridgeClient.sendAction(settings, request).ifPresentOrElse(result -> {
             if (!result.success()) {
-                LOGGER.warn("Sync nach Twitch fuer {} fehlgeschlagen: {}", link.twitchLogin(), result.message());
+                LOGGER.warn("Sync to Twitch for {} failed: {}", link.twitchLogin(), result.message());
             }
-        }, () -> LOGGER.warn("Twitch-Bridge unter {} nicht erreichbar, Sync uebersprungen.", settings.peerUrl()));
+        }, () -> LOGGER.warn("Twitch bridge at {} unreachable, sync skipped.", settings.peerUrl()));
     }
 }

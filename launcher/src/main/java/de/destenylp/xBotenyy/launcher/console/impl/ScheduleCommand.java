@@ -39,7 +39,7 @@ public final class ScheduleCommand implements ConsoleCommand {
 
     @Override
     public String description() {
-        return "Verwaltet geplante Aufgaben (Restart/Stop/Start) fuer die Bots, z.B. taegliche Neustarts.";
+        return "Manages scheduled tasks (restart/stop/start) for the bots, e.g. daily restarts.";
     }
 
     @Override
@@ -61,10 +61,10 @@ public final class ScheduleCommand implements ConsoleCommand {
     }
 
     private void printUsage(CommandContext context) {
-        context.print("Verwendung:");
-        context.print("  schedule add <discord|twitch|all> <restart|stop|start> interval <wert>  [timeoutSekunden]");
-        context.print("      wert Beispiel: 30m, 6h, 1d");
-        context.print("  schedule add <discord|twitch|all> <restart|stop|start> daily <HH:mm>     [timeoutSekunden]");
+        context.print("Usage:");
+        context.print("  schedule add <discord|twitch|all> <restart|stop|start> interval <value>  [timeoutSeconds]");
+        context.print("      value example: 30m, 6h, 1d");
+        context.print("  schedule add <discord|twitch|all> <restart|stop|start> daily <HH:mm>     [timeoutSeconds]");
         context.print("  schedule list");
         context.print("  schedule remove <id>");
         context.print("  schedule enable <id>");
@@ -73,12 +73,12 @@ public final class ScheduleCommand implements ConsoleCommand {
 
     private void handleAdd(String[] args, CommandContext context) {
         if (args.length < 4) {
-            throw new IllegalArgumentException("Verwendung: " + usage());
+            throw new IllegalArgumentException("Usage: " + usage());
         }
         String target = args[0];
         ScheduledAction action = ScheduledAction.parse(args[1])
-                .orElseThrow(() -> new IllegalArgumentException("Unbekannte Aktion '" + args[1]
-                        + "'. Gueltige Werte: restart, stop, start."));
+                .orElseThrow(() -> new IllegalArgumentException("Unknown action '" + args[1]
+                        + "'. Valid values: restart, stop, start."));
         String scheduleType = args[2].toLowerCase(Locale.ROOT);
         String value = args[3];
         long timeoutSeconds = args.length >= 5 ? parseTimeout(args[4]) : 30;
@@ -92,45 +92,45 @@ public final class ScheduleCommand implements ConsoleCommand {
             LocalTime dailyTime = parseDailyTime(value);
             task = scheduler.addDaily(target, action, dailyTime, timeoutSeconds);
         } else {
-            throw new IllegalArgumentException("Unbekannter Zeitplan-Typ '" + scheduleType
-                    + "'. Gueltige Werte: interval, daily.");
+            throw new IllegalArgumentException("Unknown schedule type '" + scheduleType
+                    + "'. Valid values: interval, daily.");
         }
-        context.print("Geplante Aufgabe angelegt: " + task);
-        context.print("Naechste Ausfuehrung: " + TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(task.getNextRunMillis())));
+        context.print("Scheduled task created: " + task);
+        context.print("Next run: " + TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(task.getNextRunMillis())));
     }
 
     private void handleList(CommandContext context) {
         List<ScheduledTask> tasks = context.scheduler().all();
         if (tasks.isEmpty()) {
-            context.print("Keine geplanten Aufgaben vorhanden.");
+            context.print("No scheduled tasks exist.");
             return;
         }
-        context.print("Geplante Aufgaben:");
+        context.print("Scheduled tasks:");
         for (ScheduledTask task : tasks) {
             String next = TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(task.getNextRunMillis()));
-            String last = task.getLastRunMillis() < 0 ? "nie"
+            String last = task.getLastRunMillis() < 0 ? "never"
                     : TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(task.getLastRunMillis()));
-            context.printf("  %s  Ziel=%-8s Aktion=%-8s Naechste=%s Letzte=%s", task, task.getTarget(),
+            context.printf("  %s  Target=%-8s Action=%-8s Next=%s Last=%s", task, task.getTarget(),
                     task.getAction(), next, last);
         }
     }
 
     private void handleRemove(String[] args, CommandContext context) {
         if (args.length != 1) {
-            throw new IllegalArgumentException("Verwendung: schedule remove <id>");
+            throw new IllegalArgumentException("Usage: schedule remove <id>");
         }
         boolean removed = context.scheduler().remove(args[0]);
-        context.print(removed ? "Aufgabe " + args[0] + " entfernt." : "Keine Aufgabe mit ID '" + args[0] + "' gefunden.");
+        context.print(removed ? "Task " + args[0] + " removed." : "No task with ID '" + args[0] + "' found.");
     }
 
     private void handleToggle(String[] args, CommandContext context, boolean enabled) {
         if (args.length != 1) {
-            throw new IllegalArgumentException("Verwendung: schedule " + (enabled ? "enable" : "disable") + " <id>");
+            throw new IllegalArgumentException("Usage: schedule " + (enabled ? "enable" : "disable") + " <id>");
         }
         boolean found = context.scheduler().setEnabled(args[0], enabled);
         context.print(found
-                ? "Aufgabe " + args[0] + (enabled ? " aktiviert." : " deaktiviert.")
-                : "Keine Aufgabe mit ID '" + args[0] + "' gefunden.");
+                ? "Task " + args[0] + (enabled ? " enabled." : " disabled.")
+                : "No task with ID '" + args[0] + "' found.");
     }
 
     private long parseTimeout(String raw) {
@@ -141,7 +141,7 @@ public final class ScheduleCommand implements ConsoleCommand {
             }
             return value;
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("timeoutSekunden muss eine positive Ganzzahl sein, war: " + raw);
+            throw new IllegalArgumentException("timeoutSeconds must be a positive integer, was: " + raw);
         }
     }
 
@@ -149,7 +149,7 @@ public final class ScheduleCommand implements ConsoleCommand {
         try {
             return LocalTime.parse(raw.trim(), DAILY_TIME_FORMAT);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Ungueltige Uhrzeit '" + raw + "'. Format: HH:mm, z.B. 04:30.");
+            throw new IllegalArgumentException("Invalid time '" + raw + "'. Format: HH:mm, e.g. 04:30.");
         }
     }
 }

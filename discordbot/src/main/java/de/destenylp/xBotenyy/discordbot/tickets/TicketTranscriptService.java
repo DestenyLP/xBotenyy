@@ -37,7 +37,7 @@ public final class TicketTranscriptService {
         return channel.getIterableHistory().takeAsync(maxMessages)
                 .thenApply(messages -> writeTranscript(channel, ticket, messages))
                 .exceptionally(failure -> {
-                    LOGGER.error("Transcript für Ticket {} konnte nicht erstellt werden: {}", ticket.getId(), failure.getMessage());
+                    LOGGER.error("Transcript for ticket {} could not be created: {}", ticket.getId(), failure.getMessage());
                     return null;
                 });
     }
@@ -70,7 +70,7 @@ public final class TicketTranscriptService {
             Files.createDirectories(transcriptDir);
             Files.writeString(targetPath, sb.toString(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            LOGGER.error("Transcript-Datei {} konnte nicht gespeichert werden: {}", targetPath, e.getMessage());
+            LOGGER.error("Transcript file {} could not be saved: {}", targetPath, e.getMessage());
         }
 
         return new TranscriptFile(fileName, sb.toString());

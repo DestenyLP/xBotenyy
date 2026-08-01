@@ -41,7 +41,7 @@ public class AccountLinkListener extends ListenerAdapter {
 
             event.replyModal(modal).queue();
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler beim Oeffnen des Verknuepfungs-Modals: ", e);
+            LOGGER.error("Unexpected error while opening the account-linking modal: ", e);
             replyGenericError(event);
         }
     }
@@ -65,7 +65,7 @@ public class AccountLinkListener extends ListenerAdapter {
                 AuditLog.record(event.getGuild().getId(), event.getUser().getId(), "ACCOUNT_LINK_INITIATE_PANEL", "twitch=" + login);
             }
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Verknuepfungs-Modal-Interaktion: ", e);
+            LOGGER.error("Unexpected error in account-linking modal interaction: ", e);
             replyGenericError(event);
         }
     }

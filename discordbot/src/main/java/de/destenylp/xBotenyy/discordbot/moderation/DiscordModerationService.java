@@ -73,7 +73,7 @@ public class DiscordModerationService {
             Member member = guild.getMemberById(targetId);
             if (role != null && member != null) {
                 guild.addRoleToMember(member, role).reason(reason).queue(unused -> {
-                }, failure -> LOGGER.warn("Konnte Ban-Rolle in Guild {} nicht setzen: {}", guild.getId(), failure.getMessage()));
+                }, failure -> LOGGER.warn("Could not set ban role in guild {}: {}", guild.getId(), failure.getMessage()));
             }
         }
         guild.ban(target, 0, java.util.concurrent.TimeUnit.SECONDS).reason(reason).queue(unused -> {
@@ -91,7 +91,7 @@ public class DiscordModerationService {
                 Role role = guild.getRoleById(banRoleId);
                 if (role != null) {
                     guild.removeRoleFromMember(member, role).reason(reason).queue(unused2 -> {
-                    }, failure -> LOGGER.warn("Konnte Ban-Rolle in Guild {} nicht entfernen: {}", guild.getId(), failure.getMessage()));
+                    }, failure -> LOGGER.warn("Could not remove ban role in guild {}: {}", guild.getId(), failure.getMessage()));
                 }
             }
             caseRepository.deactivate(ModerationPlatform.DISCORD, guild.getId(), targetId, ModerationAction.BAN);
@@ -178,10 +178,10 @@ public class DiscordModerationService {
         boolean hasRole = member.getRoles().contains(role);
         if (shouldHave && !hasRole) {
             guild.addRoleToMember(member, role).reason("Twitch-Rollen-Sync").queue(unused -> {
-            }, failure -> LOGGER.warn("Konnte Sync-Rolle {} in Guild {} nicht setzen: {}", roleId, guild.getId(), failure.getMessage()));
+            }, failure -> LOGGER.warn("Could not set sync role {} in guild {}: {}", roleId, guild.getId(), failure.getMessage()));
         } else if (!shouldHave && hasRole) {
             guild.removeRoleFromMember(member, role).reason("Twitch-Rollen-Sync").queue(unused -> {
-            }, failure -> LOGGER.warn("Konnte Sync-Rolle {} in Guild {} nicht entfernen: {}", roleId, guild.getId(), failure.getMessage()));
+            }, failure -> LOGGER.warn("Could not remove sync role {} in guild {}: {}", roleId, guild.getId(), failure.getMessage()));
         }
     }
 
@@ -195,10 +195,10 @@ public class DiscordModerationService {
         }
         if (add) {
             guild.addRoleToMember(target, role).reason(reason).queue(unused -> {
-            }, failure -> LOGGER.warn("Konnte Rolle {} in Guild {} nicht setzen: {}", roleId, guild.getId(), failure.getMessage()));
+            }, failure -> LOGGER.warn("Could not set role {} in guild {}: {}", roleId, guild.getId(), failure.getMessage()));
         } else {
             guild.removeRoleFromMember(target, role).reason(reason).queue(unused -> {
-            }, failure -> LOGGER.warn("Konnte Rolle {} in Guild {} nicht entfernen: {}", roleId, guild.getId(), failure.getMessage()));
+            }, failure -> LOGGER.warn("Could not remove role {} in guild {}: {}", roleId, guild.getId(), failure.getMessage()));
         }
     }
 

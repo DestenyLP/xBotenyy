@@ -43,8 +43,8 @@ public final class ModerationBridgeClient extends AbstractHttpApiClient {
     private Optional<String> post(BridgeSettings settings, String path, String jsonBody) {
         String url = settings.peerUrl() + path;
         if (settings.tlsEnabled() && !url.toLowerCase().startsWith("https://")) {
-            LOGGER.warn("bridge.tls.enabled=true, aber bridge.peer.url '{}' beginnt nicht mit https:// - "
-                    + "Anfrage wird abgebrochen, um ein versehentliches Klartext-Downgrade zu verhindern.", settings.peerUrl());
+            LOGGER.warn("bridge.tls.enabled=true, but bridge.peer.url '{}' does not start with https:// - "
+                    + "Request is being aborted to prevent an accidental plaintext downgrade.", settings.peerUrl());
             return Optional.empty();
         }
         try {
@@ -57,12 +57,12 @@ public final class ModerationBridgeClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(client, request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Moderation-Bridge-Aufruf");
             if (response.statusCode() >= 300) {
-                LOGGER.warn("Moderation-Bridge antwortete mit Status {}: {}", response.statusCode(), response.body());
+                LOGGER.warn("Moderation bridge responded with status {}: {}", response.statusCode(), response.body());
                 return Optional.empty();
             }
             return Optional.of(response.body());
         } catch (Exception e) {
-            LOGGER.warn("Moderation-Bridge unter {} nicht erreichbar: {}", url, e.getMessage());
+            LOGGER.warn("Moderation bridge at {} unreachable: {}", url, e.getMessage());
             return Optional.empty();
         }
     }

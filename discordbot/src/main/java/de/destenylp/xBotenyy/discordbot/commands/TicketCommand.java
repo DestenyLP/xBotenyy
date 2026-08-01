@@ -372,7 +372,7 @@ public class TicketCommand extends AbstractGuildCommand {
         channel.editMessageEmbedsById(ticket.getControlMessageId(), TicketEmbedFactory.buildTicketEmbed(ticket))
                 .setComponents(TicketEmbedFactory.buildTicketComponents(ticket))
                 .queue(success -> {
-                }, failure -> LOGGER.warn("Konnte Ticket-Nachricht {} nicht aktualisieren: {}",
+                }, failure -> LOGGER.warn("Could not update ticket message {}: {}",
                         ticket.getControlMessageId(), failure.getMessage()));
     }
 }

@@ -122,12 +122,12 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         String normalizedChannel = channelLogin.toLowerCase(Locale.ROOT);
         Optional<String> broadcasterId = resolveBroadcasterId(normalizedChannel);
         if (broadcasterId.isEmpty()) {
-            LOGGER.warn("Konnte Broadcaster-ID fuer #{} nicht aufloesen, Nachricht wird nicht gesendet.", normalizedChannel);
+            LOGGER.warn("Could not resolve broadcaster ID for #{}, message will not be sent.", normalizedChannel);
             return;
         }
         String token = appAccessTokenManager.getAccessToken();
         if (token == null) {
-            LOGGER.warn("Kein Twitch App-Access-Token verfuegbar, Nachricht wird nicht gesendet: {}", message);
+            LOGGER.warn("No Twitch app access token available, message will not be sent: {}", message);
             return;
         }
 
@@ -148,13 +148,13 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Chat-Nachricht an #" + normalizedChannel);
             if (response.statusCode() != 200) {
-                LOGGER.warn("Konnte Nachricht nicht an #{} senden (Status {}): {}",
+                LOGGER.warn("Could not send message to #{} (status {}): {}",
                         normalizedChannel, response.statusCode(), response.body());
                 return;
             }
             logDropReasonIfAny(normalizedChannel, response.body());
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Senden der Twitch-Nachricht an #{}: {}", normalizedChannel, e.getMessage());
+            LOGGER.warn("Error sending the Twitch message to #{}: {}", normalizedChannel, e.getMessage());
         }
     }
 
@@ -166,8 +166,8 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         JsonObject result = data.get(0).getAsJsonObject();
         if (result.has("is_sent") && !result.get("is_sent").getAsBoolean()) {
             JsonObject dropReason = result.getAsJsonObject("drop_reason");
-            LOGGER.warn("Twitch hat die Nachricht an #{} verworfen: {}", channelLogin,
-                    dropReason != null ? JsonUtil.optString(dropReason, "message", "unbekannt") : "unbekannt");
+            LOGGER.warn("Twitch dropped the message to #{}: {}", channelLogin,
+                    dropReason != null ? JsonUtil.optString(dropReason, "message", "unknown") : "unknown");
         }
     }
 
@@ -182,11 +182,11 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
     }
 
     private void openWebSocket(URI uri, WebSocket previousSocket) {
-        LOGGER.info("Verbinde mit Twitch-EventSub ...");
+        LOGGER.info("Connecting to Twitch EventSub ...");
         wsHttpClient.newWebSocketBuilder().buildAsync(uri, new EventSubListener(previousSocket))
                 .whenComplete((socket, error) -> {
                     if (error != null) {
-                        LOGGER.warn("Verbindung zu Twitch-EventSub fehlgeschlagen: {}", error.getMessage());
+                        LOGGER.warn("Connection to Twitch EventSub failed: {}", error.getMessage());
                         scheduleReconnect();
                     }
                 });
@@ -202,7 +202,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         long delay = currentReconnectDelaySeconds;
         currentReconnectDelaySeconds = Math.min(currentReconnectDelaySeconds * 2, maxReconnectDelaySeconds);
         sessionId = null;
-        LOGGER.info("Versuche in {}s erneut, mit Twitch-EventSub zu verbinden ...", delay);
+        LOGGER.info("Retrying connection to Twitch EventSub in {}s ...", delay);
         scheduler.schedule(() -> {
             reconnectPending.set(false);
             openWebSocket(EVENTSUB_WEBSOCKET, null);
@@ -221,7 +221,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
             }
             Instant deadline = lastInboundAt.plusSeconds(intervalSeconds + 5);
             if (Instant.now().isAfter(deadline)) {
-                LOGGER.warn("Keine Twitch-EventSub-Nachrichten seit {}s empfangen, erzwinge Reconnect.", intervalSeconds + 5);
+                LOGGER.warn("No Twitch EventSub messages received for {}s, forcing reconnect.", intervalSeconds + 5);
                 WebSocket socket = webSocket;
                 if (socket != null) {
                     socket.sendClose(WebSocket.NORMAL_CLOSURE, "keepalive-timeout");
@@ -237,7 +237,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         try {
             root = JsonParser.parseString(raw).getAsJsonObject();
         } catch (Exception e) {
-            LOGGER.warn("Konnte Twitch-EventSub-Nachricht nicht parsen: {}", e.getMessage());
+            LOGGER.warn("Could not parse Twitch EventSub message: {}", e.getMessage());
             return;
         }
         JsonObject metadata = root.getAsJsonObject("metadata");
@@ -256,14 +256,14 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
             }
             case "session_reconnect" -> handleReconnect(socket, payload);
             case "revocation" -> handleRevocation(payload);
-            default -> LOGGER.debug("Unbehandelte Twitch-EventSub-Nachricht: {}", messageType);
+            default -> LOGGER.debug("Unhandled Twitch EventSub message: {}", messageType);
         }
     }
 
     private void handleWelcome(WebSocket socket, JsonObject payload, WebSocket previousSocket) {
         JsonObject session = payload != null ? payload.getAsJsonObject("session") : null;
         if (session == null) {
-            LOGGER.warn("Twitch-EventSub-Willkommensnachricht ohne Session-Daten erhalten.");
+            LOGGER.warn("Received Twitch EventSub welcome message without session data.");
             return;
         }
         String newSessionId = JsonUtil.optString(session, "id");
@@ -278,12 +278,12 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         this.sessionId = newSessionId;
 
         if (previousSocket != null) {
-            LOGGER.info("Twitch-EventSub-Reconnect abgeschlossen.");
+            LOGGER.info("Twitch EventSub reconnect completed.");
             previousSocket.sendClose(WebSocket.NORMAL_CLOSURE, "reconnect");
             return;
         }
 
-        LOGGER.info("Twitch-EventSub-Session aufgebaut, richte Chat-Abos ein ...");
+        LOGGER.info("Twitch EventSub session established, setting up chat subscriptions ...");
         for (String channel : channels) {
             scheduler.execute(() -> subscribeToChannel(channel));
         }
@@ -294,18 +294,18 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         JsonObject session = payload != null ? payload.getAsJsonObject("session") : null;
         String reconnectUrl = session != null ? JsonUtil.optString(session, "reconnect_url") : null;
         if (reconnectUrl == null) {
-            LOGGER.warn("Twitch forderte Reconnect ohne reconnect_url an, baue neue Verbindung auf.");
+            LOGGER.warn("Twitch requested a reconnect without a reconnect_url, establishing a new connection.");
             openWebSocket(EVENTSUB_WEBSOCKET, socket);
             return;
         }
-        LOGGER.info("Twitch fordert Reconnect an, baue neue Verbindung auf.");
+        LOGGER.info("Twitch is requesting a reconnect, establishing a new connection.");
         openWebSocket(URI.create(reconnectUrl), socket);
     }
 
     private void handleRevocation(JsonObject payload) {
         JsonObject subscription = payload != null ? payload.getAsJsonObject("subscription") : null;
-        String status = subscription != null ? JsonUtil.optString(subscription, "status", "unbekannt") : "unbekannt";
-        LOGGER.warn("Twitch hat ein EventSub-Chat-Abo widerrufen (Status: {}).", status);
+        String status = subscription != null ? JsonUtil.optString(subscription, "status", "unknown") : "unknown";
+        LOGGER.warn("Twitch revoked an EventSub chat subscription (status: {}).", status);
     }
 
     private void handleNotification(JsonObject payload) {
@@ -371,9 +371,9 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         String userId = JsonUtil.optString(event, "user_id");
         String userLogin = JsonUtil.optString(event, "user_login");
         String content = JsonUtil.optString(event, "message", "");
-        String category = JsonUtil.optString(event, "category", "unbekannt");
+        String category = JsonUtil.optString(event, "category", "unknown");
         String level = event.has("level") && !event.get("level").isJsonNull()
-                ? String.valueOf(event.get("level").getAsInt()) : "unbekannt";
+                ? String.valueOf(event.get("level").getAsInt()) : "unknown";
         onAutomodHeld.accept(new TwitchAutomodHeldMessage(channelLogin, messageId, userId, userLogin, content, category, level));
     }
 
@@ -382,7 +382,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         String messageId = JsonUtil.optString(event, "message_id");
         String userId = JsonUtil.optString(event, "user_id");
         String userLogin = JsonUtil.optString(event, "user_login");
-        String status = JsonUtil.optString(event, "status", "unbekannt");
+        String status = JsonUtil.optString(event, "status", "unknown");
         String moderatorLogin = JsonUtil.optString(event, "moderator_user_login");
         onAutomodUpdate.accept(new TwitchAutomodUpdateMessage(channelLogin, messageId, userId, userLogin, status, moderatorLogin));
     }
@@ -390,7 +390,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
     private void subscribeToChannel(String channelLogin) {
         Optional<String> broadcasterId = resolveBroadcasterId(channelLogin);
         if (broadcasterId.isEmpty()) {
-            LOGGER.warn("Konnte Broadcaster-ID fuer Kanal {} nicht aufloesen, Chat-Abo wird uebersprungen.", channelLogin);
+            LOGGER.warn("Could not resolve broadcaster ID for channel {}, chat subscription skipped.", channelLogin);
             return;
         }
 
@@ -409,12 +409,12 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
     private void createEventSubSubscription(String type, String version, JsonObject condition, String channelLogin) {
         String currentSessionId = sessionId;
         if (currentSessionId == null) {
-            LOGGER.warn("Keine aktive Twitch-EventSub-Session, {}-Abo fuer #{} wird uebersprungen.", type, channelLogin);
+            LOGGER.warn("No active Twitch EventSub session, {} subscription for #{} skipped.", type, channelLogin);
             return;
         }
         String token = userAccessTokenSupplier.get();
         if (token == null || token.isBlank()) {
-            LOGGER.warn("Kein Twitch User-Access-Token verfuegbar, {}-Abo fuer #{} wird uebersprungen.", type, channelLogin);
+            LOGGER.warn("No Twitch user access token available, {} subscription for #{} skipped.", type, channelLogin);
             return;
         }
 
@@ -439,13 +439,13 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch EventSub-Abo (" + type + ") fuer #" + channelLogin);
             if (response.statusCode() != 202) {
-                LOGGER.warn("Konnte Twitch-{}-Abo fuer #{} nicht anlegen (Status {}): {}",
+                LOGGER.warn("Could not create Twitch {} subscription for #{} (status {}): {}",
                         type, channelLogin, response.statusCode(), response.body());
                 return;
             }
-            LOGGER.info("Twitch-{}-Abo fuer #{} eingerichtet.", type, channelLogin);
+            LOGGER.info("Twitch {} subscription for #{} set up.", type, channelLogin);
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Anlegen des Twitch-{}-Abos fuer #{}: {}", type, channelLogin, e.getMessage());
+            LOGGER.warn("Error creating the Twitch {} subscription for #{}: {}", type, channelLogin, e.getMessage());
         }
     }
 
@@ -472,7 +472,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
 
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
-            LOGGER.warn("Twitch-EventSub-Verbindung geschlossen ({}): {}", statusCode, reason);
+            LOGGER.warn("Twitch EventSub connection closed ({}): {}", statusCode, reason);
             if (TwitchChatClient.this.webSocket == webSocket || TwitchChatClient.this.webSocket == null) {
                 scheduleReconnect();
             }
@@ -481,7 +481,7 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
 
         @Override
         public void onError(WebSocket webSocket, Throwable error) {
-            LOGGER.warn("Fehler in der Twitch-EventSub-Verbindung: {}", error.getMessage());
+            LOGGER.warn("Error in the Twitch EventSub connection: {}", error.getMessage());
             if (TwitchChatClient.this.webSocket == webSocket || TwitchChatClient.this.webSocket == null) {
                 scheduleReconnect();
             }

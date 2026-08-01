@@ -15,19 +15,19 @@ public final class BotTargetResolver {
 
     public static List<ManagedBot> resolve(String[] args, BotRegistry registry, String commandName) {
         if (args.length == 0) {
-            throw new IllegalArgumentException("Bitte einen Bot angeben. Verwendung: "
+            throw new IllegalArgumentException("Please specify a bot. Usage: "
                     + commandName + " <discord|twitch|all>");
         }
         String token = args[0].toLowerCase(Locale.ROOT);
         if (ALL_TOKENS.contains(token)) {
             if (registry.isEmpty()) {
-                throw new IllegalArgumentException("Keine Bots registriert.");
+                throw new IllegalArgumentException("No bots registered.");
             }
             return List.copyOf(registry.all());
         }
         return registry.find(token)
                 .map(List::of)
-                .orElseThrow(() -> new IllegalArgumentException("Unbekannter Bot '" + args[0]
-                        + "'. Gueltige Werte: discord, twitch, all."));
+                .orElseThrow(() -> new IllegalArgumentException("Unknown bot '" + args[0]
+                        + "'. Valid values: discord, twitch, all."));
     }
 }

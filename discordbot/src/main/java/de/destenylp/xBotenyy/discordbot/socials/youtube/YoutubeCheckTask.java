@@ -35,7 +35,7 @@ public final class YoutubeCheckTask implements Runnable {
             checkChannels();
         } catch (Exception e) {
             SocialsPollStatus.recordYoutubeError(e.getMessage());
-            LOGGER.error("Fehler bei der Ueberpruefung der YouTube Kanaele: ", e);
+            LOGGER.error("Error while checking YouTube channels: ", e);
         }
     }
 
@@ -65,7 +65,7 @@ public final class YoutubeCheckTask implements Runnable {
             }
         } catch (Exception e) {
             SocialsPollStatus.recordYoutubeError("Kanal " + youtubeChannelId + ": " + e.getMessage());
-            LOGGER.warn("Fehler bei der Ueberpruefung des YouTube Kanals {}: {}", youtubeChannelId, e.getMessage());
+            LOGGER.warn("Error while checking YouTube channel {}: {}", youtubeChannelId, e.getMessage());
         }
     }
 
@@ -92,7 +92,7 @@ public final class YoutubeCheckTask implements Runnable {
         }
         TextChannel channel = jda.getChannelById(TextChannel.class, account.getChannelId());
         if (channel == null) {
-            LOGGER.warn("Ankuendigungskanal {} fuer Social-Account {} in Guild {} existiert nicht mehr",
+            LOGGER.warn("Announcement channel {} for social account {} in guild {} no longer exists",
                     account.getChannelId(), account.getId(), guildId);
             return;
         }
@@ -100,9 +100,9 @@ public final class YoutubeCheckTask implements Runnable {
         RenderedMessage message = SocialMessageFactory.buildYoutubeMessage(account, video, guild);
         MessageDispatcher.prepare(channel, message).ifPresent(action -> action.queue(
                 success -> BotMetrics.incrementYoutubeVideosAnnounced(),
-                failure -> LOGGER.warn("Konnte YouTube Ankuendigung fuer Account {} nicht senden: {}",
+                failure -> LOGGER.warn("Could not send YouTube announcement for account {}: {}",
                         account.getId(), failure.getMessage())));
-        LOGGER.info("Neues YouTube Video fuer Account {} in Guild {} angekuendigt: {}", account.getId(), guildId, video.videoId());
+        LOGGER.info("New YouTube video for account {} announced in guild {}: {}", account.getId(), guildId, video.videoId());
     }
 
     private record GuildAccount(String guildId, SocialAccount account) {

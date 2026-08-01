@@ -38,11 +38,11 @@ public final class SchedulerStore {
                 try {
                     tasks.add(ScheduledTask.fromStoreLine(line));
                 } catch (Exception e) {
-                    logger.warn("Ungueltige Zeile in {} wird uebersprungen: {}", storeFile, line);
+                    logger.warn("Invalid line in {} is being skipped: {}", storeFile, line);
                 }
             }
         } catch (IOException e) {
-            logger.error("Scheduler-Datei {} konnte nicht gelesen werden: ", storeFile, e);
+            logger.error("Scheduler file {} could not be read: ", storeFile, e);
         }
         return tasks;
     }
@@ -56,7 +56,7 @@ public final class SchedulerStore {
             Files.write(storeFile, lines, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
-            logger.error("Scheduler-Datei {} konnte nicht geschrieben werden: ", storeFile, e);
+            logger.error("Scheduler file {} could not be written: ", storeFile, e);
         }
     }
 }

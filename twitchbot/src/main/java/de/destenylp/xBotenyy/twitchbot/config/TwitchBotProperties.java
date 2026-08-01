@@ -39,7 +39,7 @@ public final class TwitchBotProperties {
              java.io.InputStreamReader reader = new java.io.InputStreamReader(in, StandardCharsets.UTF_8)) {
             loaded.load(reader);
         } catch (IOException e) {
-            LOGGER.error("Konnte {} nicht laden, verwende Standardwerte: {}", file, e.getMessage());
+            LOGGER.error("Could not load {}, using default values: {}", file, e.getMessage());
             Properties fallback = new Properties();
             defaults.forEach(fallback::setProperty);
             return new TwitchBotProperties(fallback);
@@ -129,9 +129,9 @@ public final class TwitchBotProperties {
                 builder.append(entry.getKey()).append('=').append(value).append(System.lineSeparator());
             }
             Files.writeString(file, builder.toString(), StandardCharsets.UTF_8);
-            LOGGER.info("Konfigurationsdatei {} wurde geschrieben", file);
+            LOGGER.info("Configuration file {} was written", file);
         } catch (IOException e) {
-            LOGGER.error("Konnte {} nicht erstellen: {}", file, e.getMessage());
+            LOGGER.error("Could not create {}: {}", file, e.getMessage());
         }
     }
 
@@ -144,7 +144,7 @@ public final class TwitchBotProperties {
         try {
             return Math.max(min, Long.parseLong(getString(key, String.valueOf(fallback))));
         } catch (NumberFormatException e) {
-            LOGGER.warn("Ungueltiger Wert fuer {}, verwende Standardwert {}", key, fallback);
+            LOGGER.warn("Invalid value for {}, using default value {}", key, fallback);
             return fallback;
         }
     }
@@ -153,7 +153,7 @@ public final class TwitchBotProperties {
         try {
             return Math.max(min, Integer.parseInt(getString(key, String.valueOf(fallback))));
         } catch (NumberFormatException e) {
-            LOGGER.warn("Ungueltiger Wert fuer {}, verwende Standardwert {}", key, fallback);
+            LOGGER.warn("Invalid value for {}, using default value {}", key, fallback);
             return fallback;
         }
     }
@@ -285,7 +285,7 @@ public final class TwitchBotProperties {
             String variable = rawValue.substring("env:".length());
             String resolved = System.getenv(variable);
             if (resolved == null) {
-                LOGGER.warn("Umgebungsvariable {} fuer Bridge-Geheimnis ist nicht gesetzt.", variable);
+                LOGGER.warn("Environment variable {} for the bridge secret is not set.", variable);
                 return "";
             }
             return resolved;

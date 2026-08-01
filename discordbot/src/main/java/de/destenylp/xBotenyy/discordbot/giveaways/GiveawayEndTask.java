@@ -25,7 +25,7 @@ public final class GiveawayEndTask implements Runnable {
         try {
             endDueGiveaways();
         } catch (Exception e) {
-            LOGGER.error("Fehler beim automatischen Beenden fälliger Gewinnspiele: ", e);
+            LOGGER.error("Error while automatically ending due giveaways: ", e);
         }
     }
 
@@ -38,7 +38,7 @@ public final class GiveawayEndTask implements Runnable {
             }
             Giveaway ended = service.getGiveaway(guildId, giveaway.getId()).orElse(giveaway);
             coordinator.announceEnd(jda, ended);
-            LOGGER.info("Giveaway {} in guild {} automatisch beendet", giveaway.getId(), guildId);
+            LOGGER.info("Giveaway {} in guild {} ended automatically", giveaway.getId(), guildId);
         }));
     }
 }

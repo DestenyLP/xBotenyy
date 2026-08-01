@@ -21,12 +21,12 @@ public final class RestartCommand implements ConsoleCommand {
 
     @Override
     public String usage() {
-        return "restart <discord|twitch|all> [timeoutSekunden]";
+        return "restart <discord|twitch|all> [timeoutSeconds]";
     }
 
     @Override
     public String description() {
-        return "Stoppt den angegebenen Bot (oder alle) geordnet und startet ihn danach sofort wieder.";
+        return "Stops the specified bot (or all) gracefully and immediately starts it again.";
     }
 
     @Override
@@ -34,7 +34,7 @@ public final class RestartCommand implements ConsoleCommand {
         List<ManagedBot> targets = BotTargetResolver.resolve(args, context.bots(), name());
         long timeoutSeconds = StopCommand.parseTimeout(args);
         for (ManagedBot bot : targets) {
-            context.print("Starte " + bot.getDisplayName() + " neu (Stop-Timeout " + timeoutSeconds + "s) ...");
+            context.print("Restarting " + bot.getDisplayName() + " (stop timeout " + timeoutSeconds + "s) ...");
             bot.stop(timeoutSeconds);
             bot.start();
         }

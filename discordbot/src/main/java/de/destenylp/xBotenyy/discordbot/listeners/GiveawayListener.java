@@ -27,7 +27,7 @@ public class GiveawayListener extends ListenerAdapter {
         try {
             handleButtonInteraction(event);
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler bei Gewinnspiel-Button {} in Guild {}: ",
+            LOGGER.error("Unexpected error with giveaway button {} in guild {}: ",
                     event.getComponentId(), event.getGuild() != null ? event.getGuild().getId() : "unknown", e);
             if (!event.isAcknowledged()) {
                 event.reply("Es ist ein unerwarteter Fehler aufgetreten.").setEphemeral(true).queue();
@@ -83,7 +83,7 @@ public class GiveawayListener extends ListenerAdapter {
         event.getMessage().editMessageEmbeds(GiveawayEmbedFactory.buildAnnouncementEmbed(giveaway))
                 .setComponents(GiveawayEmbedFactory.buildEnterComponents(giveaway))
                 .queue(success -> {
-                }, failure -> LOGGER.warn("Gewinnspiel-Nachricht {} konnte nicht aktualisiert werden: {}",
+                }, failure -> LOGGER.warn("Giveaway message {} could not be updated: {}",
                         giveaway.getMessageId(), failure.getMessage()));
     }
 }

@@ -80,7 +80,7 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                LOGGER.warn("Groq Content-Moderation API antwortete mit Status {}: {}", response.statusCode(), response.body());
+                LOGGER.warn("Groq content moderation API responded with status {}: {}", response.statusCode(), response.body());
                 return Optional.empty();
             }
 
@@ -93,7 +93,7 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
 
             return parseVerdict(content);
         } catch (Exception e) {
-            LOGGER.warn("Fehler bei der Kommunikation mit der Groq Content-Moderation API: {}", e.getMessage());
+            LOGGER.warn("Error communicating with the Groq content moderation API: {}", e.getMessage());
             return Optional.empty();
         }
     }
@@ -104,12 +104,12 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
             JsonObject verdict = JsonParser.parseString(jsonPart).getAsJsonObject();
 
             boolean flagged = verdict.get("violation").getAsInt() == 1;
-            String category = JsonUtil.optString(verdict, "category", "unbekannt");
+            String category = JsonUtil.optString(verdict, "category", "unknown");
             String rationale = JsonUtil.optString(verdict, "rationale", "");
 
             return Optional.of(new ModerationResult(flagged, category, rationale));
         } catch (Exception e) {
-            LOGGER.warn("Konnte Antwort der Groq Content-Moderation API nicht auswerten: {}", e.getMessage());
+            LOGGER.warn("Could not parse the response from the Groq content moderation API: {}", e.getMessage());
             return Optional.empty();
         }
     }
@@ -118,7 +118,7 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
         int start = content.indexOf('{');
         int end = content.lastIndexOf('}');
         if (start == -1 || end == -1 || end < start) {
-            throw new IllegalArgumentException("Kein JSON-Objekt in der Antwort gefunden");
+            throw new IllegalArgumentException("No JSON-Objekt found is responds");
         }
         return content.substring(start, end + 1);
     }

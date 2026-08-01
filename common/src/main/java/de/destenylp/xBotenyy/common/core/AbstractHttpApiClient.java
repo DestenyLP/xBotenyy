@@ -58,7 +58,7 @@ public abstract class AbstractHttpApiClient {
                 if (!isRetryableStatus(response.statusCode()) || attempt == maxAttempts) {
                     return response;
                 }
-                logger.warn("{} lieferte Status {} (Versuch {}/{}), erneuter Versuch folgt.",
+                logger.warn("{} returned status {} (attempt {}/{}), retrying.",
                         description, response.statusCode(), attempt, maxAttempts);
                 sleepBeforeRetry(attempt);
             } catch (IOException e) {
@@ -66,7 +66,7 @@ public abstract class AbstractHttpApiClient {
                 if (attempt == maxAttempts) {
                     throw e;
                 }
-                logger.warn("{} fehlgeschlagen (Versuch {}/{}): {}", description, attempt, maxAttempts, e.getMessage());
+                logger.warn("{} failed (attempt {}/{}): {}", description, attempt, maxAttempts, e.getMessage());
                 sleepBeforeRetry(attempt);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

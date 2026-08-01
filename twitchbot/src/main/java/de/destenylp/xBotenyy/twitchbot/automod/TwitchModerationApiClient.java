@@ -75,7 +75,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
     private java.util.Set<String> getBroadcasterPaginatedIds(String baseUri, String idField, String description) {
         java.util.Set<String> ids = new java.util.HashSet<>();
         if (broadcasterAccessTokenSupplier == null) {
-            LOGGER.warn("Kein Broadcaster-Token konfiguriert, {} kann nicht abgefragt werden.", description);
+            LOGGER.warn("No broadcaster token configured, {} cannot be queried.", description);
             return ids;
         }
         String cursor = null;
@@ -89,7 +89,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
                         .build();
                 HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(), LOGGER, description);
                 if (response.statusCode() != 200) {
-                    LOGGER.warn("Konnte {} nicht abfragen (Status {}): {}", description, response.statusCode(), response.body());
+                    LOGGER.warn("Could not query {} (status {}): {}", description, response.statusCode(), response.body());
                     return ids;
                 }
                 JsonObject body = JsonParser.parseString(response.body()).getAsJsonObject();
@@ -100,7 +100,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
                 JsonObject pagination = body.getAsJsonObject("pagination");
                 cursor = pagination != null && pagination.has("cursor") ? pagination.get("cursor").getAsString() : null;
             } catch (Exception e) {
-                LOGGER.warn("Fehler beim Abfragen von {}: {}", description, e.getMessage());
+                LOGGER.warn("Error querying {}: {}", description, e.getMessage());
                 return ids;
             }
         } while (cursor != null && !cursor.isBlank());
@@ -119,7 +119,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Nutzer-ID Abfrage fuer " + login);
             if (response.statusCode() != 200) {
-                LOGGER.warn("Konnte Twitch-Nutzer-ID fuer {} nicht aufloesen (Status {}): {}", login, response.statusCode(), response.body());
+                LOGGER.warn("Could not resolve Twitch user ID for {} (status {}): {}", login, response.statusCode(), response.body());
                 return Optional.empty();
             }
             JsonArray data = JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
@@ -130,7 +130,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             userIdCache.put(login.toLowerCase(), id);
             return Optional.of(id);
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Aufloesen der Twitch-Nutzer-ID fuer {}: {}", login, e.getMessage());
+            LOGGER.warn("Error resolving the Twitch user ID for {}: {}", login, e.getMessage());
             return Optional.empty();
         }
     }
@@ -143,12 +143,12 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Nachricht loeschen (" + messageId + ")");
             if (response.statusCode() != 204) {
-                LOGGER.warn("Konnte Twitch-Nachricht {} nicht loeschen (Status {}): {}", messageId, response.statusCode(), response.body());
+                LOGGER.warn("Could not delete Twitch message {} (status {}): {}", messageId, response.statusCode(), response.body());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Loeschen der Twitch-Nachricht {}: {}", messageId, e.getMessage());
+            LOGGER.warn("Error deleting the Twitch message {}: {}", messageId, e.getMessage());
             return false;
         }
     }
@@ -172,12 +172,12 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Ban/Timeout fuer " + targetUserId);
             if (response.statusCode() != 200) {
-                LOGGER.warn("Konnte Twitch-Nutzer {} nicht bannen/timeouten (Status {}): {}", targetUserId, response.statusCode(), response.body());
+                LOGGER.warn("Could not ban/time out Twitch user {} (status {}): {}", targetUserId, response.statusCode(), response.body());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Bannen/Timeouten des Twitch-Nutzers {}: {}", targetUserId, e.getMessage());
+            LOGGER.warn("Error banning/timing out Twitch user {}: {}", targetUserId, e.getMessage());
             return false;
         }
     }
@@ -198,7 +198,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
                 HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                         LOGGER, "Twitch Chatters Abfrage fuer " + broadcasterId);
                 if (response.statusCode() != 200) {
-                    LOGGER.warn("Konnte Twitch-Chatter fuer {} nicht abfragen (Status {}): {}",
+                    LOGGER.warn("Could not query Twitch chatters for {} (status {}): {}",
                             broadcasterId, response.statusCode(), response.body());
                     return chatters;
                 }
@@ -211,7 +211,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
                 JsonObject pagination = body.getAsJsonObject("pagination");
                 cursor = pagination != null && pagination.has("cursor") ? pagination.get("cursor").getAsString() : null;
             } catch (Exception e) {
-                LOGGER.warn("Fehler beim Abfragen der Twitch-Chatter fuer {}: {}", broadcasterId, e.getMessage());
+                LOGGER.warn("Error querying Twitch chatters for {}: {}", broadcasterId, e.getMessage());
                 return chatters;
             }
         } while (cursor != null && !cursor.isBlank());
@@ -225,7 +225,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Follower-Abfrage fuer " + userId + " in " + broadcasterId);
             if (response.statusCode() != 200) {
-                LOGGER.warn("Konnte Follow-Status fuer {} in {} nicht abfragen (Status {}): {}",
+                LOGGER.warn("Could not query follow status for {} in {} (status {}): {}",
                         userId, broadcasterId, response.statusCode(), response.body());
                 return Optional.empty();
             }
@@ -236,7 +236,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             String followedAt = data.get(0).getAsJsonObject().get("followed_at").getAsString();
             return Optional.of(Instant.parse(followedAt));
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Abfragen des Follow-Status fuer {} in {}: {}", userId, broadcasterId, e.getMessage());
+            LOGGER.warn("Error querying the follow status for {} in {}: {}", userId, broadcasterId, e.getMessage());
             return Optional.empty();
         }
     }
@@ -249,12 +249,12 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Unban fuer " + targetUserId);
             if (response.statusCode() != 204) {
-                LOGGER.warn("Konnte Twitch-Nutzer {} nicht entbannen (Status {}): {}", targetUserId, response.statusCode(), response.body());
+                LOGGER.warn("Could not unban Twitch user {} (status {}): {}", targetUserId, response.statusCode(), response.body());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Entbannen des Twitch-Nutzers {}: {}", targetUserId, e.getMessage());
+            LOGGER.warn("Error unbanning Twitch user {}: {}", targetUserId, e.getMessage());
             return false;
         }
     }
@@ -267,12 +267,12 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Chat leeren fuer " + broadcasterId);
             if (response.statusCode() != 204) {
-                LOGGER.warn("Konnte Twitch-Chat fuer {} nicht leeren (Status {}): {}", broadcasterId, response.statusCode(), response.body());
+                LOGGER.warn("Could not clear Twitch chat for {} (status {}): {}", broadcasterId, response.statusCode(), response.body());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Leeren des Twitch-Chats fuer {}: {}", broadcasterId, e.getMessage());
+            LOGGER.warn("Error clearing the Twitch chat for {}: {}", broadcasterId, e.getMessage());
             return false;
         }
     }
@@ -284,7 +284,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Kanalinfo fuer " + broadcasterId);
             if (response.statusCode() != 200) {
-                LOGGER.warn("Konnte Twitch-Kanalinfo fuer {} nicht abfragen (Status {}): {}",
+                LOGGER.warn("Could not query Twitch channel info for {} (status {}): {}",
                         broadcasterId, response.statusCode(), response.body());
                 return Optional.empty();
             }
@@ -296,7 +296,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return Optional.of(new ChannelInfo(broadcasterId, entry.get("title").getAsString(),
                     entry.get("game_id").getAsString(), entry.get("game_name").getAsString()));
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Abfragen der Twitch-Kanalinfo fuer {}: {}", broadcasterId, e.getMessage());
+            LOGGER.warn("Error querying the Twitch channel info for {}: {}", broadcasterId, e.getMessage());
             return Optional.empty();
         }
     }
@@ -313,7 +313,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Spiel-ID Abfrage fuer " + gameName);
             if (response.statusCode() != 200) {
-                LOGGER.warn("Konnte Twitch-Spiel-ID fuer {} nicht aufloesen (Status {}): {}",
+                LOGGER.warn("Could not resolve Twitch game ID for {} (status {}): {}",
                         gameName, response.statusCode(), response.body());
                 return Optional.empty();
             }
@@ -325,14 +325,14 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             gameIdCache.put(gameName.toLowerCase(java.util.Locale.ROOT), id);
             return Optional.of(id);
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Aufloesen der Twitch-Spiel-ID fuer {}: {}", gameName, e.getMessage());
+            LOGGER.warn("Error resolving the Twitch game ID for {}: {}", gameName, e.getMessage());
             return Optional.empty();
         }
     }
 
     public boolean updateChannelInformation(String broadcasterId, String title, String gameId) {
         if (broadcasterAccessTokenSupplier == null) {
-            LOGGER.warn("Kein Broadcaster-Token konfiguriert, Kanalinfo fuer {} kann nicht geaendert werden.", broadcasterId);
+            LOGGER.warn("No broadcaster token configured, channel info for {} cannot be changed.", broadcasterId);
             return false;
         }
         try {
@@ -353,13 +353,13 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Kanalinfo aendern fuer " + broadcasterId);
             if (response.statusCode() != 204) {
-                LOGGER.warn("Konnte Twitch-Kanalinfo fuer {} nicht aendern (Status {}): {}",
+                LOGGER.warn("Could not change Twitch channel info for {} (status {}): {}",
                         broadcasterId, response.statusCode(), response.body());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Aendern der Twitch-Kanalinfo fuer {}: {}", broadcasterId, e.getMessage());
+            LOGGER.warn("Error changing the Twitch channel info for {}: {}", broadcasterId, e.getMessage());
             return false;
         }
     }
@@ -372,13 +372,13 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Shoutout fuer " + toBroadcasterId);
             if (response.statusCode() != 204) {
-                LOGGER.warn("Konnte Twitch-Shoutout fuer {} nicht senden (Status {}): {}",
+                LOGGER.warn("Could not send Twitch shoutout for {} (status {}): {}",
                         toBroadcasterId, response.statusCode(), response.body());
                 return false;
             }
             return true;
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Senden des Twitch-Shoutouts fuer {}: {}", toBroadcasterId, e.getMessage());
+            LOGGER.warn("Error sending the Twitch shoutout for {}: {}", toBroadcasterId, e.getMessage());
             return false;
         }
     }
@@ -390,7 +390,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
                     LOGGER, "Twitch Clip erstellen fuer " + broadcasterId);
             if (response.statusCode() != 202) {
-                LOGGER.warn("Konnte Twitch-Clip fuer {} nicht erstellen (Status {}): {}",
+                LOGGER.warn("Could not create Twitch clip for {} (status {}): {}",
                         broadcasterId, response.statusCode(), response.body());
                 return Optional.empty();
             }
@@ -400,7 +400,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             }
             return Optional.of(data.get(0).getAsJsonObject().get("id").getAsString());
         } catch (Exception e) {
-            LOGGER.warn("Fehler beim Erstellen des Twitch-Clips fuer {}: {}", broadcasterId, e.getMessage());
+            LOGGER.warn("Error creating the Twitch clip for {}: {}", broadcasterId, e.getMessage());
             return Optional.empty();
         }
     }

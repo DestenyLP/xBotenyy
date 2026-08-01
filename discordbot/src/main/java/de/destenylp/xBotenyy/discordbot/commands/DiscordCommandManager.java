@@ -103,9 +103,9 @@ public class DiscordCommandManager {
             }
             channel.sendMessageEmbeds(EventLogEmbedFactory.buildCommandUsage(event, result))
                     .queue(success -> {
-                    }, failure -> LOGGER.warn("Command-Usage-Log konnte nicht gesendet werden: {}", failure.getMessage()));
+                    }, failure -> LOGGER.warn("Command usage log could not be sent: {}", failure.getMessage()));
         } catch (Exception e) {
-            LOGGER.error("Unerwarteter Fehler beim Command-Usage-Logging fuer Guild {}: ", event.getGuild().getId(), e);
+            LOGGER.error("Unexpected error during command usage logging for guild {}: ", event.getGuild().getId(), e);
         }
     }
 }

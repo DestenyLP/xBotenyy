@@ -66,7 +66,7 @@ public record CommonConfig(
             }
         }
 
-        LOGGER.debug("Keine .env in den bekannten Kandidatenverzeichnissen gefunden, verwende '{}' als Fallback.",
+        LOGGER.debug("No .env found in the known candidate directories, using '{}' as a fallback.",
                 candidateDirectories().get(0));
         return candidateDirectories().get(0);
     }

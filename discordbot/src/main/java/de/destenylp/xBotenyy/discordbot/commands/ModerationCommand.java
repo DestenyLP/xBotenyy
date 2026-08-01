@@ -210,7 +210,7 @@ public class ModerationCommand extends AbstractGuildCommand {
     }
 
     private void replyError(SlashCommandInteractionEvent event, Throwable failure) {
-        LOGGER.error("Moderationsaktion fehlgeschlagen: ", failure);
+        LOGGER.error("Moderation action failed: ", failure);
         String message = "Die Aktion konnte nicht ausgefuehrt werden. Hat der Bot die noetigen Berechtigungen und eine hoehere Rolle als das Ziel?";
         if (event.isAcknowledged()) {
             event.getHook().sendMessage(message).queue();

@@ -31,23 +31,23 @@ public final class StatusCommand implements ConsoleCommand {
 
     @Override
     public String description() {
-        return "Zeigt den aktuellen Status aller Bots sowie die Neustart-Einstellungen.";
+        return "Shows the current status of all bots as well as the restart settings.";
     }
 
     @Override
     public void execute(String[] args, CommandContext context) {
         if (context.bots().isEmpty()) {
-            context.print("Keine Bots registriert.");
+            context.print("No bots registered.");
             return;
         }
         context.print("Status:");
         for (ManagedBot bot : context.bots().all()) {
             String lastStarted = bot.getLastStartedAtMillis() < 0
-                    ? "nie"
+                    ? "never"
                     : TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(bot.getLastStartedAtMillis()));
-            context.printf("  [%s] %-11s Status=%-8s Neustarts=%-3d Zuletzt gestartet=%s",
+            context.printf("  [%s] %-11s Status=%-8s Restarts=%-3d Last started=%s",
                     bot.getId().primaryName(), bot.getDisplayName(), bot.getStatus(), bot.getRestartCount(), lastStarted);
         }
-        context.print("Einstellungen: " + context.settings());
+        context.print("Settings: " + context.settings());
     }
 }
