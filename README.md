@@ -599,20 +599,39 @@ copied to the server - only `xBotenyyLauncher.jar` as well as, as usual, `.env`,
 
 ## Automatic builds and releases
 
-Three GitHub Actions workflows under `.github/workflows/` automatically build all three fat JARs:
+A single GitHub Actions workflow, `.github/workflows/release.yml`, builds all three fat JARs and publishes
+a GitHub release fully automatically - the version in the root `pom.xml` is the single source of truth.
 
-- **`build.yml`** runs on every push and pull request to `main` (`mvn clean verify`, incl. tests, Checkstyle,
-  SpotBugs) and uploads `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`, and `xBotenyyLauncher.jar` as
-  workflow artifacts (retrievable for 14 days under the respective workflow run, **not** a GitHub release).
-- **`latest-release.yml`** also runs on every push to `main` and automatically updates a rolling
-  pre-release named "Latest Build" (tag `latest`) with the three current fat JARs - so you get an immediately
-  downloadable release after every push, even without your own tagging.
-- **`release.yml`** runs **only** on an actual version tag (e.g. `v3.0.0`) or manually via
-  "Run workflow" and publishes an official GitHub release with all three fat JARs attached.
+### How it works
 
-You create an official, versioned release via:
+1. You change `<version>` in the root `pom.xml` (e.g. from `1.0-RELEASE` to `1.1.0`).
+2. You commit and push to `main`.
+3. The workflow triggers (it watches for changes to `pom.xml` on `main`) and:
+    - reads the new version directly from the root `pom.xml`,
+    - checks whether a tag for that version already exists (skips everything below if it does, so pushes
+      that don't touch the version number don't create duplicate releases),
+    - synchronizes the `<parent><version>` reference in `common`, `discordbot`, `twitchbot`, and `launcher`
+      so all modules match the new version,
+    - creates and pushes the tag (`v` + version, e.g. `v1.1.0`),
+    - builds all three fat JARs (`mvn clean package`),
+    - publishes a GitHub release with `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`, and
+      `xBotenyyLauncher.jar` attached (GitHub automatically adds a source code ZIP/TAR.GZ to every release
+      as well),
+    - commits the synchronized module `pom.xml` files back to `main`.
+
+### Manual trigger
+
+The workflow can also be started by hand under **Actions → Release → Run workflow**, using whatever
+version is currently set in the root `pom.xml`. This is mainly useful for re-running a release after a
+fixed workflow error, without having to bump the version again.
+
+### Everyday release
+
+For a normal new release, all you need is:
 
 ```bash
-git tag v3.0.0
-git push origin v3.0.0
+# edit <version> in the root pom.xml, then:
+git add pom.xml
+git commit -m "Version 1.1.0"
+git push origin main
 ```
