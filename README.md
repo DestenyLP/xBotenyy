@@ -32,8 +32,9 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
 
 ## Requirements
 
-- JDK 21
-- Maven 3.9+
+- JDK 21 (to run the bot, whether via a downloaded JAR or a build you did yourself)
+- Maven 3.9+ (only needed if you build from source yourself - not required if you just download a
+  ready-made JAR from [Releases](../../releases))
 - Discord bot token (for `discordbot`)
 - Twitch client ID + client secret (for `twitchbot` & the Twitch integration in `discordbot`)
 
@@ -44,6 +45,52 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
   (or the URL of your OAuth handler).
 
 ## Setup
+
+There are two ways to get a running bot: download a ready-made JAR (no build tools needed), or build the
+project yourself from source.
+
+### Option A: Download a ready-made JAR (recommended for most users)
+
+1. Go to the [Releases](../../releases) page and download the JAR you need from the latest release:
+    - `xBotenyyDiscordBot.jar` - Discord bot only
+    - `xBotenyyTwitchBot.jar` - Twitch bot only
+    - `xBotenyyLauncher.jar` - both bots combined in one process (see
+      [Combined start](#combined-start-launcher)); this single JAR already contains everything, you do
+      **not** need the other two JARs alongside it
+2. Put the JAR in an empty folder on your server/PC.
+3. Create an `.env` file **in that same folder, right next to the JAR**. *Note: this is different from
+   building from source - there is no `src/main/resources` here, the `.env` just needs to sit next to the
+   JAR file.*
+
+   ```env
+   # Discord configuration
+   BOT_TOKEN=
+   GROQ_API_KEY=
+
+   # Twitch app credentials
+   TWITCH_CLIENT_ID=
+   TWITCH_CLIENT_SECRET=
+
+   # Twitch bot account tokens
+   TWITCH_BOT_ACCESS_TOKEN=
+   TWITCH_BOT_REFRESH_TOKEN=
+
+   # Twitch broadcaster account tokens (for EventSub, mod actions & role sync)
+   TWITCH_BROADCASTER_ACCESS_TOKEN=
+   TWITCH_BROADCASTER_REFRESH_TOKEN=
+   ```
+
+4. Start the bot:
+
+   ```bash
+   java -jar xBotenyyDiscordBot.jar
+   # or xBotenyyTwitchBot.jar / xBotenyyLauncher.jar, depending on what you downloaded
+   ```
+
+5. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
+   values in the same folder on first start).
+
+### Option B: Build from source
 
 1. Clone the repository.
 2. Create an `.env` file in the **root directory (project root)**. *Note: never place it under `src/main/resources`,
@@ -67,7 +114,14 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
    TWITCH_BROADCASTER_REFRESH_TOKEN=
    ```
 
-3. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
+3. Build and run, e.g. for the Discord bot:
+
+   ```bash
+   mvn -pl discordbot -am -DskipTests package
+   java -jar discordbot/target/xBotenyyDiscordBot.jar
+   ```
+
+4. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
    values in the respective module folder on first start).
 
 ---
