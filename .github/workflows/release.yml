@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "pom.xml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: JDK 21 setup
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: read version of pom.xml
+        id: version
+        run: |
+          VERSION=$(mvn -B -ntp -q -DforceStdout help:evaluate -Dexpression=project.version)
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Ermittelte Version: $VERSION (Tag: $TAG)"
+
+      - name: check if Tag/Release already exists
+        id: check
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} already exists - No new release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} is new - Release will be created."
+          fi
+
+      - name: Parent-Reference synced in all modules
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          mvn -B -ntp versions:set -DnewVersion=${{ steps.version.outputs.version }} -DprocessAllModules=true -DgenerateBackupPoms=false
+
+      - name: create tags and push
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: build Fat Jars
+        if: steps.check.outputs.exists == 'false'
+        run: mvn -B -ntp -DskipTests clean package
+
+      - name: publish releases
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: xBotenyy ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            discordbot/target/xBotenyyDiscordBot.jar
+            twitchbot/target/xBotenyyTwitchBot.jar
+            launcher/target/xBotenyyLauncher.jar
+
+      - name: syncs main after committen
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          if ! git diff --quiet -- '**/pom.xml'; then
+            git add '**/pom.xml' pom.xml
+            git commit -m "chore: Parent-Version-Reference to ${{ steps.version.outputs.version }} synced [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "No changes need in Modul-pom.xml."
+          fi
