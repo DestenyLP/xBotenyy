@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.commands;
-
 import de.destenylp.xBotenyy.common.moderation.TwitchRoleSyncStatus;
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
@@ -16,14 +15,11 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-
 public class ModerationRolesCommand extends AbstractGuildCommand {
     private final ModerationRoleSettingsRepository repository;
-
     public ModerationRolesCommand(ModerationRoleSettingsRepository repository) {
         this.repository = repository;
     }
-
     @Override
     public CommandData getCommandData() {
         OptionData roleOption = new OptionData(OptionType.ROLE, "role", "Rolle", true);
@@ -47,13 +43,11 @@ public class ModerationRolesCommand extends AbstractGuildCommand {
                         new SubcommandData("status", "Zeigt die aktuelle Konfiguration")
                 );
     }
-
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!ModerationPermissionGuard.requireAdmin(event, repository.getOrEmpty(guild.getId()))) {
             return;
         }
-
         switch (subcommand) {
             case "warn-role" -> {
                 Role role = event.getOption("role").getAsRole();
@@ -112,7 +106,6 @@ public class ModerationRolesCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
-
     private void handleStatus(SlashCommandInteractionEvent event, Guild guild) {
         ModerationRoleSettings settings = repository.getOrEmpty(guild.getId());
         EmbedBuilder eb = new EmbedBuilder();
@@ -129,11 +122,9 @@ public class ModerationRolesCommand extends AbstractGuildCommand {
         eb.addField("Sync: Broadcaster", mention(settings.syncBroadcasterRoleId()), true);
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
-
     private String mention(String roleId) {
         return roleId == null || roleId.isBlank() ? "nicht gesetzt" : "<@&" + roleId + ">";
     }
-
     private String mentionList(java.util.List<String> roleIds) {
         return roleIds.isEmpty() ? "keine" : roleIds.stream().map(id -> "<@&" + id + ">")
                 .reduce((a, b) -> a + ", " + b).orElse("keine");

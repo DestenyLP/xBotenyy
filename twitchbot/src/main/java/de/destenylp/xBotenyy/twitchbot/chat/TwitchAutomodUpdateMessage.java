@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.twitchbot.chat;
-
 public record TwitchAutomodUpdateMessage(
         String channelLogin,
         String messageId,

@@ -1,13 +1,10 @@
 package de.destenylp.xBotenyy.discordbot.placeholders;
-
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-
 public final class PlaceholderCatalog {
     private PlaceholderCatalog() {
     }
-
     public static MessageEmbed buildOverviewEmbed() {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Verfügbare Platzhalter");

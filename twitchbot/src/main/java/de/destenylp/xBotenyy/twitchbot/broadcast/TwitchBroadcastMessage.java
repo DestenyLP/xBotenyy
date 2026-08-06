@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.twitchbot.broadcast;
-
 public record TwitchBroadcastMessage(
         long id,
         String channelLogin,
@@ -10,7 +9,6 @@ public record TwitchBroadcastMessage(
         String createdBy,
         long createdAtEpochMillis,
         long lastSentAtEpochMillis) {
-
     public boolean isDueAt(long nowEpochMillis, long messagesSinceLastSend) {
         if (!enabled) {
             return false;

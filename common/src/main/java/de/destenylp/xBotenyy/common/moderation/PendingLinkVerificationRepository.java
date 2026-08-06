@@ -1,20 +1,15 @@
 package de.destenylp.xBotenyy.common.moderation;
-
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
-
 public class PendingLinkVerificationRepository {
     private final Database database;
-
     public PendingLinkVerificationRepository(Database database) {
         this.database = database;
     }
-
     public void save(PendingLinkVerification pending) {
         database.useConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -32,7 +27,6 @@ public class PendingLinkVerificationRepository {
             }
         });
     }
-
     public Optional<PendingLinkVerification> consume(String code) {
         return database.inTransaction(connection -> {
             try (PreparedStatement select = connection.prepareStatement(
@@ -56,7 +50,6 @@ public class PendingLinkVerificationRepository {
             }
         });
     }
-
     public int purgeExpired() {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -66,7 +59,6 @@ public class PendingLinkVerificationRepository {
             }
         });
     }
-
     private PendingLinkVerification map(ResultSet resultSet) throws SQLException {
         return new PendingLinkVerification(
                 resultSet.getString("code"),

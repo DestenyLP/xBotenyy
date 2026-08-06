@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.twitchbot;
-
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodSettingsFactory;
 import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
@@ -36,7 +35,6 @@ import de.destenylp.xBotenyy.twitchbot.persistence.*;
 import de.destenylp.xBotenyy.twitchbot.poll.TwitchPollManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -44,13 +42,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 public final class Bot extends AbstractBot {
     private static final Logger LOGGER = LoggerFactory.getLogger(Bot.class);
-
     private final TwitchBotProperties properties;
     private final Instant startedAt = Instant.now();
-
     private Database database;
     private TwitchChatClient chatClient;
     private TwitchAutomodAdapter automodAdapter;
@@ -75,19 +70,16 @@ public final class Bot extends AbstractBot {
     private BackupService backupService;
     private String moderatorUserId;
     private Set<String> channels;
-
     public Bot(CommonConfig config, TwitchBotProperties properties) {
         super(LOGGER, config, "twitchbot-scheduler", 2);
         this.properties = properties;
     }
-
     public void start() {
         channels = properties.getChatChannels();
         if (channels.isEmpty()) {
             LOGGER.error("No Twitch channels configured (twitch.chat.channels in twitchbot.properties). Shutting down.");
             return;
         }
-
         database = Database.open(properties.getDatabaseFile(), "db/migrations/twitchbot");
         channelRepository = new TwitchChannelRepository(database);
         watchtimeRepository = new TwitchWatchtimeRepository(database);
@@ -97,10 +89,8 @@ public final class Bot extends AbstractBot {
         quoteRepository = new TwitchQuoteRepository(database);
         CustomCommandRepository customCommandRepository = new CustomCommandRepository(database);
         channels.forEach(channelRepository::recordJoin);
-
         discordWebhookClient = new DiscordWebhookClient();
         discordLogService = new TwitchDiscordLogService(discordWebhookClient, properties.getDiscordLogSettings());
-
         moderationCaseRepository = new ModerationCaseRepository(database);
         accountLinkRepository = new AccountLinkRepository(database);
         pendingLinkVerificationRepository = new PendingLinkVerificationRepository(database);
@@ -109,15 +99,12 @@ public final class Bot extends AbstractBot {
                 properties::getBridgeSettings);
         roleSyncService = new TwitchRoleSyncService(accountLinkRepository, moderationBridgeClient,
                 properties::getBridgeSettings);
-
         Optional<TwitchUserTokenManager> tokenManager = TwitchUserTokenManager.create(
                 config.twitchClientId(), config.twitchClientSecret(), config.twitchBotRefreshToken(),
                 config.envFilePath(), "TWITCH_BOT_REFRESH_TOKEN");
-
         java.util.function.Supplier<String> accessTokenSupplier = tokenManager
                 .<java.util.function.Supplier<String>>map(manager -> manager::getAccessToken)
                 .orElse(config::twitchModeratorAccessToken);
-
         if (tokenManager.isPresent()) {
             LOGGER.info("Twitch refresh token found, access token will be refreshed automatically.");
             tokenManager.get().refreshNow();
@@ -125,15 +112,12 @@ public final class Bot extends AbstractBot {
             LOGGER.warn("No TWITCH_BOT_REFRESH_TOKEN set - the access token expires every few hours "
                     + "and must then be renewed manually. See the README for automatic setup.");
         }
-
         TwitchModerationApiClient moderationApiClient = new TwitchModerationApiClient(
                 config.twitchClientId(), accessTokenSupplier, Duration.ofSeconds(10),
                 properties.getRestActionMaxAttempts(), Duration.ofSeconds(properties.getRestActionBaseDelaySeconds()));
-
         Optional<TwitchUserTokenManager> broadcasterTokenManager = TwitchUserTokenManager.create(
                 config.twitchClientId(), config.twitchClientSecret(), config.twitchBroadcasterRefreshToken(),
                 config.envFilePath(), "TWITCH_BROADCASTER_REFRESH_TOKEN");
-
         if (broadcasterTokenManager.isPresent()) {
             LOGGER.info("Twitch broadcaster refresh token found, channel info commands are available.");
             broadcasterTokenManager.get().refreshNow();
@@ -144,12 +128,10 @@ public final class Bot extends AbstractBot {
             LOGGER.warn("No TWITCH_BROADCASTER_REFRESH_TOKEN set - !title and !game are disabled. "
                     + "See the README for setting up the broadcaster token.");
         }
-
         moderatorUserId = moderationApiClient.resolveUserId(config.twitchChatBotUsername())
                 .orElseThrow(() -> new IllegalStateException(
                         "Konnte die Twitch-Nutzer-ID des Bot-Accounts nicht aufloesen - "
                                 + "TWITCH_BOT_USERNAME und TWITCH_MODERATOR_ACCESS_TOKEN pruefen."));
-
         BridgeSettings bridgeSettings = properties.getBridgeSettings();
         if (bridgeSettings.isServerEnabled()) {
             TwitchModerationBridgeHandler bridgeHandler = new TwitchModerationBridgeHandler(
@@ -158,34 +140,27 @@ public final class Bot extends AbstractBot {
             moderationBridgeServer = new ModerationBridgeServer(bridgeSettings, bridgeHandler);
             moderationBridgeServer.start();
         }
-
         TwitchAppAccessTokenManager appAccessTokenManager = new TwitchAppAccessTokenManager(
                 config.twitchClientId(), config.twitchClientSecret(), Duration.ofSeconds(10), Duration.ofMinutes(10),
                 properties.getRestActionMaxAttempts(), Duration.ofSeconds(properties.getRestActionBaseDelaySeconds()));
-
         chatClient = new TwitchChatClient(config.twitchClientId(), appAccessTokenManager, accessTokenSupplier,
                 moderatorUserId, moderationApiClient::resolveUserId, channels, properties.getReconnectDelaySeconds(),
                 properties.getMaxReconnectDelaySeconds(), Duration.ofSeconds(10),
                 properties.getRestActionMaxAttempts(), Duration.ofSeconds(properties.getRestActionBaseDelaySeconds()));
-
         AutomodSettings automodSettings = AutomodSettingsFactory.from(properties::getRawProperty);
         GroqSafeguardClient moderationClient = automodSettings.getAiFilter().enabled() && config.hasGroqApiKey()
                 ? new GroqSafeguardClient(config.groqApiKey(), Duration.ofSeconds(Math.max(automodSettings.getAiFilter().timeoutSeconds(), 1)))
                 : null;
-
         automodAdapter = new TwitchAutomodAdapter(automodSettings, moderationClient, chatClient,
                 moderationApiClient, properties.getWarnMessageTemplate(), moderatorUserId, eventLogService,
                 discordLogService);
-
         TwitchBotServices services = new TwitchBotServices(chatClient, automodAdapter.getEngine(), automodAdapter,
                 customCommandRepository, watchtimeRepository, moderationApiClient, moderatorUserId, startedAt);
         commandManager = new TwitchCommandManager(properties.getCommandPrefix(), customCommandRepository, services,
                 eventLogService, discordLogService);
         registerCommands(commandManager, customCommandRepository);
-
         broadcastScheduler = new TwitchBroadcastScheduler(broadcastRepository, chatClient, eventLogService, channels);
         broadcastScheduler.start(scheduler, properties.getBroadcastCheckIntervalSeconds());
-
         chatClient.onMessage(message -> {
             try {
                 recordActivityQuietly(message.channelLogin());
@@ -224,19 +199,15 @@ public final class Bot extends AbstractBot {
             }
         });
         chatClient.onConnected(() -> LOGGER.info("Twitch bot is active in {} channels: {}", channels.size(), channels));
-
         startDataRetentionTask();
         startHeartbeat();
         startBackupSchedule();
         startWatchtimeTracking(moderationApiClient);
         startRoleReconciliation(moderationApiClient);
-
         registerShutdownHook();
-
         LOGGER.info("Starting Twitch bot as {} for channels: {}", config.twitchChatBotUsername(), channels);
         chatClient.connect();
     }
-
     private void registerCommands(TwitchCommandManager commandManager, CustomCommandRepository customCommandRepository) {
         commandManager.register(new PingCommand());
         commandManager.register(new UptimeCommand());
@@ -266,7 +237,6 @@ public final class Bot extends AbstractBot {
         commandManager.register(new VerifyCommand(accountLinkRepository, moderationBridgeClient, properties::getBridgeSettings));
         LOGGER.info("{} built-in commands registered.", commandManager.getRegistry().size());
     }
-
     private void recordActivityQuietly(String channelLogin) {
         try {
             channelRepository.recordActivity(channelLogin);
@@ -276,7 +246,6 @@ public final class Bot extends AbstractBot {
                     channelLogin, e.getMessage());
         }
     }
-
     private void startDataRetentionTask() {
         List<PrunableResource> resources = List.of(
                 PrunableResource.of("AutoMod-Eintraege", automodAdapter.getEngine()),
@@ -285,7 +254,6 @@ public final class Bot extends AbstractBot {
         scheduleDataRetention(intervalMinutes, intervalMinutes,
                 Duration.ofHours(properties.getDataRetentionHours()), resources);
     }
-
     private void startWatchtimeTracking(TwitchModerationApiClient moderationApiClient) {
         long intervalSeconds = properties.getWatchtimePollIntervalSeconds();
         scheduler.scheduleAtFixedRate(() -> {
@@ -309,7 +277,6 @@ public final class Bot extends AbstractBot {
             }
         }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
     }
-
     private void startRoleReconciliation(TwitchModerationApiClient moderationApiClient) {
         long intervalMinutes = properties.getModerationSyncReconcileIntervalMinutes();
         scheduler.scheduleAtFixedRate(() -> {
@@ -322,11 +289,9 @@ public final class Bot extends AbstractBot {
             }
         }, intervalMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
-
     private void startHeartbeat() {
         scheduleHeartbeat(properties.getHeartbeatIntervalMinutes());
     }
-
     @Override
     protected String heartbeatSummary() {
         String metricsSnapshot = Metrics.snapshot().entrySet().stream()
@@ -335,14 +300,12 @@ public final class Bot extends AbstractBot {
                 .collect(Collectors.joining(" "));
         return "channels=" + channels.size() + " " + metricsSnapshot;
     }
-
     private void startBackupSchedule() {
         BackupSettings backupSettings = BackupSettings.from(properties::getRawProperty);
         backupService = new BackupService(database, backupSettings.resolveDirectory(properties.getDataDirectory()),
                 "xbotenyy-twitch", backupSettings.maxBackupsToKeep());
         scheduleBackup(backupSettings, backupService);
     }
-
     @Override
     protected void onShutdown() {
         if (chatClient != null) {

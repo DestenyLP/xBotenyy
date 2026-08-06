@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
-
 import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
 import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
@@ -11,32 +10,26 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.UserSnowflake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
-
 public class DiscordModerationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscordModerationService.class);
     private static final String SYNC_MODERATOR_ID = "TWITCH_SYNC";
     private static final String SYNC_MODERATOR_NAME = "Twitch-Sync";
-
     private final ModerationCaseRepository caseRepository;
     private final ModerationRoleSettingsRepository roleSettingsRepository;
-
     public DiscordModerationService(ModerationCaseRepository caseRepository,
                                      ModerationRoleSettingsRepository roleSettingsRepository) {
         this.caseRepository = caseRepository;
         this.roleSettingsRepository = roleSettingsRepository;
     }
-
     public void warn(Guild guild, Member target, Member moderator, String reason,
                       Runnable onSuccess, Consumer<Throwable> onFailure) {
         applyRole(guild, target, roleSettingsRepository.getOrEmpty(guild.getId()).warnRoleId(), true, reason);
         recordCase(guild, target.getUser(), moderator.getUser(), ModerationAction.WARN, reason, 0);
         onSuccess.run();
     }
-
     public void timeout(Guild guild, Member target, Member moderator, String reason, Duration duration,
                          Runnable onSuccess, Consumer<Throwable> onFailure) {
         target.timeoutFor(duration).reason(reason).queue(unused -> {
@@ -45,7 +38,6 @@ public class DiscordModerationService {
             onSuccess.run();
         }, onFailure::accept);
     }
-
     public void untimeout(Guild guild, Member target, Member moderator, String reason,
                            Runnable onSuccess, Consumer<Throwable> onFailure) {
         target.removeTimeout().reason(reason).queue(unused -> {
@@ -55,7 +47,6 @@ public class DiscordModerationService {
             onSuccess.run();
         }, onFailure::accept);
     }
-
     public void kick(Guild guild, Member target, Member moderator, String reason,
                       Runnable onSuccess, Consumer<Throwable> onFailure) {
         User targetUser = target.getUser();
@@ -64,7 +55,6 @@ public class DiscordModerationService {
             onSuccess.run();
         }, onFailure::accept);
     }
-
     public void ban(Guild guild, UserSnowflake target, String targetId, String targetName, Member moderator,
                      String reason, Runnable onSuccess, Consumer<Throwable> onFailure) {
         String banRoleId = roleSettingsRepository.getOrEmpty(guild.getId()).banRoleId();
@@ -81,7 +71,6 @@ public class DiscordModerationService {
             onSuccess.run();
         }, onFailure::accept);
     }
-
     public void unban(Guild guild, UserSnowflake target, String targetId, String targetName, Member moderator,
                        String reason, Runnable onSuccess, Consumer<Throwable> onFailure) {
         guild.unban(target).reason(reason).queue(unused -> {
@@ -99,7 +88,6 @@ public class DiscordModerationService {
             onSuccess.run();
         }, onFailure::accept);
     }
-
     public void applySyncedAction(Guild guild, String targetId, String targetName, ModerationAction action,
                                    String reason, long durationSeconds, Runnable onSuccess, Consumer<Throwable> onFailure) {
         UserSnowflake target = UserSnowflake.fromId(targetId);
@@ -158,7 +146,6 @@ public class DiscordModerationService {
             default -> onFailure.accept(new IllegalArgumentException("Unbekannte Aktion: " + action));
         }
     }
-
     public void syncTwitchRoles(Guild guild, Member member, List<TwitchRoleSyncStatus> activeStatuses) {
         ModerationRoleSettings settings = roleSettingsRepository.getOrEmpty(guild.getId());
         applySyncRole(guild, member, settings.syncSubscriberRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.SUBSCRIBER));
@@ -166,7 +153,6 @@ public class DiscordModerationService {
         applySyncRole(guild, member, settings.syncModeratorRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.MODERATOR));
         applySyncRole(guild, member, settings.syncBroadcasterRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.BROADCASTER));
     }
-
     private void applySyncRole(Guild guild, Member member, String roleId, boolean shouldHave) {
         if (roleId == null || roleId.isBlank()) {
             return;
@@ -184,7 +170,6 @@ public class DiscordModerationService {
             }, failure -> LOGGER.warn("Could not remove sync role {} in guild {}: {}", roleId, guild.getId(), failure.getMessage()));
         }
     }
-
     private void applyRole(Guild guild, Member target, String roleId, boolean add, String reason) {
         if (roleId == null || roleId.isBlank()) {
             return;
@@ -201,17 +186,14 @@ public class DiscordModerationService {
             }, failure -> LOGGER.warn("Could not remove role {} in guild {}: {}", roleId, guild.getId(), failure.getMessage()));
         }
     }
-
     private void recordCase(Guild guild, User target, User moderator, ModerationAction action, String reason, long durationSeconds) {
         recordCase(guild, target.getId(), target.getName(), moderator, action, reason, durationSeconds);
     }
-
     private void recordCase(Guild guild, String targetId, String targetName, User moderator, ModerationAction action,
                              String reason, long durationSeconds) {
         caseRepository.insert(ModerationPlatform.DISCORD, guild.getId(), targetId, targetName, moderator.getId(),
                 moderator.getName(), action, reason, durationSeconds, false);
     }
-
     private void recordSyncedCase(Guild guild, String targetId, String targetName, ModerationAction action,
                                    String reason, long durationSeconds) {
         caseRepository.insert(ModerationPlatform.DISCORD, guild.getId(), targetId, targetName, SYNC_MODERATOR_ID,

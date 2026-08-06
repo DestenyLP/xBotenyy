@@ -1,110 +1,75 @@
 package de.destenylp.xBotenyy.discordbot.socials.youtube;
-
-import de.destenylp.xBotenyy.discordbot.messaging.MessageDispatcher;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
+import de.destenylp.xBotenyy.discordbot.socials.AbstractFeedCheckTask;
 import de.destenylp.xBotenyy.discordbot.socials.SocialAccount;
 import de.destenylp.xBotenyy.discordbot.socials.SocialMessageFactory;
 import de.destenylp.xBotenyy.discordbot.socials.SocialService;
 import de.destenylp.xBotenyy.discordbot.socials.SocialsPollStatus;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
-
-public final class YoutubeCheckTask implements Runnable {
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+public final class YoutubeCheckTask extends AbstractFeedCheckTask<YoutubeVideo> {
     private static final Logger LOGGER = LoggerFactory.getLogger(YoutubeCheckTask.class);
-
-    private final JDA jda;
-    private final SocialService service;
     private final YoutubeFeedClient feedClient;
-
     public YoutubeCheckTask(JDA jda, SocialService service, YoutubeFeedClient feedClient) {
-        this.jda = jda;
-        this.service = service;
+        super(jda, service);
         this.feedClient = feedClient;
     }
-
     @Override
-    public void run() {
+    protected Logger logger() {
+        return LOGGER;
+    }
+    @Override
+    protected String platformName() {
+        return "YouTube";
+    }
+    @Override
+    protected Map<String, List<SocialAccount>> findAccounts() {
+        return service.findAccountsWithYoutube();
+    }
+    @Override
+    protected String sourceIdOf(SocialAccount account) {
+        return account.getYoutubeChannelId();
+    }
+    @Override
+    protected String describeSource(String sourceId) {
+        return "Kanal " + sourceId;
+    }
+    @Override
+    protected Optional<YoutubeVideo> fetchLatest(String sourceId) {
+        return feedClient.fetchLatestVideo(sourceId);
+    }
+    @Override
+    protected String idOf(YoutubeVideo item) {
+        return item.videoId();
+    }
+    @Override
+    protected String lastIdOf(SocialAccount account) {
+        return account.getLastYoutubeVideoId();
+    }
+    @Override
+    protected void setLastId(SocialAccount account, String id) {
+        account.setLastYoutubeVideoId(id);
+    }
+    @Override
+    protected RenderedMessage buildMessage(SocialAccount account, YoutubeVideo item, Guild guild) {
+        return SocialMessageFactory.buildYoutubeMessage(account, item, guild);
+    }
+    @Override
+    protected void recordPollAttempt() {
         SocialsPollStatus.recordYoutubePollAttempt();
-        try {
-            checkChannels();
-        } catch (Exception e) {
-            SocialsPollStatus.recordYoutubeError(e.getMessage());
-            LOGGER.error("Error while checking YouTube channels: ", e);
-        }
     }
-
-    private void checkChannels() {
-        Map<String, List<SocialAccount>> byGuild = service.findAccountsWithYoutube();
-        if (byGuild.isEmpty()) {
-            return;
-        }
-
-        Map<String, List<GuildAccount>> byChannel = new HashMap<>();
-        byGuild.forEach((guildId, accounts) -> accounts.forEach(account ->
-                byChannel.computeIfAbsent(account.getYoutubeChannelId(), key -> new ArrayList<>())
-                        .add(new GuildAccount(guildId, account))));
-
-        byChannel.forEach(this::checkChannel);
+    @Override
+    protected void recordError(String message) {
+        SocialsPollStatus.recordYoutubeError(message);
     }
-
-    private void checkChannel(String youtubeChannelId, List<GuildAccount> guildAccounts) {
-        try {
-            Optional<YoutubeVideo> latest = feedClient.fetchLatestVideo(youtubeChannelId);
-            if (latest.isEmpty()) {
-                return;
-            }
-            YoutubeVideo video = latest.get();
-            for (GuildAccount guildAccount : guildAccounts) {
-                handleAccount(guildAccount.guildId(), guildAccount.account(), video);
-            }
-        } catch (Exception e) {
-            SocialsPollStatus.recordYoutubeError("Kanal " + youtubeChannelId + ": " + e.getMessage());
-            LOGGER.warn("Error while checking YouTube channel {}: {}", youtubeChannelId, e.getMessage());
-        }
-    }
-
-    private void handleAccount(String guildId, SocialAccount account, YoutubeVideo video) {
-        if (account.getLastYoutubeVideoId() == null) {
-            account.setLastYoutubeVideoId(video.videoId());
-            service.saveAccount(guildId, account);
-            return;
-        }
-
-        if (account.getLastYoutubeVideoId().equals(video.videoId())) {
-            return;
-        }
-
-        account.setLastYoutubeVideoId(video.videoId());
-        service.saveAccount(guildId, account);
-        announce(guildId, account, video);
-    }
-
-    private void announce(String guildId, SocialAccount account, YoutubeVideo video) {
-        Guild guild = jda.getGuildById(guildId);
-        if (guild == null) {
-            return;
-        }
-        TextChannel channel = jda.getChannelById(TextChannel.class, account.getChannelId());
-        if (channel == null) {
-            LOGGER.warn("Announcement channel {} for social account {} in guild {} no longer exists",
-                    account.getChannelId(), account.getId(), guildId);
-            return;
-        }
-
-        RenderedMessage message = SocialMessageFactory.buildYoutubeMessage(account, video, guild);
-        MessageDispatcher.prepare(channel, message).ifPresent(action -> action.queue(
-                success -> BotMetrics.incrementYoutubeVideosAnnounced(),
-                failure -> LOGGER.warn("Could not send YouTube announcement for account {}: {}",
-                        account.getId(), failure.getMessage())));
-        LOGGER.info("New YouTube video for account {} announced in guild {}: {}", account.getId(), guildId, video.videoId());
-    }
-
-    private record GuildAccount(String guildId, SocialAccount account) {
+    @Override
+    protected void onAnnounced() {
+        BotMetrics.incrementYoutubeVideosAnnounced();
     }
 }

@@ -1,21 +1,16 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
-
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-
 import java.awt.Color;
 import java.util.List;
-
 public final class AccountLinkPanelFactory {
     public static final String BUTTON_ID = "accountlink:start";
     public static final String MODAL_ID = "accountlink:modal";
     public static final String MODAL_INPUT_ID = "twitch_login";
-
     private AccountLinkPanelFactory() {
     }
-
     public static MessageEmbed buildPanelEmbed() {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(new Color(145, 70, 255));
@@ -31,7 +26,6 @@ public final class AccountLinkPanelFactory {
         eb.setFooter("Du kannst die Verknuepfung jederzeit mit /link unlink wieder entfernen.");
         return eb.build();
     }
-
     public static List<ActionRow> buildPanelComponents() {
         return List.of(ActionRow.of(Button.primary(BUTTON_ID, "\uD83D\uDD17 Verknuepfen")));
     }

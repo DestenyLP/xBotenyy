@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.commands;
-
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
@@ -24,22 +23,17 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-
 public class WelcomeCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeCommand.class);
-
     private final WelcomeService service;
     private final int previewMaxLength;
-
     public WelcomeCommand(WelcomeService service, int previewMaxLength) {
         this.service = service;
         this.previewMaxLength = previewMaxLength;
     }
-
     @Override
     public CommandData getCommandData() {
         return Commands.slash("welcome", "Verwalte die Willkommensnachrichten")
@@ -74,13 +68,11 @@ public class WelcomeCommand extends AbstractGuildCommand {
                         new SubcommandData("placeholders", "Zeigt alle verfügbaren Platzhalter")
                 );
     }
-
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
             return;
         }
-
         switch (subcommand) {
             case "settings" -> handleSettings(event);
             case "add" -> handleAdd(event);
@@ -92,19 +84,16 @@ public class WelcomeCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
-
     private void handleSettings(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         OptionMapping channelOption = event.getOption("channel");
         OptionMapping enabledOption = event.getOption("enabled");
         OptionMapping dmOption = event.getOption("dm");
-
         if (channelOption == null && enabledOption == null && dmOption == null) {
             WelcomeSettings settings = service.getSettings(guild.getId()).orElse(null);
             event.reply(describeSettings(settings)).setEphemeral(true).queue();
             return;
         }
-
         if (channelOption != null) {
             TextChannel channel = channelOption.getAsChannel().asTextChannel();
             service.updateChannel(guild.getId(), channel.getId());
@@ -115,7 +104,6 @@ public class WelcomeCommand extends AbstractGuildCommand {
         if (dmOption != null) {
             service.updateDm(guild.getId(), dmOption.getAsBoolean());
         }
-
         WelcomeSettings updated = service.getSettings(guild.getId()).orElse(null);
         event.reply("Einstellungen aktualisiert!\n" + describeSettings(updated)).setEphemeral(true).queue();
         LOGGER.info("Welcome settings updated for guild {}", guild.getId());
@@ -124,7 +112,6 @@ public class WelcomeCommand extends AbstractGuildCommand {
                         + " enabled=" + (updated != null && updated.isEnabled())
                         + " dm=" + (updated != null && updated.isDmEnabled()));
     }
-
     private String describeSettings(WelcomeSettings settings) {
         if (settings == null) {
             return "Noch nicht konfiguriert. Nutze `/welcome settings channel:#kanal enabled:true`.";
@@ -134,7 +121,6 @@ public class WelcomeCommand extends AbstractGuildCommand {
                 "Zusätzlich per DM: " + (settings.isDmEnabled() ? "Ja" : "Nein") + "\n" +
                 "Anzahl Varianten: " + settings.getVariants().size();
     }
-
     private void handleAdd(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         String content = event.getOption("content").getAsString();
@@ -144,23 +130,19 @@ public class WelcomeCommand extends AbstractGuildCommand {
         OptionMapping imageOption = event.getOption("image");
         OptionMapping footerOption = event.getOption("footer");
         OptionMapping pingOption = event.getOption("ping");
-
         String title = titleOption != null ? titleOption.getAsString() : null;
         String color = colorOption != null ? colorOption.getAsString() : null;
         String image = imageOption != null ? imageOption.getAsString() : null;
         String footer = footerOption != null ? footerOption.getAsString() : null;
         boolean ping = pingOption == null || pingOption.getAsBoolean();
-
         if (color != null && DiscordColors.parse(color).isEmpty()) {
             event.reply("Die angegebene Farbe ist ungültig. Bitte nutze das Format #RRGGBB.").setEphemeral(true).queue();
             return;
         }
-
         if (!ImageUrlValidator.isValid(image)) {
             event.reply("Die Bild-URL ist ungültig. Erlaubt sind http(s)-Links auf png/jpg/jpeg/gif/webp.").setEphemeral(true).queue();
             return;
         }
-
         WelcomeVariant draft = WelcomeVariant.builder()
                 .embed(embed)
                 .title(title)
@@ -170,24 +152,20 @@ public class WelcomeCommand extends AbstractGuildCommand {
                 .footer(footer)
                 .ping(ping)
                 .build();
-
         WelcomeVariant variant = service.addVariant(guild.getId(), draft);
         event.reply("Willkommensnachricht-Variante erstellt! ID: `" + variant.getId() + "`\n" +
                 "Teste sie mit `/welcome test id:" + variant.getId() + "`.").setEphemeral(true).queue();
         LOGGER.info("Added welcome variant {} for guild {}", variant.getId(), guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "WELCOME_VARIANT_ADD", "variantId=" + variant.getId());
     }
-
     private void handleEdit(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         String id = event.getOption("id").getAsString();
-
         Optional<WelcomeVariant> variantOpt = service.getVariant(guild.getId(), id);
         if (variantOpt.isEmpty()) {
             event.reply("Es wurde keine Variante mit dieser ID gefunden.").setEphemeral(true).queue();
             return;
         }
-
         OptionMapping contentOption = event.getOption("content");
         OptionMapping embedOption = event.getOption("embed");
         OptionMapping titleOption = event.getOption("title");
@@ -195,19 +173,16 @@ public class WelcomeCommand extends AbstractGuildCommand {
         OptionMapping imageOption = event.getOption("image");
         OptionMapping footerOption = event.getOption("footer");
         OptionMapping pingOption = event.getOption("ping");
-
         if (colorOption != null && !WelcomeService.isClearValue(colorOption.getAsString())
                 && DiscordColors.parse(colorOption.getAsString()).isEmpty()) {
             event.reply("Die angegebene Farbe ist ungültig. Bitte nutze das Format #RRGGBB.").setEphemeral(true).queue();
             return;
         }
-
         if (imageOption != null && !WelcomeService.isClearValue(imageOption.getAsString())
                 && !ImageUrlValidator.isValid(imageOption.getAsString())) {
             event.reply("Die Bild-URL ist ungültig. Erlaubt sind http(s)-Links auf png/jpg/jpeg/gif/webp.").setEphemeral(true).queue();
             return;
         }
-
         WelcomeVariantEdit edit = WelcomeVariantEdit.builder()
                 .content(contentOption != null ? contentOption.getAsString() : null)
                 .embed(embedOption != null ? embedOption.getAsBoolean() : null)
@@ -217,13 +192,11 @@ public class WelcomeCommand extends AbstractGuildCommand {
                 .footer(fieldEditFrom(footerOption))
                 .ping(pingOption != null ? pingOption.getAsBoolean() : null)
                 .build();
-
         service.editVariant(guild.getId(), id, edit);
         event.reply("Variante `" + id + "` wurde aktualisiert.").setEphemeral(true).queue();
         LOGGER.info("Edited welcome variant {} for guild {}", id, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "WELCOME_VARIANT_EDIT", "variantId=" + id);
     }
-
     private FieldEdit<String> fieldEditFrom(OptionMapping option) {
         if (option == null) {
             return FieldEdit.notProvided();
@@ -231,11 +204,9 @@ public class WelcomeCommand extends AbstractGuildCommand {
         String value = option.getAsString();
         return WelcomeService.isClearValue(value) ? FieldEdit.clear() : FieldEdit.value(value);
     }
-
     private void handleRemove(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         String id = event.getOption("id").getAsString();
-
         boolean removed = service.removeVariant(guild.getId(), id);
         if (removed) {
             event.reply("Variante `" + id + "` wurde entfernt.").setEphemeral(true).queue();
@@ -245,20 +216,16 @@ public class WelcomeCommand extends AbstractGuildCommand {
             event.reply("Es wurde keine Variante mit dieser ID gefunden.").setEphemeral(true).queue();
         }
     }
-
     private void handleList(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         List<WelcomeVariant> variants = service.getVariants(guild.getId());
-
         if (variants.isEmpty()) {
             event.reply("Es wurden noch keine Willkommensnachrichten-Varianten erstellt. Nutze `/welcome add` um eine zu erstellen.").setEphemeral(true).queue();
             return;
         }
-
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Willkommensnachrichten-Varianten");
         eb.setColor(DiscordColors.brand());
-
         for (WelcomeVariant variant : variants) {
             String preview = variant.getContent() != null && variant.getContent().length() > previewMaxLength
                     ? variant.getContent().substring(0, previewMaxLength) + "..."
@@ -269,20 +236,16 @@ public class WelcomeCommand extends AbstractGuildCommand {
                     "\nPing: " + (variant.isPing() ? "Ja" : "Nein");
             eb.addField("ID: " + variant.getId(), value, false);
         }
-
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
-
     private void handleTest(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         OptionMapping idOption = event.getOption("id");
-
         List<WelcomeVariant> variants = service.getVariants(guild.getId());
         if (variants.isEmpty()) {
             event.reply("Es wurden noch keine Willkommensnachrichten-Varianten erstellt.").setEphemeral(true).queue();
             return;
         }
-
         WelcomeVariant variant;
         if (idOption != null) {
             Optional<WelcomeVariant> variantOpt = service.getVariant(guild.getId(), idOption.getAsString());
@@ -294,9 +257,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
         } else {
             variant = variants.get(ThreadLocalRandom.current().nextInt(variants.size()));
         }
-
         Member member = event.getMember();
-
         TextChannel welcomeChannel = service.getSettings(guild.getId())
                 .map(WelcomeSettings::getChannelId)
                 .map(channelId -> event.getJDA().getChannelById(TextChannel.class, channelId))
@@ -304,11 +265,8 @@ public class WelcomeCommand extends AbstractGuildCommand {
         if (welcomeChannel == null) {
             welcomeChannel = event.getChannel().asTextChannel();
         }
-
         RenderedMessage built = WelcomeMessageFactory.build(variant, member, guild, welcomeChannel);
-
         event.deferReply(true).queue();
-
         String prefix = "**Vorschau** (Variante `" + variant.getId() + "`):\n";
         String body = built.content() != null ? built.content() : "";
         WebhookMessageCreateAction<?> action = event.getHook().sendMessage(prefix + body);
@@ -317,7 +275,6 @@ public class WelcomeCommand extends AbstractGuildCommand {
         }
         action.queue();
     }
-
     private void handlePlaceholders(SlashCommandInteractionEvent event) {
         event.replyEmbeds(PlaceholderCatalog.buildOverviewEmbed()).setEphemeral(true).queue();
     }

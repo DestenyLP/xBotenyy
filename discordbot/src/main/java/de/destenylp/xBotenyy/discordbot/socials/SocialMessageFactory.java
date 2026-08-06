@@ -1,18 +1,15 @@
 package de.destenylp.xBotenyy.discordbot.socials;
-
 import de.destenylp.xBotenyy.discordbot.messaging.MessageRenderer;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
 import de.destenylp.xBotenyy.discordbot.placeholders.PlaceholderContext;
 import de.destenylp.xBotenyy.discordbot.socials.twitch.TwitchStream;
+import de.destenylp.xBotenyy.discordbot.socials.tiktok.TikTokVideo;
 import de.destenylp.xBotenyy.discordbot.socials.youtube.YoutubeVideo;
 import net.dv8tion.jda.api.entities.Guild;
-
 public final class SocialMessageFactory {
     private static final String EVERYONE_PING = "@everyone";
-
     private SocialMessageFactory() {
     }
-
     public static RenderedMessage buildYoutubeMessage(SocialAccount account, YoutubeVideo video, Guild guild) {
         PlaceholderContext context = PlaceholderContext.of(guild)
                 .with("account", account.getName())
@@ -21,7 +18,6 @@ public final class SocialMessageFactory {
                 .with("video.thumbnail", video.thumbnailUrl());
         return withEveryonePing(MessageRenderer.render(account.getYoutubeTemplate(), context));
     }
-
     public static RenderedMessage buildTwitchMessage(SocialAccount account, TwitchStream stream, Guild guild) {
         PlaceholderContext context = PlaceholderContext.of(guild)
                 .with("account", account.getName())
@@ -32,7 +28,14 @@ public final class SocialMessageFactory {
                 .with("twitch.login", account.getTwitchLogin());
         return withEveryonePing(MessageRenderer.render(account.getTwitchTemplate(), context));
     }
-
+    public static RenderedMessage buildTiktokMessage(SocialAccount account, TikTokVideo video, Guild guild) {
+        PlaceholderContext context = PlaceholderContext.of(guild)
+                .with("account", account.getName())
+                .with("tiktok.title", video.title())
+                .with("tiktok.url", video.url())
+                .with("tiktok.thumbnail", video.thumbnailUrl() != null ? video.thumbnailUrl() : "");
+        return withEveryonePing(MessageRenderer.render(account.getTiktokTemplate(), context));
+    }
     private static RenderedMessage withEveryonePing(RenderedMessage rendered) {
         String existingContent = rendered.content();
         String content = (existingContent != null && !existingContent.isBlank())

@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.common.moderation;
-
 public record ModerationCase(
         long id,
         ModerationPlatform platform,

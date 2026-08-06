@@ -1,10 +1,8 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
-
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
 public class Ticket {
     private final String guildId;
     private final String authorId;
@@ -33,7 +31,6 @@ public class Ticket {
     private Integer ratingScore;
     private String ratingComment;
     private boolean autoCloseWarningSent;
-
     public Ticket(String guildId, String authorId, String authorName, TicketCategory category,
                   String subject, String description) {
         this.guildId = guildId;
@@ -48,7 +45,6 @@ public class Ticket {
         this.updatedAt = this.createdAt;
         this.lastActivityAt = this.createdAt;
     }
-
     Ticket(String id, String guildId, String channelId, String controlMessageId, String authorId,
            String authorName, TicketCategory category, TicketPriority priority, TicketStatus status,
            String subject, String description, long createdAt, long updatedAt, long lastActivityAt,
@@ -83,138 +79,106 @@ public class Ticket {
         this.autoCloseWarningSent = autoCloseWarningSent;
         this.participantIds.addAll(participantIds);
     }
-
     void assignId(String id) {
         this.id = id;
     }
-
     public String getId() {
         return id;
     }
-
     public String getGuildId() {
         return guildId;
     }
-
     public String getChannelId() {
         return channelId;
     }
-
     public void setChannelId(String channelId) {
         this.channelId = channelId;
     }
-
     public String getControlMessageId() {
         return controlMessageId;
     }
-
     public void setControlMessageId(String controlMessageId) {
         this.controlMessageId = controlMessageId;
     }
-
     public String getAuthorId() {
         return authorId;
     }
-
     public String getAuthorName() {
         return authorName;
     }
-
     public TicketCategory getCategory() {
         return category;
     }
-
     public TicketPriority getPriority() {
         return priority;
     }
-
     public void setPriority(TicketPriority priority) {
         this.priority = priority;
     }
-
     public TicketStatus getStatus() {
         return status;
     }
-
     public void setStatus(TicketStatus status) {
         this.status = status;
     }
-
     public String getSubject() {
         return subject;
     }
-
     public String getDescription() {
         return description;
     }
-
     public long getCreatedAt() {
         return createdAt;
     }
-
     public long getUpdatedAt() {
         return updatedAt;
     }
-
     public long getLastActivityAt() {
         return lastActivityAt;
     }
-
     public void recordActivity() {
         this.lastActivityAt = Instant.now().toEpochMilli();
         this.autoCloseWarningSent = false;
     }
-
     public boolean isAutoCloseWarningSent() {
         return autoCloseWarningSent;
     }
-
     public void setAutoCloseWarningSent(boolean autoCloseWarningSent) {
         this.autoCloseWarningSent = autoCloseWarningSent;
     }
-
     public void touch() {
         this.updatedAt = Instant.now().toEpochMilli();
     }
-
     public long getClosedAt() {
         return closedAt;
     }
-
     public String getClaimedById() {
         return claimedById;
     }
-
     public String getClaimedByName() {
         return claimedByName;
     }
-
     public void claim(String modId, String modName) {
         this.claimedById = modId;
         this.claimedByName = modName;
         this.status = TicketStatus.CLAIMED;
         touch();
     }
-
     public void unclaim() {
         this.claimedById = null;
         this.claimedByName = null;
         this.status = TicketStatus.OPEN;
         touch();
     }
-
     public String getClosedById() {
         return closedById;
     }
-
     public String getClosedByName() {
         return closedByName;
     }
-
     public String getCloseReason() {
         return closeReason;
     }
-
     public void close(String modId, String modName, String reason) {
         this.status = TicketStatus.CLOSED;
         this.closedById = modId;
@@ -223,46 +187,36 @@ public class Ticket {
         this.closedAt = Instant.now().toEpochMilli();
         touch();
     }
-
     public String getTranscriptFileName() {
         return transcriptFileName;
     }
-
     public void setTranscriptFileName(String transcriptFileName) {
         this.transcriptFileName = transcriptFileName;
     }
-
     public String getLogChannelId() {
         return logChannelId;
     }
-
     public String getLogMessageId() {
         return logMessageId;
     }
-
     public void setLogMessage(String logChannelId, String logMessageId) {
         this.logChannelId = logChannelId;
         this.logMessageId = logMessageId;
     }
-
     public Integer getRatingScore() {
         return ratingScore;
     }
-
     public String getRatingComment() {
         return ratingComment;
     }
-
     public void rate(int score, String comment) {
         this.ratingScore = score;
         this.ratingComment = comment;
         touch();
     }
-
     public Set<String> getParticipantIds() {
         return Collections.unmodifiableSet(participantIds);
     }
-
     public boolean addParticipant(String memberId) {
         boolean added = participantIds.add(memberId);
         if (added) {
@@ -270,7 +224,6 @@ public class Ticket {
         }
         return added;
     }
-
     public boolean removeParticipant(String memberId) {
         boolean removed = participantIds.remove(memberId);
         if (removed) {

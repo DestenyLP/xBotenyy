@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.twitchbot.moderation;
-
 import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
 import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
@@ -16,21 +15,17 @@ import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeHandler;
 import de.destenylp.xBotenyy.twitchbot.automod.TwitchModerationApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
-
 public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchModerationBridgeHandler.class);
     private static final String SYNC_MODERATOR_ID = "DISCORD_SYNC";
     private static final String SYNC_MODERATOR_NAME = "Discord-Sync";
-
     private final String syncChannel;
     private final String moderatorUserId;
     private final TwitchModerationApiClient moderationApiClient;
     private final ModerationCaseRepository caseRepository;
     private final AccountLinkRepository accountLinkRepository;
     private final PendingLinkVerificationRepository pendingLinkVerificationRepository;
-
     public TwitchModerationBridgeHandler(String syncChannel, String moderatorUserId,
                                           TwitchModerationApiClient moderationApiClient,
                                           ModerationCaseRepository caseRepository,
@@ -43,7 +38,6 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         this.accountLinkRepository = accountLinkRepository;
         this.pendingLinkVerificationRepository = pendingLinkVerificationRepository;
     }
-
     @Override
     public BridgeActionResult applyAction(BridgeActionRequest request) {
         if (syncChannel == null || syncChannel.isBlank()) {
@@ -56,7 +50,6 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         if (broadcasterId.isEmpty()) {
             return new BridgeActionResult(false, "Sync-Kanal konnte nicht aufgeloest werden.");
         }
-
         String reason = "Sync von Discord: " + request.reason();
         boolean success = switch (request.action()) {
             case TIMEOUT -> moderationApiClient.banUser(broadcasterId.get(), moderatorUserId, request.targetUserId(),
@@ -66,11 +59,9 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
             case WARN -> true;
             default -> false;
         };
-
         if (!success) {
             return new BridgeActionResult(false, "Aktion konnte auf Twitch nicht ausgefuehrt werden.");
         }
-
         ModerationAction resolvedAction = request.action() == ModerationAction.UNTIMEOUT
                 ? ModerationAction.UNBAN : request.action();
         if (resolvedAction == ModerationAction.BAN || resolvedAction == ModerationAction.TIMEOUT) {
@@ -83,7 +74,6 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         }
         return new BridgeActionResult(true, "OK");
     }
-
     @Override
     public BridgeLinkConfirmResult confirmLink(BridgeLinkConfirmRequest request) {
         Optional<PendingLinkVerification> pendingOpt = pendingLinkVerificationRepository.consume(request.code());
@@ -99,7 +89,6 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         return new BridgeLinkConfirmResult(true, request.discordUserId(), request.discordUsername(),
                 pending.twitchUserId(), pending.twitchLogin(), "Verknuepfung erfolgreich.");
     }
-
     @Override
     public BridgeRoleSyncResult syncRoles(BridgeRoleSyncRequest request) {
         return new BridgeRoleSyncResult(false, "Rollen-Sync wird nur in Richtung Discord unterstuetzt.");

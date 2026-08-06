@@ -1,17 +1,13 @@
 package de.destenylp.xBotenyy.launcher.bot;
-
 import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.launcher.LauncherSettings;
 import de.destenylp.xBotenyy.twitchbot.Bot;
 import de.destenylp.xBotenyy.twitchbot.config.TwitchBotProperties;
 import org.slf4j.Logger;
-
 public final class TwitchManagedBot extends AbstractManagedBot<Bot> {
-
     public TwitchManagedBot(Logger logger, LauncherSettings settings) {
         super(BotId.TWITCH, "Twitch-Bot", logger, settings);
     }
-
     @Override
     protected Bot createInstance() {
         CommonConfig config = CommonConfig.load()
@@ -27,7 +23,6 @@ public final class TwitchManagedBot extends AbstractManagedBot<Bot> {
         TwitchBotProperties properties = TwitchBotProperties.load();
         return new Bot(config, properties);
     }
-
     @Override
     protected void performStart(Bot instance) throws Exception {
         instance.start();

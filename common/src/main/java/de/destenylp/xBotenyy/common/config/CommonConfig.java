@@ -1,14 +1,11 @@
 package de.destenylp.xBotenyy.common.config;
-
 import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-
 public record CommonConfig(
         String discordBotToken,
         String twitchClientId,
@@ -24,7 +21,6 @@ public record CommonConfig(
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
     private static final String ENV_FILE_NAME = ".env";
     private static final String ENV_DIR_OVERRIDE_VAR = "XBOTENYY_ENV_DIR";
-
     public static Optional<CommonConfig> load() {
         String envDirectory = resolveEnvDirectory();
         Dotenv dotenv = Dotenv.configure()
@@ -32,7 +28,6 @@ public record CommonConfig(
                 .filename(ENV_FILE_NAME)
                 .ignoreIfMissing()
                 .load();
-
         String discordBotToken = blankToNull(resolve("BOT_TOKEN", dotenv));
         String twitchClientId = blankToNull(resolve("TWITCH_CLIENT_ID", dotenv));
         String twitchClientSecret = blankToNull(resolve("TWITCH_CLIENT_SECRET", dotenv));
@@ -44,13 +39,11 @@ public record CommonConfig(
         String twitchBroadcasterRefreshToken = blankToNull(resolve("TWITCH_BROADCASTER_REFRESH_TOKEN", dotenv));
         String groqApiKey = blankToNull(resolve("GROQ_API_KEY", dotenv));
         java.nio.file.Path envFilePath = java.nio.file.Path.of(envDirectory, ENV_FILE_NAME);
-
         return Optional.of(new CommonConfig(discordBotToken, twitchClientId, twitchClientSecret,
                 twitchChatBotUsername, twitchChatOauthToken, twitchModeratorAccessToken,
                 twitchBotRefreshToken, twitchBroadcasterAccessToken, twitchBroadcasterRefreshToken,
                 envFilePath, groqApiKey));
     }
-
     private static String resolveEnvDirectory() {
         String override = System.getenv(ENV_DIR_OVERRIDE_VAR);
         if (override == null || override.isBlank()) {
@@ -59,22 +52,18 @@ public record CommonConfig(
         if (override != null && !override.isBlank()) {
             return override;
         }
-
         for (String candidate : candidateDirectories()) {
             if (Files.isRegularFile(Path.of(candidate, ENV_FILE_NAME))) {
                 return candidate;
             }
         }
-
         LOGGER.debug("No .env found in the known candidate directories, using '{}' as a fallback.",
                 candidateDirectories().get(0));
         return candidateDirectories().get(0);
     }
-
     private static List<String> candidateDirectories() {
         return List.of("common", ".", "..", "../common", "../..", "../../common");
     }
-
     private static String resolve(String key, Dotenv dotenv) {
         String value = System.getenv(key);
         if (value == null || value.isBlank()) {
@@ -82,39 +71,30 @@ public record CommonConfig(
         }
         return value;
     }
-
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
     }
-
     public boolean hasDiscordToken() {
         return discordBotToken != null;
     }
-
     public boolean hasTwitchAppCredentials() {
         return twitchClientId != null && twitchClientSecret != null;
     }
-
     public boolean hasTwitchChatCredentials() {
         return twitchClientId != null && twitchClientSecret != null && twitchChatBotUsername != null;
     }
-
     public boolean hasTwitchModeratorAccessToken() {
         return twitchModeratorAccessToken != null;
     }
-
     public boolean hasTwitchBotRefreshToken() {
         return twitchBotRefreshToken != null && twitchClientSecret != null;
     }
-
     public boolean hasTwitchBroadcasterAccessToken() {
         return twitchBroadcasterAccessToken != null;
     }
-
     public boolean hasTwitchBroadcasterRefreshToken() {
         return twitchBroadcasterRefreshToken != null && twitchClientSecret != null;
     }
-
     public boolean hasGroqApiKey() {
         return groqApiKey != null;
     }

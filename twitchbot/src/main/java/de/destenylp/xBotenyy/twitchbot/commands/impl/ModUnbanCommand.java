@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
-
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
@@ -8,18 +7,14 @@ import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.moderation.TwitchModerationSyncTrigger;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-
 public class ModUnbanCommand extends AbstractTwitchCommand {
     private static final String USAGE = "Nutzung: !unban <nutzer>";
-
     private final TwitchEventLogService eventLogService;
     private final ModerationCaseRepository caseRepository;
     private final TwitchModerationSyncTrigger syncTrigger;
-
     public ModUnbanCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
                             TwitchModerationSyncTrigger syncTrigger) {
         super("unban", "Hebt einen Bann oder Timeout auf.", List.of("untimeout"),
@@ -28,14 +23,12 @@ public class ModUnbanCommand extends AbstractTwitchCommand {
         this.caseRepository = caseRepository;
         this.syncTrigger = syncTrigger;
     }
-
     @Override
     public void execute(TwitchCommandContext context) {
         if (context.arg(0) == null) {
             context.reply(USAGE);
             return;
         }
-
         String targetLogin = context.arg(0).replace("@", "").toLowerCase(Locale.ROOT);
         String channel = context.message().channelLogin();
         Optional<String> broadcasterId = context.services().moderationApiClient().resolveUserId(channel);
@@ -44,7 +37,6 @@ public class ModUnbanCommand extends AbstractTwitchCommand {
             context.reply("Konnte den Nutzer " + targetLogin + " nicht finden.");
             return;
         }
-
         boolean success = context.services().moderationApiClient().unbanUser(broadcasterId.get(),
                 context.services().moderatorUserId(), targetUserId.get());
         if (success) {

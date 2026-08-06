@@ -1,35 +1,27 @@
 package de.destenylp.xBotenyy.launcher.bot;
-
 import de.destenylp.xBotenyy.common.core.AbstractBot;
 import de.destenylp.xBotenyy.launcher.LauncherSettings;
 import org.slf4j.Logger;
-
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
 public abstract class AbstractManagedBot<T extends AbstractBot> implements ManagedBot {
-
     private final BotId id;
     private final String displayName;
     private final Logger logger;
     private final LauncherSettings settings;
-
     private final Object lifecycleLock = new Object();
     private final AtomicReference<T> currentInstance = new AtomicReference<>();
     private final AtomicInteger restartCount = new AtomicInteger(0);
-
     private volatile BotStatus status = BotStatus.STOPPED;
     private volatile boolean manualStopRequested = false;
     private volatile long lastStartedAtMillis = -1;
-
     protected AbstractManagedBot(BotId id, String displayName, Logger logger, LauncherSettings settings) {
         this.id = id;
         this.displayName = displayName;
         this.logger = logger;
         this.settings = settings;
     }
-
     private static void sleepQuietly(Duration duration) {
         try {
             Thread.sleep(duration.toMillis());
@@ -37,36 +29,28 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             Thread.currentThread().interrupt();
         }
     }
-
     protected abstract T createInstance();
-
     protected abstract void performStart(T instance) throws Exception;
-
     @Override
     public final BotId getId() {
         return id;
     }
-
     @Override
     public final String getDisplayName() {
         return displayName;
     }
-
     @Override
     public final BotStatus getStatus() {
         return status;
     }
-
     @Override
     public final int getRestartCount() {
         return restartCount.get();
     }
-
     @Override
     public final long getLastStartedAtMillis() {
         return lastStartedAtMillis;
     }
-
     @Override
     public final void start() {
         synchronized (lifecycleLock) {
@@ -86,7 +70,6 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             supervisorThread.start();
         }
     }
-
     @Override
     public final boolean stop(long timeoutSeconds) {
         synchronized (lifecycleLock) {
@@ -97,13 +80,11 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             manualStopRequested = true;
             status = BotStatus.STOPPING;
         }
-
         T instance = currentInstance.get();
         if (instance == null) {
             status = BotStatus.STOPPED;
             return true;
         }
-
         Thread stopWorker = new Thread(instance::shutdown, id.primaryName() + "-stop");
         stopWorker.setDaemon(true);
         stopWorker.start();
@@ -112,7 +93,6 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-
         boolean stoppedInTime = !stopWorker.isAlive();
         if (stoppedInTime) {
             status = BotStatus.STOPPED;
@@ -124,7 +104,6 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
         }
         return stoppedInTime;
     }
-
     private void runSupervised() {
         int attempt = 0;
         while (true) {
@@ -139,22 +118,18 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
                 return;
             }
             currentInstance.set(instance);
-
             try {
                 performStart(instance);
                 lastStartedAtMillis = System.currentTimeMillis();
                 status = BotStatus.RUNNING;
                 logger.info("{} was started successfully (attempt {}).", displayName, attempt);
-
                 instance.awaitShutdown();
-
                 status = BotStatus.STOPPED;
                 return;
             } catch (Throwable failure) {
                 int maxAttempts = settings.getMaxRestartAttempts();
                 logger.error("{} has crashed (attempt {}/{}), the other bot keeps running independently: ",
                         displayName, attempt, maxAttempts, failure);
-
                 if (manualStopRequested) {
                     status = BotStatus.STOPPED;
                     return;
@@ -166,12 +141,10 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
                     status = BotStatus.FAILED;
                     return;
                 }
-
                 status = BotStatus.CRASHED;
                 restartCount.incrementAndGet();
                 Duration delay = Duration.ofSeconds(settings.getRestartDelaySeconds());
                 sleepQuietly(delay);
-
                 if (manualStopRequested) {
                     status = BotStatus.STOPPED;
                     return;

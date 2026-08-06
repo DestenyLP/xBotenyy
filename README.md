@@ -32,8 +32,9 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
 
 ## Requirements
 
-- JDK 21
-- Maven 3.9+
+- JDK 21 (to run the bot, whether via a downloaded JAR or a build you did yourself)
+- Maven 3.9+ (only needed if you build from source yourself - not required if you just download a
+  ready-made JAR from [Releases](../../releases))
 - Discord bot token (for `discordbot`)
 - Twitch client ID + client secret (for `twitchbot` & the Twitch integration in `discordbot`)
 
@@ -44,6 +45,52 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
   (or the URL of your OAuth handler).
 
 ## Setup
+
+There are two ways to get a running bot: download a ready-made JAR (no build tools needed), or build the
+project yourself from source.
+
+### Option A: Download a ready-made JAR (recommended for most users)
+
+1. Go to the [Releases](../../releases) page and download the JAR you need from the latest release:
+    - `xBotenyyDiscordBot.jar` - Discord bot only
+    - `xBotenyyTwitchBot.jar` - Twitch bot only
+    - `xBotenyyLauncher.jar` - both bots combined in one process (see
+      [Combined start](#combined-start-launcher)); this single JAR already contains everything, you do
+      **not** need the other two JARs alongside it
+2. Put the JAR in an empty folder on your server/PC.
+3. Create an `.env` file **in that same folder, right next to the JAR**. *Note: this is different from
+   building from source - there is no `src/main/resources` here, the `.env` just needs to sit next to the
+   JAR file.*
+
+   ```env
+   # Discord configuration
+   BOT_TOKEN=
+   GROQ_API_KEY=
+
+   # Twitch app credentials
+   TWITCH_CLIENT_ID=
+   TWITCH_CLIENT_SECRET=
+
+   # Twitch bot account tokens
+   TWITCH_BOT_ACCESS_TOKEN=
+   TWITCH_BOT_REFRESH_TOKEN=
+
+   # Twitch broadcaster account tokens (for EventSub, mod actions & role sync)
+   TWITCH_BROADCASTER_ACCESS_TOKEN=
+   TWITCH_BROADCASTER_REFRESH_TOKEN=
+   ```
+
+4. Start the bot:
+
+   ```bash
+   java -jar xBotenyyDiscordBot.jar
+   # or xBotenyyTwitchBot.jar / xBotenyyLauncher.jar, depending on what you downloaded
+   ```
+
+5. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
+   values in the same folder on first start).
+
+### Option B: Build from source
 
 1. Clone the repository.
 2. Create an `.env` file in the **root directory (project root)**. *Note: never place it under `src/main/resources`,
@@ -67,7 +114,14 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
    TWITCH_BROADCASTER_REFRESH_TOKEN=
    ```
 
-3. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
+3. Build and run, e.g. for the Discord bot:
+
+   ```bash
+   mvn -pl discordbot -am -DskipTests package
+   java -jar discordbot/target/xBotenyyDiscordBot.jar
+   ```
+
+4. Configure `discordbot.properties` / `twitchbot.properties` (these are created automatically with default
    values in the respective module folder on first start).
 
 ---
@@ -90,7 +144,7 @@ Discord ↔ Twitch linking.
 | `/reactionrole` | `add`, `remove`, `list` | Reaction roles via emoji or button on any message |
 | `/giveaway` | `start`, `end`, `reroll`, `cancel`, `list` | Giveaway system with multiple winners |
 | `/welcome` | `settings`, `add`, `edit`, `remove`, `list`, `test`, `placeholders` | Welcome messages with multiple variants and placeholders |
-| `/socials` | `add`, `edit`, `message`, `remove`, `list`, `status`, `test`, `placeholders` | YouTube & Twitch live announcements |
+| `/socials` | `add`, `edit`, `message`, `remove`, `list`, `status`, `test`, `placeholders` | YouTube, Twitch & TikTok announcements |
 | `/message` | `create`, `edit`, `placeholders` | Freeform messages with placeholders (e.g. as a basis for reaction roles) |
 
 #### Moderation
@@ -599,20 +653,45 @@ copied to the server - only `xBotenyyLauncher.jar` as well as, as usual, `.env`,
 
 ## Automatic builds and releases
 
-Three GitHub Actions workflows under `.github/workflows/` automatically build all three fat JARs:
+A single GitHub Actions workflow, `.github/workflows/release.yml`, builds all three fat JARs and publishes
+a GitHub release fully automatically - the version in the root `pom.xml` is the single source of truth.
 
-- **`build.yml`** runs on every push and pull request to `main` (`mvn clean verify`, incl. tests, Checkstyle,
-  SpotBugs) and uploads `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`, and `xBotenyyLauncher.jar` as
-  workflow artifacts (retrievable for 14 days under the respective workflow run, **not** a GitHub release).
-- **`latest-release.yml`** also runs on every push to `main` and automatically updates a rolling
-  pre-release named "Latest Build" (tag `latest`) with the three current fat JARs - so you get an immediately
-  downloadable release after every push, even without your own tagging.
-- **`release.yml`** runs **only** on an actual version tag (e.g. `v3.0.0`) or manually via
-  "Run workflow" and publishes an official GitHub release with all three fat JARs attached.
+### How it works
 
-You create an official, versioned release via:
+1. You change `<version>` in the root `pom.xml` (e.g. from `1.0-RELEASE` to `1.1.0`).
+2. You commit and push to `main`.
+3. The workflow triggers (it watches for changes to `pom.xml` on `main`) and:
+    - reads the new version directly from the root `pom.xml`,
+    - checks whether a tag for that version already exists (skips everything below if it does, so pushes
+      that don't touch the version number don't create duplicate releases),
+    - synchronizes the `<parent><version>` reference in `common`, `discordbot`, `twitchbot`, and `launcher`
+      so all modules match the new version,
+    - creates and pushes the tag (`v` + version, e.g. `v1.1.0`),
+    - builds all three fat JARs (`mvn clean package`),
+    - publishes a GitHub release with `xBotenyyDiscordBot.jar`, `xBotenyyTwitchBot.jar`, and
+      `xBotenyyLauncher.jar` attached (GitHub automatically adds a source code ZIP/TAR.GZ to every release
+      as well),
+    - commits the synchronized module `pom.xml` files back to `main`.
+
+### Manual trigger
+
+The workflow can also be started by hand under **Actions → Release → Run workflow**, using whatever
+version is currently set in the root `pom.xml`. This is mainly useful for re-running a release after a
+fixed workflow error, without having to bump the version again.
+
+### Everyday release
+
+For a normal new release, all you need is:
 
 ```bash
-git tag v3.0.0
-git push origin v3.0.0
+# edit <version> in the root pom.xml, then:
+git add pom.xml
+git commit -m "Version 1.1.0"
+git push origin main
 ```
+
+
+---
+
+This Documentation has been generated by AI
+

@@ -1,9 +1,7 @@
 package de.destenylp.xBotenyy.launcher.scheduler;
-
 import de.destenylp.xBotenyy.launcher.bot.BotRegistry;
 import de.destenylp.xBotenyy.launcher.bot.ManagedBot;
 import org.slf4j.Logger;
-
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.List;
@@ -16,30 +14,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 public final class TaskScheduler {
-
     private static final List<String> ALL_TOKENS = List.of("all", "both", "*");
     private static final long DEFAULT_TICK_SECONDS = 10;
     private static final long DEFAULT_TIMEOUT_SECONDS = 30;
-
     private final BotRegistry registry;
     private final SchedulerStore store;
     private final Logger logger;
-
     private final List<ScheduledTask> tasks = new CopyOnWriteArrayList<>();
     private final AtomicInteger idCounter = new AtomicInteger(0);
-
     private ScheduledExecutorService executor;
     private ExecutorService actionExecutor;
     private volatile ScheduledFuture<?> tickFuture;
-
     public TaskScheduler(BotRegistry registry, SchedulerStore store, Logger logger) {
         this.registry = registry;
         this.store = store;
         this.logger = logger;
     }
-
     public void start() {
         for (ScheduledTask task : store.load()) {
             tasks.add(task);
@@ -59,7 +50,6 @@ public final class TaskScheduler {
                 TimeUnit.SECONDS);
         logger.info("TaskScheduler started ({} saved tasks loaded).", tasks.size());
     }
-
     public void stop() {
         if (tickFuture != null) {
             tickFuture.cancel(false);
@@ -72,7 +62,6 @@ public final class TaskScheduler {
         }
         logger.info("TaskScheduler stopped.");
     }
-
     private void trackId(String id) {
         if (id != null && id.startsWith("s")) {
             try {
@@ -82,11 +71,9 @@ public final class TaskScheduler {
             }
         }
     }
-
     private String nextId() {
         return "s" + idCounter.incrementAndGet();
     }
-
     public ScheduledTask addInterval(String target, ScheduledAction action, Duration interval, long timeoutSeconds) {
         validateTarget(target);
         ScheduledTask task = ScheduledTask.interval(nextId(), normalizeTarget(target), action, interval,
@@ -95,7 +82,6 @@ public final class TaskScheduler {
         persist();
         return task;
     }
-
     public ScheduledTask addDaily(String target, ScheduledAction action, LocalTime dailyTime, long timeoutSeconds) {
         validateTarget(target);
         ScheduledTask task = ScheduledTask.daily(nextId(), normalizeTarget(target), action, dailyTime,
@@ -104,7 +90,6 @@ public final class TaskScheduler {
         persist();
         return task;
     }
-
     public boolean remove(String id) {
         boolean removed = tasks.removeIf(task -> task.getId().equalsIgnoreCase(id));
         if (removed) {
@@ -112,11 +97,9 @@ public final class TaskScheduler {
         }
         return removed;
     }
-
     public Optional<ScheduledTask> find(String id) {
         return tasks.stream().filter(task -> task.getId().equalsIgnoreCase(id)).findFirst();
     }
-
     public boolean setEnabled(String id, boolean enabled) {
         Optional<ScheduledTask> task = find(id);
         task.ifPresent(t -> {
@@ -125,11 +108,9 @@ public final class TaskScheduler {
         });
         return task.isPresent();
     }
-
     public List<ScheduledTask> all() {
         return List.copyOf(tasks);
     }
-
     private void validateTarget(String target) {
         String normalized = target.toLowerCase(Locale.ROOT).trim();
         if (ALL_TOKENS.contains(normalized)) {
@@ -139,19 +120,16 @@ public final class TaskScheduler {
             throw new IllegalArgumentException("Unbekannter Bot '" + target + "'. Gueltige Werte: discord, twitch, all.");
         }
     }
-
     private String normalizeTarget(String target) {
         String normalized = target.toLowerCase(Locale.ROOT).trim();
         return ALL_TOKENS.contains(normalized) ? "all" : normalized;
     }
-
     private List<ManagedBot> resolveTargets(String target) {
         if (ALL_TOKENS.contains(target)) {
             return List.copyOf(registry.all());
         }
         return registry.find(target).map(List::of).orElse(List.of());
     }
-
     private void tick() {
         long now = System.currentTimeMillis();
         for (ScheduledTask task : tasks) {
@@ -162,7 +140,6 @@ public final class TaskScheduler {
             }
         }
     }
-
     private void runTask(ScheduledTask task) {
         List<ManagedBot> targets = resolveTargets(task.getTarget());
         if (targets.isEmpty()) {
@@ -184,7 +161,6 @@ public final class TaskScheduler {
             }
         }
     }
-
     private void persist() {
         store.save(tasks);
     }

@@ -1,8 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.giveaways;
-
 import java.time.Instant;
 import java.util.*;
-
 public class Giveaway {
     private final String guildId;
     private final String prize;
@@ -20,7 +18,6 @@ public class Giveaway {
     private GiveawayStatus status;
     private long endedAt;
     private List<String> winnerIds = new ArrayList<>();
-
     public Giveaway(String guildId, String prize, String description, int winnerCount, String hostId,
                     String hostName, String requiredRoleId, long endAt) {
         this.guildId = guildId;
@@ -34,7 +31,6 @@ public class Giveaway {
         this.status = GiveawayStatus.RUNNING;
         this.createdAt = Instant.now().toEpochMilli();
     }
-
     Giveaway(String id, String guildId, String channelId, String messageId, String prize, String description,
              int winnerCount, String hostId, String hostName, String requiredRoleId, GiveawayStatus status,
              long createdAt, long endAt, long endedAt, Set<String> participantIds, List<String> winnerIds) {
@@ -55,111 +51,85 @@ public class Giveaway {
         this.participantIds.addAll(participantIds);
         this.winnerIds = new ArrayList<>(winnerIds);
     }
-
     void assignId(String id) {
         this.id = id;
     }
-
     public String getId() {
         return id;
     }
-
     public String getGuildId() {
         return guildId;
     }
-
     public String getChannelId() {
         return channelId;
     }
-
     public String getMessageId() {
         return messageId;
     }
-
     public void setChannelAndMessage(String channelId, String messageId) {
         this.channelId = channelId;
         this.messageId = messageId;
     }
-
     public String getPrize() {
         return prize;
     }
-
     public String getDescription() {
         return description;
     }
-
     public int getWinnerCount() {
         return winnerCount;
     }
-
     public String getHostId() {
         return hostId;
     }
-
     public String getHostName() {
         return hostName;
     }
-
     public String getRequiredRoleId() {
         return requiredRoleId;
     }
-
     public GiveawayStatus getStatus() {
         return status;
     }
-
     public long getCreatedAt() {
         return createdAt;
     }
-
     public long getEndAt() {
         return endAt;
     }
-
     public long getEndedAt() {
         return endedAt;
     }
-
     public Set<String> getParticipantIds() {
         return Collections.unmodifiableSet(participantIds);
     }
-
     public boolean isParticipant(String memberId) {
         return participantIds.contains(memberId);
     }
-
     public boolean addParticipant(String memberId) {
         return participantIds.add(memberId);
     }
-
     public boolean removeParticipant(String memberId) {
         return participantIds.remove(memberId);
     }
-
     public List<String> getWinnerIds() {
         return Collections.unmodifiableList(winnerIds);
     }
-
     public boolean isRunning() {
         return status == GiveawayStatus.RUNNING;
     }
-
     public boolean isDue() {
         return isRunning() && Instant.now().toEpochMilli() >= endAt;
     }
-
     public void end(List<String> winnerIds) {
         this.winnerIds = new ArrayList<>(winnerIds);
         this.status = GiveawayStatus.ENDED;
         this.endedAt = Instant.now().toEpochMilli();
     }
-
     public void reroll(List<String> winnerIds) {
         this.winnerIds = new ArrayList<>(winnerIds);
         this.endedAt = Instant.now().toEpochMilli();
     }
-
     public void cancel() {
         this.status = GiveawayStatus.CANCELLED;
         this.endedAt = Instant.now().toEpochMilli();

@@ -1,13 +1,10 @@
 package de.destenylp.xBotenyy.common.automod;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 public final class AutomodActivityTracker {
     private final Map<String, MemberActivity> activity = new ConcurrentHashMap<>();
-
     public int registerMessage(String key, long nowMillis, long windowMillis) {
         MemberActivity entry = activity.computeIfAbsent(key, ignored -> new MemberActivity());
         synchronized (entry) {
@@ -22,7 +19,6 @@ public final class AutomodActivityTracker {
             return entry.timestamps.size();
         }
     }
-
     public int registerDuplicate(String key, String normalizedContent, long nowMillis) {
         MemberActivity entry = activity.computeIfAbsent(key, ignored -> new MemberActivity());
         synchronized (entry) {
@@ -41,7 +37,6 @@ public final class AutomodActivityTracker {
             return entry.repeatCount;
         }
     }
-
     public int purgeStaleEntries(long olderThanMillis) {
         long now = System.currentTimeMillis();
         int removed = 0;
@@ -53,7 +48,6 @@ public final class AutomodActivityTracker {
         }
         return removed;
     }
-
     private static final class MemberActivity {
         private final Deque<Long> timestamps = new ArrayDeque<>();
         private String lastContent = "";

@@ -1,13 +1,9 @@
 package de.destenylp.xBotenyy.discordbot.placeholders;
-
 import java.time.format.DateTimeFormatter;
-
 public final class DefaultPlaceholders {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-
     private DefaultPlaceholders() {
     }
-
     public static void registerAll() {
         PlaceholderEngine.register("user", context -> context.getMember() != null
                 ? context.getMember().getAsMention() : null);

@@ -1,17 +1,12 @@
 package de.destenylp.xBotenyy.launcher.scheduler;
-
 import java.time.Duration;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 public final class DurationParser {
-
     private static final Pattern PATTERN = Pattern.compile("^(\\d+)([smhd]?)$");
-
     private DurationParser() {
     }
-
     public static Duration parse(String raw) {
         if (raw == null || raw.isBlank()) {
             throw new IllegalArgumentException("Intervall darf nicht leer sein.");
@@ -36,7 +31,6 @@ public final class DurationParser {
         }
         return duration;
     }
-
     public static String format(Duration duration) {
         long seconds = duration.getSeconds();
         if (seconds % 86400 == 0) {

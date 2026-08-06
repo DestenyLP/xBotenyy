@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.commands;
-
 import de.destenylp.xBotenyy.common.moderation.AccountLink;
 import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmRequest;
 import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmResult;
@@ -19,16 +18,13 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-
 import java.util.Optional;
 import java.util.function.Supplier;
-
 public class AccountLinkCommand extends AbstractGuildCommand {
     private final AccountLinkService accountLinkService;
     private final ModerationBridgeClient bridgeClient;
     private final Supplier<BridgeSettings> bridgeSettingsSupplier;
     private final ModerationRoleSettingsRepository roleSettingsRepository;
-
     public AccountLinkCommand(AccountLinkService accountLinkService, ModerationBridgeClient bridgeClient,
                                Supplier<BridgeSettings> bridgeSettingsSupplier,
                                ModerationRoleSettingsRepository roleSettingsRepository) {
@@ -37,7 +33,6 @@ public class AccountLinkCommand extends AbstractGuildCommand {
         this.bridgeSettingsSupplier = bridgeSettingsSupplier;
         this.roleSettingsRepository = roleSettingsRepository;
     }
-
     @Override
     public CommandData getCommandData() {
         return Commands.slash("link", "Verknuepft deinen Discord- mit deinem Twitch-Account")
@@ -52,7 +47,6 @@ public class AccountLinkCommand extends AbstractGuildCommand {
                                 .addOptions(new OptionData(OptionType.CHANNEL, "channel", "Zielkanal", true))
                 );
     }
-
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         switch (subcommand) {
@@ -64,7 +58,6 @@ public class AccountLinkCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
-
     private void handleTwitch(SlashCommandInteractionEvent event) {
         String login = event.getOption("login").getAsString().toLowerCase().replace("@", "");
         String code = accountLinkService.initiate(event.getUser().getId(), event.getUser().getName(), login);
@@ -72,7 +65,6 @@ public class AccountLinkCommand extends AbstractGuildCommand {
                 + "von **" + login + "**, um die Verknuepfung zu bestaetigen.").setEphemeral(true).queue();
         AuditLog.record(event.getGuild().getId(), event.getUser().getId(), "ACCOUNT_LINK_INITIATE", "twitch=" + login);
     }
-
     private void handleVerify(SlashCommandInteractionEvent event) {
         BridgeSettings settings = bridgeSettingsSupplier.get();
         if (!settings.isPeerConfigured()) {
@@ -94,7 +86,6 @@ public class AccountLinkCommand extends AbstractGuildCommand {
         AuditLog.record(event.getGuild().getId(), event.getUser().getId(), "ACCOUNT_LINK_CONFIRM",
                 "twitch=" + result.twitchLogin());
     }
-
     private void handleStatus(SlashCommandInteractionEvent event) {
         Optional<AccountLink> linkOpt = accountLinkService.findLink(event.getUser().getId());
         if (linkOpt.isEmpty()) {
@@ -104,13 +95,11 @@ public class AccountLinkCommand extends AbstractGuildCommand {
         }
         event.reply("Verknuepft mit Twitch-Account **" + linkOpt.get().twitchLogin() + "**.").setEphemeral(true).queue();
     }
-
     private void handleUnlink(SlashCommandInteractionEvent event) {
         accountLinkService.unlink(event.getUser().getId());
         event.reply("Verknuepfung entfernt.").setEphemeral(true).queue();
         AuditLog.record(event.getGuild().getId(), event.getUser().getId(), "ACCOUNT_LINK_REMOVE", "");
     }
-
     private void handlePanel(SlashCommandInteractionEvent event, Guild guild) {
         if (!ModerationPermissionGuard.requireAdmin(event, roleSettingsRepository.getOrEmpty(guild.getId()))) {
             return;

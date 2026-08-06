@@ -1,8 +1,6 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
-
 import de.destenylp.xBotenyy.common.moderation.TwitchRoleSyncStatus;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,18 +8,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-
 public class ModerationRoleSettingsRepository {
     private final Database database;
-
     public ModerationRoleSettingsRepository(Database database) {
         this.database = database;
     }
-
     public ModerationRoleSettings getOrEmpty(String guildId) {
         return find(guildId).orElseGet(() -> ModerationRoleSettings.empty(guildId));
     }
-
     public Optional<ModerationRoleSettings> find(String guildId) {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -33,27 +27,23 @@ public class ModerationRoleSettingsRepository {
             }
         });
     }
-
     public void setWarnRole(String guildId, String roleId) {
         upsert(guildId, settings -> new ModerationRoleSettings(guildId, roleId, settings.muteRoleId(),
                 settings.banRoleId(), settings.moderatorRoleIds(), settings.adminRoleIds(),
                 settings.syncSubscriberRoleId(), settings.syncVipRoleId(), settings.syncModeratorRoleId(),
                 settings.syncBroadcasterRoleId()));
     }
-
     public void setMuteRole(String guildId, String roleId) {
         upsert(guildId, settings -> new ModerationRoleSettings(guildId, settings.warnRoleId(), roleId,
                 settings.banRoleId(), settings.moderatorRoleIds(), settings.adminRoleIds(),
                 settings.syncSubscriberRoleId(), settings.syncVipRoleId(), settings.syncModeratorRoleId(),
                 settings.syncBroadcasterRoleId()));
     }
-
     public void setBanRole(String guildId, String roleId) {
         upsert(guildId, settings -> new ModerationRoleSettings(guildId, settings.warnRoleId(), settings.muteRoleId(),
                 roleId, settings.moderatorRoleIds(), settings.adminRoleIds(), settings.syncSubscriberRoleId(),
                 settings.syncVipRoleId(), settings.syncModeratorRoleId(), settings.syncBroadcasterRoleId()));
     }
-
     public void addModeratorRole(String guildId, String roleId) {
         upsert(guildId, settings -> {
             List<String> updated = new java.util.ArrayList<>(settings.moderatorRoleIds());
@@ -65,7 +55,6 @@ public class ModerationRoleSettingsRepository {
                     settings.syncVipRoleId(), settings.syncModeratorRoleId(), settings.syncBroadcasterRoleId());
         });
     }
-
     public void removeModeratorRole(String guildId, String roleId) {
         upsert(guildId, settings -> {
             List<String> updated = new java.util.ArrayList<>(settings.moderatorRoleIds());
@@ -75,7 +64,6 @@ public class ModerationRoleSettingsRepository {
                     settings.syncVipRoleId(), settings.syncModeratorRoleId(), settings.syncBroadcasterRoleId());
         });
     }
-
     public void addAdminRole(String guildId, String roleId) {
         upsert(guildId, settings -> {
             List<String> updated = new java.util.ArrayList<>(settings.adminRoleIds());
@@ -87,7 +75,6 @@ public class ModerationRoleSettingsRepository {
                     settings.syncVipRoleId(), settings.syncModeratorRoleId(), settings.syncBroadcasterRoleId());
         });
     }
-
     public void removeAdminRole(String guildId, String roleId) {
         upsert(guildId, settings -> {
             List<String> updated = new java.util.ArrayList<>(settings.adminRoleIds());
@@ -97,7 +84,6 @@ public class ModerationRoleSettingsRepository {
                     settings.syncVipRoleId(), settings.syncModeratorRoleId(), settings.syncBroadcasterRoleId());
         });
     }
-
     public void setSyncRole(String guildId, TwitchRoleSyncStatus status, String roleId) {
         upsert(guildId, settings -> switch (status) {
             case SUBSCRIBER -> new ModerationRoleSettings(guildId, settings.warnRoleId(), settings.muteRoleId(),
@@ -115,7 +101,6 @@ public class ModerationRoleSettingsRepository {
                     settings.syncSubscriberRoleId(), settings.syncVipRoleId(), settings.syncModeratorRoleId(), roleId);
         });
     }
-
     private void upsert(String guildId, Function<ModerationRoleSettings, ModerationRoleSettings> updater) {
         ModerationRoleSettings updated = updater.apply(getOrEmpty(guildId));
         database.useConnection(connection -> {
@@ -144,7 +129,6 @@ public class ModerationRoleSettingsRepository {
             }
         });
     }
-
     private ModerationRoleSettings map(ResultSet resultSet) throws SQLException {
         return new ModerationRoleSettings(
                 resultSet.getString("guild_id"),
@@ -158,7 +142,6 @@ public class ModerationRoleSettingsRepository {
                 resultSet.getString("sync_moderator_role_id"),
                 resultSet.getString("sync_broadcaster_role_id"));
     }
-
     private List<String> splitRoles(String value) {
         if (value == null || value.isBlank()) {
             return List.of();

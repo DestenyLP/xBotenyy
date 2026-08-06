@@ -1,30 +1,24 @@
 package de.destenylp.xBotenyy.discordbot.util;
-
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.slf4j.Logger;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 public final class RetryingRestAction {
     private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor(retryThreadFactory());
     private static volatile int maxAttempts = 3;
     private static volatile long baseDelaySeconds = 2;
-
     private RetryingRestAction() {
     }
-
     public static void configure(int maxAttempts, long baseDelaySeconds) {
         RetryingRestAction.maxAttempts = Math.max(1, maxAttempts);
         RetryingRestAction.baseDelaySeconds = Math.max(1, baseDelaySeconds);
     }
-
     private static ThreadFactory retryThreadFactory() {
         return runnable -> {
             Thread thread = new Thread(runnable, "discord-retry-scheduler");
@@ -32,12 +26,10 @@ public final class RetryingRestAction {
             return thread;
         };
     }
-
     public static <T> void queueWithRetry(Supplier<RestAction<T>> actionSupplier, Consumer<T> onSuccess,
                                           Consumer<Throwable> onFailure, Logger logger, String description) {
         attempt(actionSupplier, onSuccess, onFailure, logger, description, 1);
     }
-
     private static <T> void attempt(Supplier<RestAction<T>> actionSupplier, Consumer<T> onSuccess,
                                     Consumer<Throwable> onFailure, Logger logger, String description, int attemptNumber) {
         actionSupplier.get().queue(onSuccess, failure -> {
@@ -53,7 +45,6 @@ public final class RetryingRestAction {
             }
         });
     }
-
     private static boolean isRetryable(Throwable failure) {
         if (failure instanceof ErrorResponseException responseException) {
             ErrorResponse response = responseException.getErrorResponse();

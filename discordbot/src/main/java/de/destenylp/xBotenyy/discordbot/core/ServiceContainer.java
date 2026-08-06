@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.core;
-
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodSettingsFactory;
 import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
@@ -32,10 +31,8 @@ import de.destenylp.xBotenyy.discordbot.tickets.TicketManager;
 import de.destenylp.xBotenyy.discordbot.tickets.TicketService;
 import de.destenylp.xBotenyy.discordbot.welcome.WelcomeManager;
 import de.destenylp.xBotenyy.discordbot.welcome.WelcomeService;
-
 import java.time.Duration;
 import java.util.List;
-
 public class ServiceContainer implements AutoCloseable {
     private final Database database;
     private final ReactionRoleService reactionRoleService;
@@ -58,15 +55,12 @@ public class ServiceContainer implements AutoCloseable {
     private final ModerationBridgeClient moderationBridgeClient;
     private final DiscordModerationSyncTrigger moderationSyncTrigger;
     private final BotProperties properties;
-
     public ServiceContainer() {
         this(BotProperties.load());
     }
-
     public ServiceContainer(BotProperties properties) {
         this(Database.open(properties.getDatabaseFile(), "db/migrations/discordbot"), properties);
     }
-
     private ServiceContainer(Database database, BotProperties properties) {
         this(database,
                 new ReactionRoleManager(database),
@@ -78,7 +72,6 @@ public class ServiceContainer implements AutoCloseable {
                 new SocialManager(database),
                 properties);
     }
-
     ServiceContainer(Database database, ReactionRoleManager reactionRoleManager, WelcomeManager welcomeManager,
                      ReportManager reportManager, TicketManager ticketManager, GiveawayManager giveawayManager,
                      EventLogManager eventLogManager, SocialManager socialManager, BotProperties properties) {
@@ -94,19 +87,15 @@ public class ServiceContainer implements AutoCloseable {
                 Duration.ofDays(properties.getGiveawayMaxDurationDays()));
         this.eventLogService = new EventLogService(eventLogManager);
         this.socialService = new SocialService(socialManager, properties.getSocialsMaxAccountsPerGuild());
-
         AutomodSettings automodSettings = AutomodSettingsFactory.from(properties::getRawProperty);
         this.automodService = new AutomodService(automodSettings, buildModerationClient(automodSettings));
-
         this.backupSettings = BackupSettings.from(properties::getRawProperty);
         this.backupService = new BackupService(database,
                 backupSettings.resolveDirectory(properties.getDataDirectory()), "xbotenyy-discord",
                 backupSettings.maxBackupsToKeep());
-
         this.moderationCaseRepository = new ModerationCaseRepository(database);
         this.moderationRoleSettingsRepository = new ModerationRoleSettingsRepository(database);
         this.moderationService = new DiscordModerationService(moderationCaseRepository, moderationRoleSettingsRepository);
-
         this.accountLinkRepository = new AccountLinkRepository(database);
         this.pendingLinkVerificationRepository = new PendingLinkVerificationRepository(database);
         this.accountLinkService = new AccountLinkService(accountLinkRepository, pendingLinkVerificationRepository);
@@ -115,7 +104,6 @@ public class ServiceContainer implements AutoCloseable {
                 properties::getBridgeSettings);
         this.properties = properties;
     }
-
     private static GroqSafeguardClient buildModerationClient(AutomodSettings settings) {
         if (!settings.getAiFilter().enabled()) {
             return null;
@@ -126,96 +114,73 @@ public class ServiceContainer implements AutoCloseable {
                         Duration.ofSeconds(Math.max(settings.getAiFilter().timeoutSeconds(), 1))))
                 .orElse(null);
     }
-
     public List<GuildService> getAllServices() {
         return List.of(reactionRoleService, welcomeService, reportService, ticketService, giveawayService,
                 eventLogService, socialService, automodService);
     }
-
     public List<PrunableGuildService> getPrunableServices() {
         return List.of(reportService, ticketService, giveawayService, automodService);
     }
-
     public AutomodService getAutomodService() {
         return automodService;
     }
-
     public BackupService getBackupService() {
         return backupService;
     }
-
     public BackupSettings getBackupSettings() {
         return backupSettings;
     }
-
     public ReactionRoleService getReactionRoleService() {
         return reactionRoleService;
     }
-
     public WelcomeService getWelcomeService() {
         return welcomeService;
     }
-
     public ReportService getReportService() {
         return reportService;
     }
-
     public TicketService getTicketService() {
         return ticketService;
     }
-
     public TicketCloseCoordinator getTicketCloseCoordinator() {
         return ticketCloseCoordinator;
     }
-
     public GiveawayService getGiveawayService() {
         return giveawayService;
     }
-
     public EventLogService getEventLogService() {
         return eventLogService;
     }
-
     public SocialService getSocialService() {
         return socialService;
     }
-
     public ModerationCaseRepository getModerationCaseRepository() {
         return moderationCaseRepository;
     }
-
     public ModerationRoleSettingsRepository getModerationRoleSettingsRepository() {
         return moderationRoleSettingsRepository;
     }
-
     public DiscordModerationService getModerationService() {
         return moderationService;
     }
-
     public AccountLinkRepository getAccountLinkRepository() {
         return accountLinkRepository;
     }
-
     public PendingLinkVerificationRepository getPendingLinkVerificationRepository() {
         return pendingLinkVerificationRepository;
     }
-
     public AccountLinkService getAccountLinkService() {
         return accountLinkService;
     }
-
     public ModerationBridgeClient getModerationBridgeClient() {
         return moderationBridgeClient;
     }
-
     public DiscordModerationSyncTrigger getModerationSyncTrigger() {
         return moderationSyncTrigger;
     }
-
     public BotProperties getProperties() {
         return properties;
     }
-
     @Override
     public void close() {
         automodService.shutdown();

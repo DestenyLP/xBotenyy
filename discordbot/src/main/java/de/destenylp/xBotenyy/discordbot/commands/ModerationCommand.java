@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.commands;
-
 import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCase;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
@@ -25,23 +24,19 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneOffset;
 import java.util.List;
-
 public class ModerationCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModerationCommand.class);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
             .withZone(ZoneOffset.UTC);
-
     private final DiscordModerationService moderationService;
     private final ModerationRoleSettingsRepository roleSettingsRepository;
     private final ModerationCaseRepository caseRepository;
     private final DiscordModerationSyncTrigger syncTrigger;
-
     public ModerationCommand(DiscordModerationService moderationService,
                               ModerationRoleSettingsRepository roleSettingsRepository,
                               ModerationCaseRepository caseRepository,
@@ -51,12 +46,10 @@ public class ModerationCommand extends AbstractGuildCommand {
         this.caseRepository = caseRepository;
         this.syncTrigger = syncTrigger;
     }
-
     @Override
     public CommandData getCommandData() {
         OptionData reasonOption = new OptionData(OptionType.STRING, "grund", "Grund", false);
         OptionData durationOption = new OptionData(OptionType.STRING, "dauer", "Dauer (z. B. 10m, 1h, 1d, 1w)", true);
-
         return Commands.slash("mod", "Moderations-Werkzeuge")
                 .addSubcommands(
                         new SubcommandData("warn", "Verwarnt ein Mitglied")
@@ -75,14 +68,12 @@ public class ModerationCommand extends AbstractGuildCommand {
                                 .addOptions(new OptionData(OptionType.USER, "user", "Nutzer", true))
                 );
     }
-
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         var roleSettings = roleSettingsRepository.getOrEmpty(guild.getId());
         if (!ModerationPermissionGuard.requireModerator(event, roleSettings)) {
             return;
         }
-
         switch (subcommand) {
             case "warn" -> handleWarn(event, guild);
             case "timeout" -> handleTimeout(event, guild);
@@ -94,7 +85,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
-
     private void handleWarn(SlashCommandInteractionEvent event, Guild guild) {
         Member target = event.getOption("user").getAsMember();
         if (target == null) {
@@ -110,7 +100,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             syncTrigger.trigger(target.getId(), ModerationAction.WARN, reason, 0, event.getUser().getName());
         }, failure -> replyError(event, failure));
     }
-
     private void handleTimeout(SlashCommandInteractionEvent event, Guild guild) {
         Member target = event.getOption("user").getAsMember();
         if (target == null) {
@@ -130,7 +119,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             syncTrigger.trigger(target.getId(), ModerationAction.TIMEOUT, reason, duration.getSeconds(), event.getUser().getName());
         }, failure -> replyError(event, failure));
     }
-
     private void handleUntimeout(SlashCommandInteractionEvent event, Guild guild) {
         Member target = event.getOption("user").getAsMember();
         if (target == null) {
@@ -144,7 +132,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             syncTrigger.trigger(target.getId(), ModerationAction.UNTIMEOUT, reason, 0, event.getUser().getName());
         }, failure -> replyError(event, failure));
     }
-
     private void handleKick(SlashCommandInteractionEvent event, Guild guild) {
         Member target = event.getOption("user").getAsMember();
         if (target == null) {
@@ -157,7 +144,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             AuditLog.record(guild.getId(), event.getUser().getId(), "MOD_KICK", "target=" + target.getId());
         }, failure -> replyError(event, failure));
     }
-
     private void handleBan(SlashCommandInteractionEvent event, Guild guild) {
         User target = event.getOption("user").getAsUser();
         String reason = optionalReason(event);
@@ -168,7 +154,6 @@ public class ModerationCommand extends AbstractGuildCommand {
                     syncTrigger.trigger(target.getId(), ModerationAction.BAN, reason, 0, event.getUser().getName());
                 }, failure -> replyError(event, failure));
     }
-
     private void handleUnban(SlashCommandInteractionEvent event, Guild guild) {
         User target = event.getOption("user").getAsUser();
         String reason = optionalReason(event);
@@ -179,15 +164,12 @@ public class ModerationCommand extends AbstractGuildCommand {
                     syncTrigger.trigger(target.getId(), ModerationAction.UNBAN, reason, 0, event.getUser().getName());
                 }, failure -> replyError(event, failure));
     }
-
     private void handleCases(SlashCommandInteractionEvent event, Guild guild) {
         User target = event.getOption("user").getAsUser();
         List<ModerationCase> cases = caseRepository.findByTarget(ModerationPlatform.DISCORD, guild.getId(), target.getId(), 15);
-
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
         eb.setTitle("\uD83D\uDCC1 Moderations-Historie – " + target.getAsTag());
-
         if (cases.isEmpty()) {
             eb.setDescription("Keine Eintraege vorhanden.");
         } else {
@@ -203,12 +185,10 @@ public class ModerationCommand extends AbstractGuildCommand {
         }
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
-
     private String optionalReason(SlashCommandInteractionEvent event) {
         OptionMapping option = event.getOption("grund");
         return option != null ? option.getAsString() : "Kein Grund angegeben";
     }
-
     private void replyError(SlashCommandInteractionEvent event, Throwable failure) {
         LOGGER.error("Moderation action failed: ", failure);
         String message = "Die Aktion konnte nicht ausgefuehrt werden. Hat der Bot die noetigen Berechtigungen und eine hoehere Rolle als das Ziel?";
@@ -218,7 +198,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             event.reply(message).setEphemeral(true).queue();
         }
     }
-
     private static Duration parseDuration(String input) {
         if (input == null || input.isBlank()) {
             return null;
@@ -243,7 +222,6 @@ public class ModerationCommand extends AbstractGuildCommand {
             return null;
         }
     }
-
     private static String formatDuration(Duration duration) {
         if (duration.toDays() >= 1) {
             return duration.toDays() + " Tag(e)";

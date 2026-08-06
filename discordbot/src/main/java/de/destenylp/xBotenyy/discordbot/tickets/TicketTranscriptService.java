@@ -1,11 +1,9 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
-
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,22 +15,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
 public final class TicketTranscriptService {
     private static final Logger LOGGER = LoggerFactory.getLogger(TicketTranscriptService.class);
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
             .withZone(ZoneId.systemDefault());
     private static volatile int maxMessages = 1000;
     private static volatile Path transcriptDir = Paths.get("data", "transcripts");
-
     private TicketTranscriptService() {
     }
-
     public static void configure(int maxMessages, Path transcriptDir) {
         TicketTranscriptService.maxMessages = Math.max(1, maxMessages);
         TicketTranscriptService.transcriptDir = transcriptDir;
     }
-
     public static CompletableFuture<TranscriptFile> generate(TextChannel channel, Ticket ticket) {
         return channel.getIterableHistory().takeAsync(maxMessages)
                 .thenApply(messages -> writeTranscript(channel, ticket, messages))
@@ -41,19 +35,16 @@ public final class TicketTranscriptService {
                     return null;
                 });
     }
-
     private static TranscriptFile writeTranscript(TextChannel channel, Ticket ticket, List<Message> messages) {
         List<Message> chronological = messages.stream()
                 .sorted(Comparator.comparing(Message::getTimeCreated))
                 .toList();
-
         StringBuilder sb = new StringBuilder();
         sb.append("Transcript – Ticket #").append(ticket.getId()).append(" · ").append(ticket.getSubject()).append('\n');
         sb.append("Kanal: #").append(channel.getName()).append(" (").append(channel.getId()).append(")\n");
         sb.append("Erstellt von: ").append(ticket.getAuthorName()).append(" (").append(ticket.getAuthorId()).append(")\n");
         sb.append("Kategorie: ").append(ticket.getCategory().getLabel()).append('\n');
         sb.append("=".repeat(60)).append("\n\n");
-
         for (Message message : chronological) {
             String timestamp = TIMESTAMP.format(message.getTimeCreated().toInstant());
             String author = message.getAuthor().getName() + " (" + message.getAuthor().getId() + ")";
@@ -63,7 +54,6 @@ public final class TicketTranscriptService {
             message.getAttachments().forEach(attachment -> sb.append("  \uD83D\uDCCE Anhang: ").append(attachment.getUrl()).append('\n'));
             sb.append('\n');
         }
-
         String fileName = "ticket-" + ticket.getId() + "-" + Instant.now().toEpochMilli() + ".txt";
         Path targetPath = transcriptDir.resolve(fileName);
         try {
@@ -72,10 +62,8 @@ public final class TicketTranscriptService {
         } catch (IOException e) {
             LOGGER.error("Transcript file {} could not be saved: {}", targetPath, e.getMessage());
         }
-
         return new TranscriptFile(fileName, sb.toString());
     }
-
     public record TranscriptFile(String fileName, String content) {
         public FileUpload toFileUpload() {
             return FileUpload.fromData(content.getBytes(StandardCharsets.UTF_8), fileName);

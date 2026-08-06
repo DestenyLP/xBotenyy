@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.eventlog;
-
 import de.destenylp.xBotenyy.common.commands.CommandDispatchResult;
 import de.destenylp.xBotenyy.discordbot.core.AbstractEmbedFactory;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -12,22 +11,18 @@ import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
 public final class EventLogEmbedFactory extends AbstractEmbedFactory {
     private EventLogEmbedFactory() {
     }
-
     private static EmbedBuilder base(LogEventType type) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(type.getColor());
         timestampNow(eb);
         return eb;
     }
-
     public static MessageEmbed buildMemberJoin(Member member) {
         EmbedBuilder eb = base(LogEventType.MEMBER_JOIN);
         eb.setTitle(LogEventType.MEMBER_JOIN.getEmoji() + " Mitglied beigetreten");
@@ -37,7 +32,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildMemberLeave(User user, Member member, int memberCount) {
         EmbedBuilder eb = base(LogEventType.MEMBER_LEAVE);
         eb.setTitle(LogEventType.MEMBER_LEAVE.getEmoji() + " Mitglied verlassen");
@@ -49,7 +43,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, user.getId(), user.getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildBoost(Member member) {
         EmbedBuilder eb = base(LogEventType.MEMBER_BOOST);
         eb.setTitle(LogEventType.MEMBER_BOOST.getEmoji() + " Server geboostet");
@@ -59,7 +52,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildUnboost(Member member) {
         EmbedBuilder eb = base(LogEventType.MEMBER_UNBOOST);
         eb.setTitle(LogEventType.MEMBER_UNBOOST.getEmoji() + " Boost entfernt");
@@ -68,7 +60,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildBan(User user) {
         EmbedBuilder eb = base(LogEventType.MEMBER_BAN);
         eb.setTitle(LogEventType.MEMBER_BAN.getEmoji() + " Mitglied gebannt");
@@ -76,7 +67,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, user.getId(), user.getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildUnban(User user) {
         EmbedBuilder eb = base(LogEventType.MEMBER_UNBAN);
         eb.setTitle(LogEventType.MEMBER_UNBAN.getEmoji() + " Bann aufgehoben");
@@ -84,7 +74,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, user.getId(), user.getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildNicknameChange(Member member, String oldNickname, String newNickname) {
         EmbedBuilder eb = base(LogEventType.NICKNAME_CHANGE);
         eb.setTitle(LogEventType.NICKNAME_CHANGE.getEmoji() + " Nickname geändert");
@@ -94,7 +83,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildRoleUpdate(Member member, List<Role> roles, boolean added) {
         EmbedBuilder eb = base(LogEventType.ROLE_UPDATE);
         eb.setTitle(LogEventType.ROLE_UPDATE.getEmoji() + " Rollen aktualisiert");
@@ -104,7 +92,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildVoiceUpdate(Member member, AudioChannel left, AudioChannel joined) {
         EmbedBuilder eb = base(LogEventType.VOICE_UPDATE);
         String description;
@@ -122,7 +109,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildTimeout(Member member, OffsetDateTime timeoutEnd) {
         EmbedBuilder eb = base(LogEventType.MEMBER_TIMEOUT);
         eb.setTitle(LogEventType.MEMBER_TIMEOUT.getEmoji() + " Mitglied Timeout");
@@ -133,7 +119,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildTimeoutRemoved(Member member) {
         EmbedBuilder eb = base(LogEventType.MEMBER_TIMEOUT_REMOVED);
         eb.setTitle(LogEventType.MEMBER_TIMEOUT_REMOVED.getEmoji() + " Timeout aufgehoben");
@@ -141,7 +126,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, member.getUser().getId(), member.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     public static MessageEmbed buildChannelCreate(GuildChannel channel) {
         EmbedBuilder eb = base(LogEventType.CHANNEL_CREATE);
         eb.setTitle(LogEventType.CHANNEL_CREATE.getEmoji() + " Channel erstellt");
@@ -149,7 +133,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         eb.setFooter("Channel-ID: " + channel.getId());
         return eb.build();
     }
-
     public static MessageEmbed buildChannelDelete(GuildChannel channel) {
         EmbedBuilder eb = base(LogEventType.CHANNEL_DELETE);
         eb.setTitle(LogEventType.CHANNEL_DELETE.getEmoji() + " Channel gelöscht");
@@ -157,7 +140,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         eb.setFooter("Channel-ID: " + channel.getId());
         return eb.build();
     }
-
     public static MessageEmbed buildMessageDelete(String channelMention, String messageId, RecentMessageCache.CachedMessage cached, int contentMaxLength) {
         EmbedBuilder eb = base(LogEventType.MESSAGE_DELETE);
         eb.setTitle(LogEventType.MESSAGE_DELETE.getEmoji() + " Nachricht gelöscht");
@@ -175,7 +157,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         }
         return eb.build();
     }
-
     public static MessageEmbed buildCommandUsage(SlashCommandInteractionEvent event, CommandDispatchResult result) {
         EmbedBuilder eb = base(LogEventType.COMMAND_USAGE);
         eb.setTitle(LogEventType.COMMAND_USAGE.getEmoji() + " Command-Nutzung");
@@ -192,7 +173,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
         appendUserFooter(eb, event.getUser().getId(), event.getUser().getEffectiveAvatarUrl());
         return eb.build();
     }
-
     private static String describeOption(OptionMapping option) {
         try {
             return option.getName() + ": " + option.getAsString();
@@ -200,7 +180,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
             return option.getName() + ": *(nicht darstellbar)*";
         }
     }
-
     private static String describeCommandResult(CommandDispatchResult result) {
         return switch (result) {
             case EXECUTED -> "\u2705 Ausgeführt";
@@ -210,7 +189,6 @@ public final class EventLogEmbedFactory extends AbstractEmbedFactory {
             default -> result.name();
         };
     }
-
     private static String describeChannel(GuildChannel channel) {
         if (channel.getType() == ChannelType.TEXT || channel.getType() == ChannelType.VOICE
                 || channel.getType() == ChannelType.STAGE || channel.getType() == ChannelType.FORUM) {

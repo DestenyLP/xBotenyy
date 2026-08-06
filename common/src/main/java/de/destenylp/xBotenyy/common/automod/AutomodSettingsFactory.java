@@ -1,15 +1,12 @@
 package de.destenylp.xBotenyy.common.automod;
-
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
 public final class AutomodSettingsFactory {
     private AutomodSettingsFactory() {
     }
-
     public static AutomodSettings from(Function<String, String> resolver) {
         return new AutomodSettings(
                 bool(resolver, "automod.enabled", true),
@@ -61,7 +58,6 @@ public final class AutomodSettingsFactory {
                         intVal(resolver, "automod.strikes.kick.threshold", 5),
                         intVal(resolver, "automod.strikes.ban.threshold", 8)));
     }
-
     public static Map<String, String> defaultValues() {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("automod.enabled", "true");
@@ -105,17 +101,14 @@ public final class AutomodSettingsFactory {
         values.put("automod.strikes.ban.threshold", "8");
         return values;
     }
-
     private static String string(Function<String, String> resolver, String key, String fallback) {
         String value = resolver.apply(key);
         return value == null || value.isBlank() ? fallback : value.trim();
     }
-
     private static boolean bool(Function<String, String> resolver, String key, boolean fallback) {
         String value = resolver.apply(key);
         return value == null || value.isBlank() ? fallback : Boolean.parseBoolean(value.trim());
     }
-
     private static int intVal(Function<String, String> resolver, String key, int fallback) {
         try {
             String value = resolver.apply(key);
@@ -124,7 +117,6 @@ public final class AutomodSettingsFactory {
             return fallback;
         }
     }
-
     private static double doubleVal(Function<String, String> resolver, String key, double fallback) {
         try {
             String value = resolver.apply(key);
@@ -133,7 +125,6 @@ public final class AutomodSettingsFactory {
             return fallback;
         }
     }
-
     private static Set<String> stringSet(Function<String, String> resolver, String key) {
         String raw = resolver.apply(key);
         if (raw == null || raw.isBlank()) {

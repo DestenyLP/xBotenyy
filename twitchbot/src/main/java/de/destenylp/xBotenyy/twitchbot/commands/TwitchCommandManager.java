@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.twitchbot.commands;
-
 import de.destenylp.xBotenyy.common.commands.*;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatMessage;
@@ -8,13 +7,10 @@ import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.CustomCommandRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.Optional;
-
 public class TwitchCommandManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchCommandManager.class);
-
     private final String prefix;
     private final CommandRegistry<TwitchCommandContext> registry = new CommandRegistry<>();
     private final CommandDispatcher<TwitchCommandContext> dispatcher;
@@ -23,7 +19,6 @@ public class TwitchCommandManager {
     private final TwitchEventLogService eventLogService;
     private final TwitchDiscordLogService discordLogService;
     private final CooldownManager customCommandCooldownManager = new CooldownManager();
-
     public TwitchCommandManager(String prefix, CustomCommandRepository customCommandRepository,
                                 TwitchBotServices services, TwitchEventLogService eventLogService,
                                 TwitchDiscordLogService discordLogService) {
@@ -36,7 +31,6 @@ public class TwitchCommandManager {
                 context -> resolvePermission(context.message()),
                 context -> context.message().userId());
     }
-
     private static CommandPermission resolvePermission(TwitchChatMessage message) {
         if (message.broadcaster()) {
             return CommandPermission.BROADCASTER;
@@ -52,15 +46,12 @@ public class TwitchCommandManager {
         }
         return CommandPermission.EVERYONE;
     }
-
     public CommandRegistry<TwitchCommandContext> getRegistry() {
         return registry;
     }
-
     public void register(de.destenylp.xBotenyy.common.commands.Command<TwitchCommandContext> command) {
         registry.register(command);
     }
-
     public boolean handleMessage(TwitchChatMessage message) {
         if (!message.content().startsWith(prefix)) {
             return false;
@@ -69,21 +60,16 @@ public class TwitchCommandManager {
         if (withoutPrefix.isEmpty()) {
             return false;
         }
-
         List<String> parts = List.of(withoutPrefix.split("\\s+"));
         String commandName = parts.get(0).toLowerCase(java.util.Locale.ROOT);
         List<String> args = parts.size() > 1 ? parts.subList(1, parts.size()) : List.of();
-
         TwitchCommandContext context = new TwitchCommandContext(message, args, services);
-
         if (registry.find(commandName).isPresent()) {
             dispatchBuiltIn(commandName, context);
             return true;
         }
-
         return handleCustomCommand(message, commandName);
     }
-
     private void dispatchBuiltIn(String commandName, TwitchCommandContext context) {
         Metrics.increment("twitch.commands_executed");
         CommandDispatchResult result = dispatcher.dispatch(commandName, context);
@@ -99,7 +85,6 @@ public class TwitchCommandManager {
         }
         discordLogService.logCommandUsage(context.message(), commandName, describeResult(result));
     }
-
     private static String describeResult(CommandDispatchResult result) {
         return switch (result) {
             case EXECUTED -> "Ausgefuehrt";
@@ -109,14 +94,12 @@ public class TwitchCommandManager {
             default -> result.name();
         };
     }
-
     private boolean handleCustomCommand(TwitchChatMessage message, String commandName) {
         Optional<CustomCommandRepository.CustomCommandRecord> custom =
                 customCommandRepository.find(message.channelLogin(), commandName);
         if (custom.isEmpty()) {
             return false;
         }
-
         int cooldownSeconds = custom.get().cooldownSeconds();
         if (cooldownSeconds > 0) {
             String cooldownKey = message.channelLogin() + ":" + commandName + ":" + message.userId();
@@ -126,7 +109,6 @@ public class TwitchCommandManager {
                 return true;
             }
         }
-
         String response = custom.get().response()
                 .replace("{user}", message.displayName())
                 .replace("{channel}", message.channelLogin());

@@ -1,16 +1,12 @@
 package de.destenylp.xBotenyy.common.commands;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
 public final class CommandRegistry<C> {
     private final Map<String, Command<C>> commandsByName = new ConcurrentHashMap<>();
     private final Map<String, Command<C>> lookupByAlias = new ConcurrentHashMap<>();
-
     private static String normalize(String value) {
         return value.trim().toLowerCase(Locale.ROOT);
     }
-
     public void register(Command<C> command) {
         String name = normalize(command.getName());
         if (commandsByName.containsKey(name) || lookupByAlias.containsKey(name)) {
@@ -18,7 +14,6 @@ public final class CommandRegistry<C> {
         }
         commandsByName.put(name, command);
         lookupByAlias.put(name, command);
-
         for (String alias : command.getAliases()) {
             String normalizedAlias = normalize(alias);
             if (lookupByAlias.containsKey(normalizedAlias)) {
@@ -28,18 +23,15 @@ public final class CommandRegistry<C> {
             lookupByAlias.put(normalizedAlias, command);
         }
     }
-
     public Optional<Command<C>> find(String nameOrAlias) {
         if (nameOrAlias == null || nameOrAlias.isBlank()) {
             return Optional.empty();
         }
         return Optional.ofNullable(lookupByAlias.get(normalize(nameOrAlias)));
     }
-
     public Collection<Command<C>> all() {
         return List.copyOf(commandsByName.values());
     }
-
     public int size() {
         return commandsByName.size();
     }

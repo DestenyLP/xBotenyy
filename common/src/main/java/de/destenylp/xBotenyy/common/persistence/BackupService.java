@@ -1,9 +1,7 @@
 package de.destenylp.xBotenyy.common.persistence;
-
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -18,12 +16,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
 public final class BackupService implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(BackupService.class);
     private static final DateTimeFormatter TIMESTAMP_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").withZone(ZoneOffset.UTC);
-
     private final Database database;
     private final Path backupDirectory;
     private final String filePrefix;
@@ -33,19 +29,16 @@ public final class BackupService implements AutoCloseable {
         thread.setDaemon(true);
         return thread;
     });
-
     public BackupService(Database database, Path backupDirectory, String filePrefix, int maxBackupsToKeep) {
         this.database = database;
         this.backupDirectory = backupDirectory;
         this.filePrefix = filePrefix;
         this.maxBackupsToKeep = Math.max(maxBackupsToKeep, 1);
     }
-
     public void start(Duration interval) {
         long intervalMinutes = Math.max(interval.toMinutes(), 1);
         scheduler.scheduleAtFixedRate(this::runBackupSafely, 0, intervalMinutes, TimeUnit.MINUTES);
     }
-
     private void runBackupSafely() {
         try {
             createBackup();
@@ -53,24 +46,19 @@ public final class BackupService implements AutoCloseable {
             LOGGER.error("Error creating the database backup: ", e);
         }
     }
-
     public Path createBackup() {
         try {
             Files.createDirectories(backupDirectory);
         } catch (IOException e) {
             throw new UncheckedIOException("Konnte Backup-Verzeichnis " + backupDirectory + " nicht anlegen", e);
         }
-
         String fileName = filePrefix + "-" + TIMESTAMP_FORMAT.format(Instant.now()) + ".sqlite";
         Path target = backupDirectory.resolve(fileName);
-
         database.backupInto(target);
         LOGGER.info("Database backup created: {}", target);
-
         enforceRetention();
         return target;
     }
-
     private void enforceRetention() {
         List<Path> backups = listBackups();
         if (backups.size() <= maxBackupsToKeep) {
@@ -85,7 +73,6 @@ public final class BackupService implements AutoCloseable {
             }
         }
     }
-
     public List<Path> listBackups() {
         if (!Files.isDirectory(backupDirectory)) {
             return List.of();
@@ -101,7 +88,6 @@ public final class BackupService implements AutoCloseable {
             return List.of();
         }
     }
-
     private Instant lastModifiedSafely(Path path) {
         try {
             return Files.getLastModifiedTime(path).toInstant();
@@ -109,7 +95,6 @@ public final class BackupService implements AutoCloseable {
             return Instant.EPOCH;
         }
     }
-
     @Override
     public void close() {
         scheduler.shutdownNow();

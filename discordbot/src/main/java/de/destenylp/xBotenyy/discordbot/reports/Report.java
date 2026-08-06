@@ -1,7 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.reports;
-
 import java.time.Instant;
-
 public class Report {
     private final String guildId;
     private final String reporterId;
@@ -21,7 +19,6 @@ public class Report {
     private String assignedModName;
     private String resolutionNote;
     private String rejectionReason;
-
     public Report(String guildId, String reporterId, String reporterName, ReportCategory category,
                   String subject, String target, String description, String evidence) {
         this.guildId = guildId;
@@ -36,7 +33,6 @@ public class Report {
         this.createdAt = Instant.now().toEpochMilli();
         this.updatedAt = this.createdAt;
     }
-
     Report(String id, String guildId, String reporterId, String reporterName, ReportCategory category,
            String subject, String target, String description, String evidence, ReportStatus status,
            long createdAt, long updatedAt, String reportChannelId, String reportMessageId, String assignedModId,
@@ -60,115 +56,87 @@ public class Report {
         this.resolutionNote = resolutionNote;
         this.rejectionReason = rejectionReason;
     }
-
     void assignId(String id) {
         this.id = id;
     }
-
     public String getId() {
         return id;
     }
-
     public String getGuildId() {
         return guildId;
     }
-
     public String getReporterId() {
         return reporterId;
     }
-
     public String getReporterName() {
         return reporterName;
     }
-
     public ReportCategory getCategory() {
         return category;
     }
-
     public String getSubject() {
         return subject;
     }
-
     public String getTarget() {
         return target;
     }
-
     public String getDescription() {
         return description;
     }
-
     public String getEvidence() {
         return evidence;
     }
-
     public ReportStatus getStatus() {
         return status;
     }
-
     public void setStatus(ReportStatus status) {
         this.status = status;
     }
-
     public long getCreatedAt() {
         return createdAt;
     }
-
     public long getUpdatedAt() {
         return updatedAt;
     }
-
     void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
     }
-
     public void touch() {
         this.updatedAt = Instant.now().toEpochMilli();
     }
-
     public String getReportChannelId() {
         return reportChannelId;
     }
-
     public void setReportChannelId(String reportChannelId) {
         this.reportChannelId = reportChannelId;
     }
-
     public String getReportMessageId() {
         return reportMessageId;
     }
-
     public void setReportMessageId(String reportMessageId) {
         this.reportMessageId = reportMessageId;
     }
-
     public String getAssignedModId() {
         return assignedModId;
     }
-
     public void setAssignedModId(String assignedModId) {
         this.assignedModId = assignedModId;
     }
-
     public String getAssignedModName() {
         return assignedModName;
     }
-
     public void setAssignedModName(String assignedModName) {
         this.assignedModName = assignedModName;
     }
-
     public String getResolutionNote() {
         return resolutionNote;
     }
-
     public void setResolutionNote(String resolutionNote) {
         this.resolutionNote = resolutionNote;
     }
-
     public String getRejectionReason() {
         return rejectionReason;
     }
-
     public void setRejectionReason(String rejectionReason) {
         this.rejectionReason = rejectionReason;
     }

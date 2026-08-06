@@ -1,29 +1,24 @@
 package de.destenylp.xBotenyy.discordbot.welcome;
-
 import de.destenylp.xBotenyy.common.persistence.sql.AbstractSqlManager;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import de.destenylp.xBotenyy.common.persistence.sql.Jdbc;
 import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-
 public class WelcomeManager extends AbstractSqlManager implements WelcomeRepository {
     public WelcomeManager(Database database) {
         super(database);
     }
-
     @Override
     public Optional<WelcomeSettings> getSettings(String guildId) {
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM welcome_guild_settings WHERE guild_id = ?",
                 resultSet -> mapSettings(guildId, resultSet), guildId));
     }
-
     private WelcomeSettings mapSettings(String guildId, ResultSet resultSet) throws SQLException {
         WelcomeSettings settings = new WelcomeSettings(() -> getVariants(guildId));
         settings.setChannelId(Jdbc.getString(resultSet, "channel_id"));
@@ -31,7 +26,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
         settings.setDmEnabled(Jdbc.getBoolean(resultSet, "dm_enabled"));
         return settings;
     }
-
     @Override
     public void updateChannel(String guildId, String channelId) {
         database.runInTransaction(connection -> {
@@ -40,7 +34,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
                     channelId, guildId);
         });
     }
-
     @Override
     public void updateEnabled(String guildId, boolean enabled) {
         database.runInTransaction(connection -> {
@@ -49,7 +42,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
                     enabled, guildId);
         });
     }
-
     @Override
     public void updateDm(String guildId, boolean dmEnabled) {
         database.runInTransaction(connection -> {
@@ -58,7 +50,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
                     dmEnabled, guildId);
         });
     }
-
     @Override
     public WelcomeVariant addVariant(String guildId, WelcomeVariant draft) {
         return database.inTransaction(connection -> {
@@ -69,7 +60,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
             return draft;
         });
     }
-
     private void insertVariant(Connection connection, String guildId, WelcomeVariant variant) throws SQLException {
         MessageTemplate template = variant.getTemplate();
         Jdbc.update(connection, """
@@ -79,7 +69,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
                         """, guildId, variant.getId(), variant.isPing(), template.isEmbed(), template.getTitle(),
                 template.getContent(), template.getColor(), template.getImageUrl(), template.getFooter());
     }
-
     @Override
     public void save(String guildId, WelcomeVariant variant) {
         MessageTemplate template = variant.getTemplate();
@@ -90,27 +79,23 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
                         """, variant.isPing(), template.isEmbed(), template.getTitle(), template.getContent(),
                 template.getColor(), template.getImageUrl(), template.getFooter(), guildId, variant.getId()));
     }
-
     @Override
     public Optional<WelcomeVariant> getVariant(String guildId, String id) {
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM welcome_variants WHERE guild_id = ? AND variant_id = ? COLLATE NOCASE",
                 this::mapVariant, guildId, id));
     }
-
     @Override
     public boolean removeVariant(String guildId, String id) {
         int removed = database.withConnection(connection -> Jdbc.update(connection,
                 "DELETE FROM welcome_variants WHERE guild_id = ? AND variant_id = ? COLLATE NOCASE", guildId, id));
         return removed > 0;
     }
-
     @Override
     public List<WelcomeVariant> getVariants(String guildId) {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM welcome_variants WHERE guild_id = ?", this::mapVariant, guildId));
     }
-
     @Override
     public Optional<WelcomeVariant> getRandomVariant(String guildId) {
         List<WelcomeVariant> variants = getVariants(guildId);
@@ -119,7 +104,6 @@ public class WelcomeManager extends AbstractSqlManager implements WelcomeReposit
         }
         return Optional.of(variants.get(ThreadLocalRandom.current().nextInt(variants.size())));
     }
-
     private WelcomeVariant mapVariant(ResultSet resultSet) throws SQLException {
         WelcomeVariant variant = WelcomeVariant.builder()
                 .ping(Jdbc.getBoolean(resultSet, "ping"))

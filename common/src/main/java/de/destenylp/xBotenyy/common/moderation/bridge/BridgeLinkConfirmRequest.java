@@ -1,15 +1,12 @@
 package de.destenylp.xBotenyy.common.moderation.bridge;
-
 import com.google.gson.JsonObject;
 import de.destenylp.xBotenyy.common.util.JsonUtil;
-
 public record BridgeLinkConfirmRequest(
         String code,
         String twitchUserId,
         String twitchLogin,
         String discordUserId,
         String discordUsername) {
-
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("code", code);
@@ -19,7 +16,6 @@ public record BridgeLinkConfirmRequest(
         json.addProperty("discordUsername", discordUsername == null ? "" : discordUsername);
         return json;
     }
-
     public static BridgeLinkConfirmRequest fromJson(JsonObject json) {
         return new BridgeLinkConfirmRequest(
                 JsonUtil.optString(json, "code"),

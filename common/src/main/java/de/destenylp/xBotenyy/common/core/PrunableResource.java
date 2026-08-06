@@ -1,7 +1,5 @@
 package de.destenylp.xBotenyy.common.core;
-
 import java.time.Duration;
-
 public interface PrunableResource extends Prunable {
     static PrunableResource of(String name, Prunable prunable) {
         return new PrunableResource() {
@@ -9,13 +7,11 @@ public interface PrunableResource extends Prunable {
             public int pruneOldEntries(Duration retention) {
                 return prunable.pruneOldEntries(retention);
             }
-
             @Override
             public String getName() {
                 return name;
             }
         };
     }
-
     String getName();
 }

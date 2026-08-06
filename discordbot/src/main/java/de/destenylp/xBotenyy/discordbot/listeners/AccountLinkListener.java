@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
-
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.moderation.AccountLinkPanelFactory;
 import de.destenylp.xBotenyy.discordbot.moderation.AccountLinkService;
@@ -14,16 +13,12 @@ import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 import net.dv8tion.jda.api.modals.Modal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 public class AccountLinkListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountLinkListener.class);
-
     private final AccountLinkService accountLinkService;
-
     public AccountLinkListener(AccountLinkService accountLinkService) {
         this.accountLinkService = accountLinkService;
     }
-
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         if (!AccountLinkPanelFactory.BUTTON_ID.equals(event.getComponentId())) {
@@ -34,18 +29,15 @@ public class AccountLinkListener extends ListenerAdapter {
                     .setPlaceholder("z. B. destenylp")
                     .setMaxLength(30)
                     .build();
-
             Modal modal = Modal.create(AccountLinkPanelFactory.MODAL_ID, "Mit Twitch verknuepfen")
                     .addComponents(Label.of("Dein Twitch-Loginname", login))
                     .build();
-
             event.replyModal(modal).queue();
         } catch (Exception e) {
             LOGGER.error("Unexpected error while opening the account-linking modal: ", e);
             replyGenericError(event);
         }
     }
-
     @Override
     public void onModalInteraction(ModalInteractionEvent event) {
         if (!AccountLinkPanelFactory.MODAL_ID.equals(event.getModalId())) {
@@ -69,7 +61,6 @@ public class AccountLinkListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
-
     private void replyGenericError(IReplyCallback event) {
         if (event.isAcknowledged()) {
             event.getHook().sendMessage("Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es erneut.").queue();

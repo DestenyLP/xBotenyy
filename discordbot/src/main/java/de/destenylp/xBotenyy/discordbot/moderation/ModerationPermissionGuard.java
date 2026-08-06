@@ -1,21 +1,16 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
-
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-
 public final class ModerationPermissionGuard {
     private ModerationPermissionGuard() {
     }
-
     public static boolean requireModerator(SlashCommandInteractionEvent event, ModerationRoleSettings settings) {
         return require(event, settings, false);
     }
-
     public static boolean requireAdmin(SlashCommandInteractionEvent event, ModerationRoleSettings settings) {
         return require(event, settings, true);
     }
-
     private static boolean require(SlashCommandInteractionEvent event, ModerationRoleSettings settings, boolean adminOnly) {
         Member member = event.getMember();
         if (member == null) {

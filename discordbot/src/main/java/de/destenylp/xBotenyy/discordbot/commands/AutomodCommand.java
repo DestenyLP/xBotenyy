@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.commands;
-
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodVerdict;
 import de.destenylp.xBotenyy.discordbot.automod.AutomodService;
@@ -11,16 +10,12 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-
 import java.util.Optional;
-
 public class AutomodCommand extends AbstractGuildCommand {
     private final AutomodService service;
-
     public AutomodCommand(AutomodService service) {
         this.service = service;
     }
-
     @Override
     public CommandData getCommandData() {
         return Commands.slash("automod", "AutoMod-Diagnose (Konfiguration erfolgt ausschließlich über discordbot.properties)")
@@ -29,7 +24,6 @@ public class AutomodCommand extends AbstractGuildCommand {
                         new SubcommandData("test", "Prüft einen Text gegen die Filter, ohne eine echte Nachricht zu senden")
                                 .addOption(OptionType.STRING, "text", "Zu prüfender Text", true));
     }
-
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -41,7 +35,6 @@ public class AutomodCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
-
     private void handleStatus(SlashCommandInteractionEvent event) {
         AutomodSettings settings = service.getSettings();
         StringBuilder sb = new StringBuilder();
@@ -52,7 +45,6 @@ public class AutomodCommand extends AbstractGuildCommand {
         sb.append("Bypass für `Administrator` (betrifft auch den Server-Owner): ").append(settings.isBypassAdministrator() ? "Ja" : "Nein").append("\n");
         sb.append("Ausgenommene Rollen: ").append(settings.getExemptRoleIds().isEmpty() ? "Keine" : settings.getExemptRoleIds().size()).append("\n");
         sb.append("Ausgenommene Kanäle: ").append(settings.getExemptChannelIds().isEmpty() ? "Keine" : settings.getExemptChannelIds().size()).append("\n\n");
-
         sb.append("Verbotene Wörter: ").append(ruleLine(settings.getWordFilter().isEnabled(), settings.getWordFilter().getAction().getLabel())).append("\n");
         sb.append("Invite-Links: ").append(ruleLine(settings.getInviteFilter().enabled(), settings.getInviteFilter().action().getLabel())).append("\n");
         sb.append("Massen-Erwähnungen: ").append(ruleLine(settings.getMentionFilter().enabled(), settings.getMentionFilter().action().getLabel()
@@ -66,7 +58,6 @@ public class AutomodCommand extends AbstractGuildCommand {
         sb.append("Nicht erlaubte Links: ").append(ruleLine(settings.getLinkFilter().enabled(), settings.getLinkFilter().action().getLabel())).append("\n");
         sb.append("KI-Toxizitätserkennung: ").append(ruleLine(settings.getAiFilter().enabled(), settings.getAiFilter().action().getLabel()
                 + ", Schwelle " + settings.getAiFilter().threshold())).append(service.isAiAvailable() ? "" : " ⚠️ Kein API-Key hinterlegt").append("\n\n");
-
         sb.append("Strike-Eskalation: ").append(settings.getStrikeConfig().enabled() ? "Aktiviert" : "Deaktiviert").append("\n");
         if (settings.getStrikeConfig().enabled()) {
             sb.append("Timeout ab ").append(settings.getStrikeConfig().timeoutThreshold()).append(" Strikes (")
@@ -75,10 +66,8 @@ public class AutomodCommand extends AbstractGuildCommand {
                     .append(settings.getStrikeConfig().banThreshold()).append(", Ablauf nach ")
                     .append(settings.getStrikeConfig().expiryMinutes()).append(" min\n");
         }
-
         event.reply(sb.toString()).setEphemeral(true).queue();
     }
-
     private void handleTest(SlashCommandInteractionEvent event) {
         String text = event.getOption("text").getAsString();
         Optional<AutomodVerdict> verdict = service.evaluateTextOnly(text);
@@ -91,11 +80,9 @@ public class AutomodCommand extends AbstractGuildCommand {
         event.reply("🚫 Regel ausgelöst: **" + result.ruleType().getLabel() + "**\nGrund: " + result.reason()
                 + "\nKonfigurierte Aktion: " + result.action().getLabel()).setEphemeral(true).queue();
     }
-
     private String ruleLine(boolean enabled, String detail) {
         return (enabled ? "✅ Aktiviert" : "❌ Deaktiviert") + (enabled ? " (" + detail + ")" : "");
     }
-
     private String describeChannel(String channelId) {
         return channelId == null || channelId.isBlank() ? "Nicht gesetzt" : "<#" + channelId + ">";
     }

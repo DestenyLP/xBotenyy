@@ -1,36 +1,27 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
-
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.TimeUnit;
-
 public class TicketCloseCoordinator {
     private static final Logger LOGGER = LoggerFactory.getLogger(TicketCloseCoordinator.class);
-
     private final TicketService service;
     private final long channelDeleteDelaySeconds;
-
     public TicketCloseCoordinator(TicketService service) {
         this(service, 20);
     }
-
     public TicketCloseCoordinator(TicketService service, long channelDeleteDelaySeconds) {
         this.service = service;
         this.channelDeleteDelaySeconds = Math.max(0, channelDeleteDelaySeconds);
     }
-
     public void finalizeClose(TextChannel channel, Ticket ticket) {
         JDA jda = channel.getJDA();
-
         channel.sendMessageEmbeds(TicketEmbedFactory.buildTicketEmbed(ticket))
                 .setComponents(TicketEmbedFactory.buildTicketComponents(ticket))
                 .queue(success -> {
                 }, failure -> LOGGER.warn("Closing embed could not be posted: {}", failure.getMessage()));
-
         TicketTranscriptService.generate(channel, ticket).thenAccept(transcript -> {
             if (transcript != null) {
                 service.attachTranscript(ticket.getGuildId(), ticket.getId(), transcript.fileName());
@@ -39,27 +30,22 @@ public class TicketCloseCoordinator {
             requestRating(jda, ticket);
             scheduleChannelDeletion(channel, ticket);
         });
-
         LOGGER.info("Ticket {} in guild {} closed, transcript generation started", ticket.getId(), ticket.getGuildId());
         BotMetrics.incrementTicketsClosed();
     }
-
     private void postToLogChannel(JDA jda, Ticket ticket, TicketTranscriptService.TranscriptFile transcript) {
         TicketSettings settings = service.getSettings(ticket.getGuildId()).orElse(null);
         if (settings == null) {
             LOGGER.warn("No ticket settings found for guild {}, ticket {} will not be archived", ticket.getGuildId(), ticket.getId());
             return;
         }
-
         String logChannelId = settings.getLogChannelId();
         String transcriptChannelId = settings.getTranscriptChannelId();
-
         if (logChannelId == null && transcriptChannelId == null) {
             LOGGER.warn("Neither a log nor a transcript channel is configured for ticket {} in guild {}. Use /ticket settings logchannel:#channel so closed tickets get logged.",
                     ticket.getId(), ticket.getGuildId());
             return;
         }
-
         if (logChannelId != null) {
             TextChannel logChannel = jda.getChannelById(TextChannel.class, logChannelId);
             if (logChannel == null) {
@@ -76,7 +62,6 @@ public class TicketCloseCoordinator {
                                 ticket.getId(), logChannelId, failure.getMessage()));
             }
         }
-
         if (transcript != null && transcriptChannelId != null && !transcriptChannelId.equals(logChannelId)) {
             TextChannel transcriptChannel = jda.getChannelById(TextChannel.class, transcriptChannelId);
             if (transcriptChannel == null) {
@@ -90,7 +75,6 @@ public class TicketCloseCoordinator {
             }
         }
     }
-
     public void refreshLogMessage(JDA jda, Ticket ticket) {
         if (ticket.getLogChannelId() == null || ticket.getLogMessageId() == null) {
             return;
@@ -105,7 +89,6 @@ public class TicketCloseCoordinator {
                 }, failure -> LOGGER.warn("Log entry {} for ticket {} could not be updated with the rating: {}",
                         ticket.getLogMessageId(), ticket.getId(), failure.getMessage()));
     }
-
     private void requestRating(JDA jda, Ticket ticket) {
         jda.retrieveUserById(ticket.getAuthorId()).queue(
                 user -> user.openPrivateChannel().queue(
@@ -117,7 +100,6 @@ public class TicketCloseCoordinator {
                         failure -> LOGGER.debug("Could not open a DM channel with {}: {}", ticket.getAuthorId(), failure.getMessage())),
                 failure -> LOGGER.debug("Could not resolve user {}: {}", ticket.getAuthorId(), failure.getMessage()));
     }
-
     private void scheduleChannelDeletion(TextChannel channel, Ticket ticket) {
         channel.sendMessage("\uD83D\uDD12 Dieses Ticket wird in " + channelDeleteDelaySeconds + " Sekunden archiviert...")
                 .queue(success -> {

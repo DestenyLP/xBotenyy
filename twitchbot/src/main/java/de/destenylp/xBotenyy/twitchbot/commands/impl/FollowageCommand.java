@@ -1,18 +1,14 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
-
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
-
 public class FollowageCommand extends AbstractTwitchCommand {
     public FollowageCommand() {
         super("followage", "Zeigt, wie lange du diesem Kanal bereits folgst.");
     }
-
     private static String formatDuration(Duration duration) {
         long totalDays = duration.toDays();
         long years = totalDays / 365;
@@ -28,7 +24,6 @@ public class FollowageCommand extends AbstractTwitchCommand {
         builder.append(days).append(" Tag(en)");
         return builder.toString();
     }
-
     @Override
     public void execute(TwitchCommandContext context) {
         String channelLogin = context.message().channelLogin();
@@ -37,11 +32,9 @@ public class FollowageCommand extends AbstractTwitchCommand {
             context.reply("Konnte den Kanal " + channelLogin + " nicht aufloesen.");
             return;
         }
-
         String rawTarget = context.arg(0);
         String targetUserId;
         String targetDisplay;
-
         if (rawTarget == null) {
             targetUserId = context.message().userId();
             targetDisplay = context.message().displayName();
@@ -55,14 +48,12 @@ public class FollowageCommand extends AbstractTwitchCommand {
             targetUserId = resolved.get();
             targetDisplay = normalized;
         }
-
         Optional<Instant> followedAt = context.services().moderationApiClient()
                 .getFollowedAt(broadcasterId.get(), targetUserId);
         if (followedAt.isEmpty()) {
             context.reply(targetDisplay + " folgt " + channelLogin + " (noch) nicht.");
             return;
         }
-
         Duration duration = Duration.between(followedAt.get(), Instant.now());
         context.reply(targetDisplay + " folgt " + channelLogin + " seit " + formatDuration(duration) + ".");
     }

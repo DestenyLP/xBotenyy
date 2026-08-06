@@ -1,44 +1,35 @@
 package de.destenylp.xBotenyy.twitchbot.poll;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 public final class TwitchPoll {
     private final String question;
     private final List<String> options;
     private final String startedBy;
     private final long startedAtEpochMillis;
     private final Map<String, Integer> votesByUserId = new HashMap<>();
-
     public TwitchPoll(String question, List<String> options, String startedBy, long startedAtEpochMillis) {
         this.question = question;
         this.options = List.copyOf(options);
         this.startedBy = startedBy;
         this.startedAtEpochMillis = startedAtEpochMillis;
     }
-
     public String question() {
         return question;
     }
-
     public List<String> options() {
         return options;
     }
-
     public String startedBy() {
         return startedBy;
     }
-
     public long startedAtEpochMillis() {
         return startedAtEpochMillis;
     }
-
     public boolean isValidOption(int optionNumber) {
         return optionNumber >= 1 && optionNumber <= options.size();
     }
-
     public synchronized boolean vote(String userId, int optionNumber) {
         if (!isValidOption(optionNumber)) {
             return false;
@@ -46,11 +37,9 @@ public final class TwitchPoll {
         votesByUserId.put(userId, optionNumber);
         return true;
     }
-
     public synchronized int totalVotes() {
         return votesByUserId.size();
     }
-
     public synchronized List<Integer> tally() {
         List<Integer> result = new ArrayList<>(options.size());
         for (int i = 0; i < options.size(); i++) {
@@ -61,7 +50,6 @@ public final class TwitchPoll {
         }
         return result;
     }
-
     public String formatOptions() {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < options.size(); i++) {
@@ -72,7 +60,6 @@ public final class TwitchPoll {
         }
         return builder.toString();
     }
-
     public String formatResults() {
         List<Integer> tally = tally();
         StringBuilder builder = new StringBuilder();

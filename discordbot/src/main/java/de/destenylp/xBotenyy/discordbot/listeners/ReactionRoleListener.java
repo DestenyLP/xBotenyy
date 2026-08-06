@@ -1,5 +1,4 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
-
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleEntry;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleMessage;
@@ -15,18 +14,13 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
-
 public class ReactionRoleListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactionRoleListener.class);
-
     private final ReactionRoleService service;
-
     public ReactionRoleListener(ReactionRoleService service) {
         this.service = service;
     }
-
     @Override
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
         try {
@@ -35,24 +29,20 @@ public class ReactionRoleListener extends ListenerAdapter {
             LOGGER.error("Unexpected error on reaction-add for message {}: ", event.getMessageId(), e);
         }
     }
-
     private void handleReactionAdd(MessageReactionAddEvent event) {
         if (!event.isFromGuild() || event.getUser() == null || event.getUser().isBot()) {
             return;
         }
-
         Guild guild = event.getGuild();
         Optional<ReactionRoleMessage> rrMessageOpt = service.findMessage(guild.getId(), event.getMessageId());
         if (rrMessageOpt.isEmpty()) {
             return;
         }
-
         String emojiFormatted = event.getReaction().getEmoji().getFormatted();
         Optional<ReactionRoleEntry> entryOpt = rrMessageOpt.get().getEntries().stream()
                 .filter(entry -> entry.getType() == ReactionRoleType.REACTION)
                 .filter(entry -> emojiFormatted.equals(entry.getEmoji()))
                 .findFirst();
-
         entryOpt.ifPresent(entry -> event.retrieveMember().queue(member -> {
             Role role = guild.getRoleById(entry.getRoleId());
             if (role == null) {
@@ -69,7 +59,6 @@ public class ReactionRoleListener extends ListenerAdapter {
                     LOGGER, "Rollenvergabe " + role.getId() + " -> " + member.getId());
         }));
     }
-
     @Override
     public void onMessageReactionRemove(MessageReactionRemoveEvent event) {
         try {
@@ -78,24 +67,20 @@ public class ReactionRoleListener extends ListenerAdapter {
             LOGGER.error("Unexpected error on reaction-remove for message {}: ", event.getMessageId(), e);
         }
     }
-
     private void handleReactionRemove(MessageReactionRemoveEvent event) {
         if (!event.isFromGuild()) {
             return;
         }
-
         Guild guild = event.getGuild();
         Optional<ReactionRoleMessage> rrMessageOpt = service.findMessage(guild.getId(), event.getMessageId());
         if (rrMessageOpt.isEmpty()) {
             return;
         }
-
         String emojiFormatted = event.getReaction().getEmoji().getFormatted();
         Optional<ReactionRoleEntry> entryOpt = rrMessageOpt.get().getEntries().stream()
                 .filter(entry -> entry.getType() == ReactionRoleType.REACTION)
                 .filter(entry -> emojiFormatted.equals(entry.getEmoji()))
                 .findFirst();
-
         entryOpt.ifPresent(entry -> event.retrieveMember().queue(member -> {
             if (member.getUser().isBot()) {
                 return;
@@ -111,7 +96,6 @@ public class ReactionRoleListener extends ListenerAdapter {
                     LOGGER, "Rollenentzug " + role.getId() + " -> " + member.getId());
         }));
     }
-
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         try {
@@ -124,30 +108,25 @@ public class ReactionRoleListener extends ListenerAdapter {
             }
         }
     }
-
     private void handleButtonInteraction(ButtonInteractionEvent event) {
         String componentId = event.getComponentId();
         if (!componentId.startsWith("reactionrole:")) {
             return;
         }
-
         String[] parts = componentId.split(":");
         if (parts.length != 3) {
             return;
         }
-
         Guild guild = event.getGuild();
         Member member = event.getMember();
         if (guild == null || member == null) {
             return;
         }
-
         Role role = guild.getRoleById(parts[2]);
         if (role == null) {
             event.reply("Diese Rolle existiert nicht mehr.").setEphemeral(true).queue();
             return;
         }
-
         if (member.getRoles().contains(role)) {
             RetryingRestAction.queueWithRetry(
                     () -> guild.removeRoleFromMember(member, role),
