@@ -44,13 +44,9 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         return thread;
     });
     private final AtomicBoolean closing = new AtomicBoolean(false);
-    private final AtomicBoolean reconnectPending = new AtomicBoolean(false);
     private final Map<String, String> broadcasterIdCache = new ConcurrentHashMap<>();
-    private volatile WebSocket webSocket;
-    private volatile String sessionId;
-    private volatile long currentReconnectDelaySeconds;
-    private volatile Instant lastInboundAt = Instant.now();
-    private volatile ScheduledFuture<?> keepaliveWatchdogFuture;
+    private final EventSubSession botSession = new EventSubSession("bot", this::subscribeBotChannels);
+    private final EventSubSession broadcasterSession = new EventSubSession("broadcaster", this::subscribeBroadcasterChannels);
     private Consumer<TwitchChatMessage> onMessage = message -> {
     };
     private Consumer<TwitchAutomodHeldMessage> onAutomodHeld = message -> {
@@ -83,7 +79,6 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         this.channels = channels;
         this.reconnectDelaySeconds = Math.max(reconnectDelaySeconds, 1);
         this.maxReconnectDelaySeconds = Math.max(maxReconnectDelaySeconds, this.reconnectDelaySeconds);
-        this.currentReconnectDelaySeconds = this.reconnectDelaySeconds;
     }
     public void onMessage(Consumer<TwitchChatMessage> listener) {
         this.onMessage = listener;
@@ -124,19 +119,22 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
     }
     public void connect() {
         closing.set(false);
-        openWebSocket(EVENTSUB_WEBSOCKET, null);
+        botSession.connect();
+        if (needsBroadcasterSession()) {
+            broadcasterSession.connect();
+        } else if (followAlertEnabled || subscribeAlertEnabled) {
+            LOGGER.warn("Follow/subscribe alerts are enabled but no Twitch broadcaster token is configured, "
+                    + "the dedicated broadcaster EventSub session will not be started.");
+        }
+    }
+    private boolean needsBroadcasterSession() {
+        return (followAlertEnabled || subscribeAlertEnabled) && broadcasterAccessTokenSupplier != null;
     }
     public void close() {
         closing.set(true);
-        ScheduledFuture<?> watchdog = keepaliveWatchdogFuture;
-        if (watchdog != null) {
-            watchdog.cancel(false);
-        }
         scheduler.shutdownNow();
-        WebSocket socket = webSocket;
-        if (socket != null) {
-            socket.sendClose(WebSocket.NORMAL_CLOSURE, "shutdown");
-        }
+        botSession.close();
+        broadcasterSession.close();
     }
     public void sendMessage(String channelLogin, String message) {
         String normalizedChannel = channelLogin.toLowerCase(Locale.ROOT);
@@ -195,121 +193,99 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         resolved.ifPresent(id -> broadcasterIdCache.put(channelLogin, id));
         return resolved;
     }
-    private void openWebSocket(URI uri, WebSocket previousSocket) {
-        LOGGER.info("Connecting to Twitch EventSub ...");
-        wsHttpClient.newWebSocketBuilder().buildAsync(uri, new EventSubListener(previousSocket))
-                .whenComplete((socket, error) -> {
-                    if (error != null) {
-                        LOGGER.warn("Connection to Twitch EventSub failed: {}", error.getMessage());
-                        scheduleReconnect();
-                    }
-                });
-    }
-    private void scheduleReconnect() {
-        if (closing.get()) {
-            return;
-        }
-        if (!reconnectPending.compareAndSet(false, true)) {
-            return;
-        }
-        long delay = currentReconnectDelaySeconds;
-        currentReconnectDelaySeconds = Math.min(currentReconnectDelaySeconds * 2, maxReconnectDelaySeconds);
-        sessionId = null;
-        LOGGER.info("Retrying connection to Twitch EventSub in {}s ...", delay);
-        scheduler.schedule(() -> {
-            reconnectPending.set(false);
-            openWebSocket(EVENTSUB_WEBSOCKET, null);
-        }, delay, TimeUnit.SECONDS);
-    }
-    private void resetKeepaliveWatchdog(long keepaliveTimeoutSeconds) {
-        ScheduledFuture<?> previous = keepaliveWatchdogFuture;
-        if (previous != null) {
-            previous.cancel(false);
-        }
-        long intervalSeconds = Math.max(keepaliveTimeoutSeconds, 5);
-        keepaliveWatchdogFuture = scheduler.scheduleAtFixedRate(() -> {
-            if (closing.get()) {
-                return;
-            }
-            Instant deadline = lastInboundAt.plusSeconds(intervalSeconds + 5);
-            if (Instant.now().isAfter(deadline)) {
-                LOGGER.warn("No Twitch EventSub messages received for {}s, forcing reconnect.", intervalSeconds + 5);
-                WebSocket socket = webSocket;
-                if (socket != null) {
-                    socket.sendClose(WebSocket.NORMAL_CLOSURE, "keepalive-timeout");
-                } else {
-                    scheduleReconnect();
-                }
-            }
-        }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
-    }
-    private void handleMessage(WebSocket socket, String raw, WebSocket previousSocket) {
-        JsonObject root;
-        try {
-            root = JsonParser.parseString(raw).getAsJsonObject();
-        } catch (Exception e) {
-            LOGGER.warn("Could not parse Twitch EventSub message: {}", e.getMessage());
-            return;
-        }
-        JsonObject metadata = root.getAsJsonObject("metadata");
-        JsonObject payload = root.getAsJsonObject("payload");
-        String messageType = metadata != null ? JsonUtil.optString(metadata, "message_type") : null;
-        if (messageType == null) {
-            return;
-        }
-        switch (messageType) {
-            case "session_welcome" -> handleWelcome(socket, payload, previousSocket);
-            case "session_keepalive" -> lastInboundAt = Instant.now();
-            case "notification" -> {
-                lastInboundAt = Instant.now();
-                handleNotification(payload);
-            }
-            case "session_reconnect" -> handleReconnect(socket, payload);
-            case "revocation" -> handleRevocation(payload);
-            default -> LOGGER.debug("Unhandled Twitch EventSub message: {}", messageType);
-        }
-    }
-    private void handleWelcome(WebSocket socket, JsonObject payload, WebSocket previousSocket) {
-        JsonObject session = payload != null ? payload.getAsJsonObject("session") : null;
-        if (session == null) {
-            LOGGER.warn("Received Twitch EventSub welcome message without session data.");
-            return;
-        }
-        String newSessionId = JsonUtil.optString(session, "id");
-        long keepaliveTimeout = session.has("keepalive_timeout_seconds") && !session.get("keepalive_timeout_seconds").isJsonNull()
-                ? session.get("keepalive_timeout_seconds").getAsLong()
-                : DEFAULT_KEEPALIVE_TIMEOUT_SECONDS;
-        lastInboundAt = Instant.now();
-        resetKeepaliveWatchdog(keepaliveTimeout);
-        currentReconnectDelaySeconds = reconnectDelaySeconds;
-        this.webSocket = socket;
-        this.sessionId = newSessionId;
-        if (previousSocket != null) {
-            LOGGER.info("Twitch EventSub reconnect completed.");
-            previousSocket.sendClose(WebSocket.NORMAL_CLOSURE, "reconnect");
-            return;
-        }
-        LOGGER.info("Twitch EventSub session established, setting up chat subscriptions ...");
+    private void subscribeBotChannels() {
         for (String channel : channels) {
-            scheduler.execute(() -> subscribeToChannel(channel));
+            subscribeBotChannel(channel);
         }
         onConnected.run();
     }
-    private void handleReconnect(WebSocket socket, JsonObject payload) {
-        JsonObject session = payload != null ? payload.getAsJsonObject("session") : null;
-        String reconnectUrl = session != null ? JsonUtil.optString(session, "reconnect_url") : null;
-        if (reconnectUrl == null) {
-            LOGGER.warn("Twitch requested a reconnect without a reconnect_url, establishing a new connection.");
-            openWebSocket(EVENTSUB_WEBSOCKET, socket);
+    private void subscribeBroadcasterChannels() {
+        for (String channel : channels) {
+            subscribeBroadcasterChannel(channel);
+        }
+    }
+    private void subscribeBotChannel(String channelLogin) {
+        Optional<String> broadcasterId = resolveBroadcasterId(channelLogin);
+        if (broadcasterId.isEmpty()) {
+            LOGGER.warn("Could not resolve broadcaster ID for channel {}, chat subscription skipped.", channelLogin);
             return;
         }
-        LOGGER.info("Twitch is requesting a reconnect, establishing a new connection.");
-        openWebSocket(URI.create(reconnectUrl), socket);
+        JsonObject chatCondition = new JsonObject();
+        chatCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+        chatCondition.addProperty("user_id", botUserId);
+        createEventSubSubscription(botSession, "channel.chat.message", "1", chatCondition, channelLogin, userAccessTokenSupplier);
+        JsonObject automodCondition = new JsonObject();
+        automodCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+        automodCondition.addProperty("moderator_user_id", botUserId);
+        createEventSubSubscription(botSession, "automod.message.hold", "1", automodCondition, channelLogin, userAccessTokenSupplier);
+        createEventSubSubscription(botSession, "automod.message.update", "1", automodCondition, channelLogin, userAccessTokenSupplier);
+        if (raidAlertEnabled) {
+            JsonObject raidCondition = new JsonObject();
+            raidCondition.addProperty("to_broadcaster_user_id", broadcasterId.get());
+            createEventSubSubscription(botSession, "channel.raid", "1", raidCondition, channelLogin, userAccessTokenSupplier);
+        }
     }
-    private void handleRevocation(JsonObject payload) {
-        JsonObject subscription = payload != null ? payload.getAsJsonObject("subscription") : null;
-        String status = subscription != null ? JsonUtil.optString(subscription, "status", "unknown") : "unknown";
-        LOGGER.warn("Twitch revoked an EventSub chat subscription (status: {}).", status);
+    private void subscribeBroadcasterChannel(String channelLogin) {
+        Optional<String> broadcasterId = resolveBroadcasterId(channelLogin);
+        if (broadcasterId.isEmpty()) {
+            LOGGER.warn("Could not resolve broadcaster ID for channel {}, follow/subscribe subscription skipped.", channelLogin);
+            return;
+        }
+        java.util.function.Supplier<String> broadcasterToken = broadcasterAccessTokenSupplier;
+        if (broadcasterToken == null) {
+            return;
+        }
+        if (followAlertEnabled) {
+            JsonObject followCondition = new JsonObject();
+            followCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+            followCondition.addProperty("moderator_user_id", broadcasterId.get());
+            createEventSubSubscription(broadcasterSession, "channel.follow", "2", followCondition, channelLogin, broadcasterToken);
+        }
+        if (subscribeAlertEnabled) {
+            JsonObject subscribeCondition = new JsonObject();
+            subscribeCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+            createEventSubSubscription(broadcasterSession, "channel.subscribe", "1", subscribeCondition, channelLogin, broadcasterToken);
+        }
+    }
+    private void createEventSubSubscription(EventSubSession session, String type, String version, JsonObject condition,
+                                             String channelLogin, java.util.function.Supplier<String> tokenSupplier) {
+        String currentSessionId = session.sessionId;
+        if (currentSessionId == null) {
+            LOGGER.warn("No active Twitch EventSub session ({}), {} subscription for #{} skipped.",
+                    session.name, type, channelLogin);
+            return;
+        }
+        String token = tokenSupplier.get();
+        if (token == null || token.isBlank()) {
+            LOGGER.warn("No Twitch user access token available, {} subscription for #{} skipped.", type, channelLogin);
+            return;
+        }
+        try {
+            JsonObject transport = new JsonObject();
+            transport.addProperty("method", "websocket");
+            transport.addProperty("session_id", currentSessionId);
+            JsonObject body = new JsonObject();
+            body.addProperty("type", type);
+            body.addProperty("version", version);
+            body.add("condition", condition);
+            body.add("transport", transport);
+            HttpRequest request = requestBuilder(URI.create(HELIX_EVENTSUB_URL))
+                    .header("Client-Id", clientId)
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
+                    LOGGER, "Twitch EventSub-Abo (" + type + ") fuer #" + channelLogin);
+            if (response.statusCode() != 202) {
+                LOGGER.warn("Could not create Twitch {} subscription for #{} (status {}): {}",
+                        type, channelLogin, response.statusCode(), response.body());
+                return;
+            }
+            LOGGER.info("Twitch {} subscription for #{} set up.", type, channelLogin);
+        } catch (Exception e) {
+            LOGGER.warn("Error creating the Twitch {} subscription for #{}: {}", type, channelLogin, e.getMessage());
+        }
     }
     private void handleNotification(JsonObject payload) {
         if (payload == null) {
@@ -409,92 +385,154 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         int viewers = event.has("viewers") && !event.get("viewers").isJsonNull() ? event.get("viewers").getAsInt() : 0;
         onRaid.accept(new TwitchRaidEvent(channelLogin, fromUserId, fromUserLogin, displayName, viewers));
     }
-    private void subscribeToChannel(String channelLogin) {
-        Optional<String> broadcasterId = resolveBroadcasterId(channelLogin);
-        if (broadcasterId.isEmpty()) {
-            LOGGER.warn("Could not resolve broadcaster ID for channel {}, chat subscription skipped.", channelLogin);
-            return;
+    private final class EventSubSession {
+        private final String name;
+        private final Runnable onFirstWelcome;
+        private final AtomicBoolean reconnectPending = new AtomicBoolean(false);
+        private volatile WebSocket webSocket;
+        private volatile String sessionId;
+        private volatile long currentReconnectDelaySeconds;
+        private volatile Instant lastInboundAt = Instant.now();
+        private volatile ScheduledFuture<?> keepaliveWatchdogFuture;
+        private EventSubSession(String name, Runnable onFirstWelcome) {
+            this.name = name;
+            this.onFirstWelcome = onFirstWelcome;
+            this.currentReconnectDelaySeconds = reconnectDelaySeconds;
         }
-        JsonObject chatCondition = new JsonObject();
-        chatCondition.addProperty("broadcaster_user_id", broadcasterId.get());
-        chatCondition.addProperty("user_id", botUserId);
-        createEventSubSubscription("channel.chat.message", "1", chatCondition, channelLogin, userAccessTokenSupplier);
-        JsonObject automodCondition = new JsonObject();
-        automodCondition.addProperty("broadcaster_user_id", broadcasterId.get());
-        automodCondition.addProperty("moderator_user_id", botUserId);
-        createEventSubSubscription("automod.message.hold", "1", automodCondition, channelLogin, userAccessTokenSupplier);
-        createEventSubSubscription("automod.message.update", "1", automodCondition, channelLogin, userAccessTokenSupplier);
-        if (raidAlertEnabled) {
-            JsonObject raidCondition = new JsonObject();
-            raidCondition.addProperty("to_broadcaster_user_id", broadcasterId.get());
-            createEventSubSubscription("channel.raid", "1", raidCondition, channelLogin, userAccessTokenSupplier);
+        private void connect() {
+            openWebSocket(EVENTSUB_WEBSOCKET, null);
         }
-        java.util.function.Supplier<String> broadcasterToken = broadcasterAccessTokenSupplier;
-        if (followAlertEnabled) {
-            if (broadcasterToken != null) {
-                JsonObject followCondition = new JsonObject();
-                followCondition.addProperty("broadcaster_user_id", broadcasterId.get());
-                followCondition.addProperty("moderator_user_id", broadcasterId.get());
-                createEventSubSubscription("channel.follow", "2", followCondition, channelLogin, broadcasterToken);
-            } else {
-                LOGGER.warn("Follow alerts are enabled but no Twitch broadcaster token is configured "
-                        + "(required scope: moderator:read:followers) - follow alerts for #{} are skipped.", channelLogin);
+        private void close() {
+            ScheduledFuture<?> watchdog = keepaliveWatchdogFuture;
+            if (watchdog != null) {
+                watchdog.cancel(false);
+            }
+            WebSocket socket = webSocket;
+            if (socket != null) {
+                socket.sendClose(WebSocket.NORMAL_CLOSURE, "shutdown");
             }
         }
-        if (subscribeAlertEnabled) {
-            if (broadcasterToken != null) {
-                JsonObject subscribeCondition = new JsonObject();
-                subscribeCondition.addProperty("broadcaster_user_id", broadcasterId.get());
-                createEventSubSubscription("channel.subscribe", "1", subscribeCondition, channelLogin, broadcasterToken);
-            } else {
-                LOGGER.warn("Subscribe alerts are enabled but no Twitch broadcaster token is configured "
-                        + "(required scope: channel:read:subscriptions) - subscribe alerts for #{} are skipped.", channelLogin);
-            }
+        private void openWebSocket(URI uri, WebSocket previousSocket) {
+            LOGGER.info("Connecting to Twitch EventSub ({}) ...", name);
+            wsHttpClient.newWebSocketBuilder().buildAsync(uri, new EventSubListener(this, previousSocket))
+                    .whenComplete((socket, error) -> {
+                        if (error != null) {
+                            LOGGER.warn("Connection to Twitch EventSub ({}) failed: {}", name, error.getMessage());
+                            scheduleReconnect();
+                        }
+                    });
         }
-    }
-    private void createEventSubSubscription(String type, String version, JsonObject condition, String channelLogin,
-                                             java.util.function.Supplier<String> tokenSupplier) {
-        String currentSessionId = sessionId;
-        if (currentSessionId == null) {
-            LOGGER.warn("No active Twitch EventSub session, {} subscription for #{} skipped.", type, channelLogin);
-            return;
-        }
-        String token = tokenSupplier.get();
-        if (token == null || token.isBlank()) {
-            LOGGER.warn("No Twitch user access token available, {} subscription for #{} skipped.", type, channelLogin);
-            return;
-        }
-        try {
-            JsonObject transport = new JsonObject();
-            transport.addProperty("method", "websocket");
-            transport.addProperty("session_id", currentSessionId);
-            JsonObject body = new JsonObject();
-            body.addProperty("type", type);
-            body.addProperty("version", version);
-            body.add("condition", condition);
-            body.add("transport", transport);
-            HttpRequest request = requestBuilder(URI.create(HELIX_EVENTSUB_URL))
-                    .header("Client-Id", clientId)
-                    .header("Authorization", "Bearer " + token)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(),
-                    LOGGER, "Twitch EventSub-Abo (" + type + ") fuer #" + channelLogin);
-            if (response.statusCode() != 202) {
-                LOGGER.warn("Could not create Twitch {} subscription for #{} (status {}): {}",
-                        type, channelLogin, response.statusCode(), response.body());
+        private void scheduleReconnect() {
+            if (closing.get()) {
                 return;
             }
-            LOGGER.info("Twitch {} subscription for #{} set up.", type, channelLogin);
-        } catch (Exception e) {
-            LOGGER.warn("Error creating the Twitch {} subscription for #{}: {}", type, channelLogin, e.getMessage());
+            if (!reconnectPending.compareAndSet(false, true)) {
+                return;
+            }
+            long delay = currentReconnectDelaySeconds;
+            currentReconnectDelaySeconds = Math.min(currentReconnectDelaySeconds * 2, maxReconnectDelaySeconds);
+            sessionId = null;
+            LOGGER.info("Retrying connection to Twitch EventSub ({}) in {}s ...", name, delay);
+            scheduler.schedule(() -> {
+                reconnectPending.set(false);
+                openWebSocket(EVENTSUB_WEBSOCKET, null);
+            }, delay, TimeUnit.SECONDS);
+        }
+        private void resetKeepaliveWatchdog(long keepaliveTimeoutSeconds) {
+            ScheduledFuture<?> previous = keepaliveWatchdogFuture;
+            if (previous != null) {
+                previous.cancel(false);
+            }
+            long intervalSeconds = Math.max(keepaliveTimeoutSeconds, 5);
+            keepaliveWatchdogFuture = scheduler.scheduleAtFixedRate(() -> {
+                if (closing.get()) {
+                    return;
+                }
+                Instant deadline = lastInboundAt.plusSeconds(intervalSeconds + 5);
+                if (Instant.now().isAfter(deadline)) {
+                    LOGGER.warn("No Twitch EventSub ({}) messages received for {}s, forcing reconnect.",
+                            name, intervalSeconds + 5);
+                    WebSocket socket = webSocket;
+                    if (socket != null) {
+                        socket.sendClose(WebSocket.NORMAL_CLOSURE, "keepalive-timeout");
+                    } else {
+                        scheduleReconnect();
+                    }
+                }
+            }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+        }
+        private void handleMessage(WebSocket socket, String raw, WebSocket previousSocket) {
+            JsonObject root;
+            try {
+                root = JsonParser.parseString(raw).getAsJsonObject();
+            } catch (Exception e) {
+                LOGGER.warn("Could not parse Twitch EventSub ({}) message: {}", name, e.getMessage());
+                return;
+            }
+            JsonObject metadata = root.getAsJsonObject("metadata");
+            JsonObject payload = root.getAsJsonObject("payload");
+            String messageType = metadata != null ? JsonUtil.optString(metadata, "message_type") : null;
+            if (messageType == null) {
+                return;
+            }
+            switch (messageType) {
+                case "session_welcome" -> handleWelcome(socket, payload, previousSocket);
+                case "session_keepalive" -> lastInboundAt = Instant.now();
+                case "notification" -> {
+                    lastInboundAt = Instant.now();
+                    handleNotification(payload);
+                }
+                case "session_reconnect" -> handleReconnect(socket, payload);
+                case "revocation" -> handleRevocation(payload);
+                default -> LOGGER.debug("Unhandled Twitch EventSub ({}) message: {}", name, messageType);
+            }
+        }
+        private void handleWelcome(WebSocket socket, JsonObject payload, WebSocket previousSocket) {
+            JsonObject session = payload != null ? payload.getAsJsonObject("session") : null;
+            if (session == null) {
+                LOGGER.warn("Received Twitch EventSub ({}) welcome message without session data.", name);
+                return;
+            }
+            String newSessionId = JsonUtil.optString(session, "id");
+            long keepaliveTimeout = session.has("keepalive_timeout_seconds") && !session.get("keepalive_timeout_seconds").isJsonNull()
+                    ? session.get("keepalive_timeout_seconds").getAsLong()
+                    : DEFAULT_KEEPALIVE_TIMEOUT_SECONDS;
+            lastInboundAt = Instant.now();
+            resetKeepaliveWatchdog(keepaliveTimeout);
+            currentReconnectDelaySeconds = reconnectDelaySeconds;
+            this.webSocket = socket;
+            this.sessionId = newSessionId;
+            if (previousSocket != null) {
+                LOGGER.info("Twitch EventSub ({}) reconnect completed.", name);
+                previousSocket.sendClose(WebSocket.NORMAL_CLOSURE, "reconnect");
+                return;
+            }
+            LOGGER.info("Twitch EventSub ({}) session established, setting up subscriptions ...", name);
+            scheduler.execute(onFirstWelcome);
+        }
+        private void handleReconnect(WebSocket socket, JsonObject payload) {
+            JsonObject session = payload != null ? payload.getAsJsonObject("session") : null;
+            String reconnectUrl = session != null ? JsonUtil.optString(session, "reconnect_url") : null;
+            if (reconnectUrl == null) {
+                LOGGER.warn("Twitch requested a reconnect ({}) without a reconnect_url, establishing a new connection.", name);
+                openWebSocket(EVENTSUB_WEBSOCKET, socket);
+                return;
+            }
+            LOGGER.info("Twitch is requesting a reconnect ({}), establishing a new connection.", name);
+            openWebSocket(URI.create(reconnectUrl), socket);
+        }
+        private void handleRevocation(JsonObject payload) {
+            JsonObject subscription = payload != null ? payload.getAsJsonObject("subscription") : null;
+            String status = subscription != null ? JsonUtil.optString(subscription, "status", "unknown") : "unknown";
+            LOGGER.warn("Twitch revoked an EventSub ({}) chat subscription (status: {}).", name, status);
         }
     }
     private final class EventSubListener implements WebSocket.Listener {
         private final StringBuilder buffer = new StringBuilder();
+        private final EventSubSession session;
         private final WebSocket previousSocket;
-        private EventSubListener(WebSocket previousSocket) {
+        private EventSubListener(EventSubSession session, WebSocket previousSocket) {
+            this.session = session;
             this.previousSocket = previousSocket;
         }
         @Override
@@ -506,22 +544,22 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
             }
             String raw = buffer.toString();
             buffer.setLength(0);
-            handleMessage(webSocket, raw, previousSocket);
+            session.handleMessage(webSocket, raw, previousSocket);
             return CompletableFuture.completedFuture(null);
         }
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
-            LOGGER.warn("Twitch EventSub connection closed ({}): {}", statusCode, reason);
-            if (TwitchChatClient.this.webSocket == webSocket || TwitchChatClient.this.webSocket == null) {
-                scheduleReconnect();
+            LOGGER.warn("Twitch EventSub ({}) connection closed ({}): {}", session.name, statusCode, reason);
+            if (session.webSocket == webSocket || session.webSocket == null) {
+                session.scheduleReconnect();
             }
             return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
         }
         @Override
         public void onError(WebSocket webSocket, Throwable error) {
-            LOGGER.warn("Error in the Twitch EventSub connection: {}", error.getMessage());
-            if (TwitchChatClient.this.webSocket == webSocket || TwitchChatClient.this.webSocket == null) {
-                scheduleReconnect();
+            LOGGER.warn("Error in the Twitch EventSub ({}) connection: {}", session.name, error.getMessage());
+            if (session.webSocket == webSocket || session.webSocket == null) {
+                session.scheduleReconnect();
             }
         }
     }
