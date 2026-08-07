@@ -72,7 +72,7 @@ public class Bot extends AbstractBot {
             case "WATCHING" -> Activity.watching(text);
             case "LISTENING" -> Activity.listening(text);
             case "COMPETING" -> Activity.competing(text);
-            case "Streaming" -> Activity.streaming("Desteny", "https://www.twitch.tv/xdestenyyy");
+            case "STREAMING" -> Activity.streaming("Made by Desteny", "https://www.twitch.tv/xdestenyyy");
             default -> Activity.playing(text);
         };
     }
@@ -101,6 +101,7 @@ public class Bot extends AbstractBot {
                 retryMaxAttempts, retryBaseDelay)
                 : null;
         registerCommands(services);
+
         jda = JDABuilder.createDefault(config.discordBotToken())
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .setChunkingFilter(ChunkingFilter.ALL)
