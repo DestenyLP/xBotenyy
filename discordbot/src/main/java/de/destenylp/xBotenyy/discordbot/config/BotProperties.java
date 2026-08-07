@@ -73,7 +73,7 @@ public final class BotProperties {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("data.directory", "data");
         values.put("database.file", "xbotenyy.sqlite");
-        values.put("bot.activity.type", "PLAYING");
+        values.put("bot.activity.type", "STREAMING");
         values.put("bot.activity.text", "🛠️ Made by Desteny");
         values.put("scheduler.heartbeat.interval.minutes", "5");
         values.put("scheduler.ticket.autoclose.interval.minutes", "15");
