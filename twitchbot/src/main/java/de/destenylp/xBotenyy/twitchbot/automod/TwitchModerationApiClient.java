@@ -47,23 +47,23 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
     public boolean hasBroadcasterAccessToken() {
         return broadcasterAccessTokenSupplier != null;
     }
-    public java.util.Set<String> getSubscriberUserIds(String broadcasterId) {
+    public Optional<java.util.Set<String>> getSubscriberUserIds(String broadcasterId) {
         return getBroadcasterPaginatedIds(HELIX_BASE + "/subscriptions?broadcaster_id=" + broadcasterId + "&first=100",
                 "user_id", "Twitch Abonnenten-Liste fuer " + broadcasterId);
     }
-    public java.util.Set<String> getVipUserIds(String broadcasterId) {
+    public Optional<java.util.Set<String>> getVipUserIds(String broadcasterId) {
         return getBroadcasterPaginatedIds(HELIX_BASE + "/channels/vips?broadcaster_id=" + broadcasterId + "&first=100",
                 "user_id", "Twitch VIP-Liste fuer " + broadcasterId);
     }
-    public java.util.Set<String> getModeratorUserIds(String broadcasterId) {
+    public Optional<java.util.Set<String>> getModeratorUserIds(String broadcasterId) {
         return getBroadcasterPaginatedIds(HELIX_BASE + "/moderation/moderators?broadcaster_id=" + broadcasterId + "&first=100",
                 "user_id", "Twitch Moderatoren-Liste fuer " + broadcasterId);
     }
-    private java.util.Set<String> getBroadcasterPaginatedIds(String baseUri, String idField, String description) {
+    private Optional<java.util.Set<String>> getBroadcasterPaginatedIds(String baseUri, String idField, String description) {
         java.util.Set<String> ids = new java.util.HashSet<>();
         if (broadcasterAccessTokenSupplier == null) {
             LOGGER.warn("No broadcaster token configured, {} cannot be queried.", description);
-            return ids;
+            return Optional.empty();
         }
         String cursor = null;
         do {
@@ -77,7 +77,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
                 HttpResponse<String> response = sendWithRetry(request, HttpResponse.BodyHandlers.ofString(), LOGGER, description);
                 if (response.statusCode() != 200) {
                     LOGGER.warn("Could not query {} (status {}): {}", description, response.statusCode(), response.body());
-                    return ids;
+                    return Optional.empty();
                 }
                 JsonObject body = JsonParser.parseString(response.body()).getAsJsonObject();
                 JsonArray data = body.getAsJsonArray("data");
@@ -88,10 +88,10 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
                 cursor = pagination != null && pagination.has("cursor") ? pagination.get("cursor").getAsString() : null;
             } catch (Exception e) {
                 LOGGER.warn("Error querying {}: {}", description, e.getMessage());
-                return ids;
+                return Optional.empty();
             }
         } while (cursor != null && !cursor.isBlank());
-        return ids;
+        return Optional.of(ids);
     }
     public Optional<String> resolveUserId(String login) {
         String cached = userIdCache.get(login.toLowerCase());

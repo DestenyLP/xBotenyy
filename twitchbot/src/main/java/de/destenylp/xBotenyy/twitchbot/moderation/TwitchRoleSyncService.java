@@ -38,9 +38,17 @@ public class TwitchRoleSyncService {
             return;
         }
         String broadcasterId = broadcasterIdOpt.get();
-        Set<String> subscribers = moderationApiClient.getSubscriberUserIds(broadcasterId);
-        Set<String> vips = moderationApiClient.getVipUserIds(broadcasterId);
-        Set<String> moderators = moderationApiClient.getModeratorUserIds(broadcasterId);
+        Optional<Set<String>> subscribersOpt = moderationApiClient.getSubscriberUserIds(broadcasterId);
+        Optional<Set<String>> vipsOpt = moderationApiClient.getVipUserIds(broadcasterId);
+        Optional<Set<String>> moderatorsOpt = moderationApiClient.getModeratorUserIds(broadcasterId);
+        if (subscribersOpt.isEmpty() || vipsOpt.isEmpty() || moderatorsOpt.isEmpty()) {
+            LOGGER.warn("Skipping periodic role reconciliation for {} because at least one Twitch API query failed; "
+                    + "roles are left unchanged to avoid incorrectly removing them.", channelLogin);
+            return;
+        }
+        Set<String> subscribers = subscribersOpt.get();
+        Set<String> vips = vipsOpt.get();
+        Set<String> moderators = moderatorsOpt.get();
         for (AccountLink link : accountLinkRepository.findAll()) {
             List<TwitchRoleSyncStatus> statuses = new ArrayList<>();
             if (link.twitchUserId().equals(broadcasterId)) {
