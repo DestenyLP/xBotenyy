@@ -22,6 +22,8 @@ public class TwitchRoleSyncService {
     private final ModerationBridgeClient bridgeClient;
     private final Supplier<BridgeSettings> bridgeSettingsSupplier;
     private final Map<String, List<TwitchRoleSyncStatus>> lastSyncedStatuses = new ConcurrentHashMap<>();
+    private final Map<String, Integer> reconcileModeratorMissStreak = new ConcurrentHashMap<>();
+    private static final int RECONCILE_MODERATOR_REMOVAL_CONFIRMATIONS = 2;
     public TwitchRoleSyncService(AccountLinkRepository accountLinkRepository, ModerationBridgeClient bridgeClient,
                                   Supplier<BridgeSettings> bridgeSettingsSupplier) {
         this.accountLinkRepository = accountLinkRepository;
@@ -50,11 +52,33 @@ public class TwitchRoleSyncService {
         Set<String> vips = vipsOpt.get();
         Set<String> moderators = moderatorsOpt.get();
         for (AccountLink link : accountLinkRepository.findAll()) {
+            boolean isBroadcaster = link.twitchUserId().equals(broadcasterId);
+            // The Twitch API never lists the broadcaster in the moderator list (they are implicitly
+            // always a moderator of their own channel), so treat the broadcaster as a moderator too -
+            // this mirrors the badge-based detection done in handleMessage() for live chat messages.
+            boolean isModeratorNow = isBroadcaster || moderators.contains(link.twitchUserId());
+            boolean wasModeratorBefore = lastKnownStatuses(link.twitchUserId()).contains(TwitchRoleSyncStatus.MODERATOR);
+            boolean keepModerator;
+            if (isModeratorNow) {
+                reconcileModeratorMissStreak.remove(link.twitchUserId());
+                keepModerator = true;
+            } else if (wasModeratorBefore) {
+                // Only drop the moderator status after it has been confirmed absent on several
+                // consecutive reconciliations in a row, to avoid flapping on a single stale/incomplete
+                // Twitch API response instead of an outright error (which is already handled above).
+                int misses = reconcileModeratorMissStreak.merge(link.twitchUserId(), 1, Integer::sum);
+                keepModerator = misses < RECONCILE_MODERATOR_REMOVAL_CONFIRMATIONS;
+                if (!keepModerator) {
+                    reconcileModeratorMissStreak.remove(link.twitchUserId());
+                }
+            } else {
+                keepModerator = false;
+            }
             List<TwitchRoleSyncStatus> statuses = new ArrayList<>();
-            if (link.twitchUserId().equals(broadcasterId)) {
+            if (isBroadcaster) {
                 statuses.add(TwitchRoleSyncStatus.BROADCASTER);
             }
-            if (moderators.contains(link.twitchUserId())) {
+            if (keepModerator) {
                 statuses.add(TwitchRoleSyncStatus.MODERATOR);
             }
             if (vips.contains(link.twitchUserId())) {
@@ -65,6 +89,10 @@ public class TwitchRoleSyncService {
             }
             syncIfChanged(link, statuses);
         }
+    }
+    private List<TwitchRoleSyncStatus> lastKnownStatuses(String twitchUserId) {
+        List<TwitchRoleSyncStatus> known = lastSyncedStatuses.get(twitchUserId);
+        return known != null ? known : List.of();
     }
     public void handleMessage(TwitchChatMessage message) {
         BridgeSettings settings = bridgeSettingsSupplier.get();
@@ -92,7 +120,10 @@ public class TwitchRoleSyncService {
     }
     private void syncIfChanged(AccountLink link, List<TwitchRoleSyncStatus> statuses) {
         List<TwitchRoleSyncStatus> previous = lastSyncedStatuses.get(link.twitchUserId());
-        if (previous != null && previous.equals(statuses)) {
+        // Compare as sets: handleMessage() and reconcile() build the status list in different orders,
+        // so a plain List.equals() would (wrongly) detect a "change" and re-sync every time even though
+        // the actual set of active roles is identical - causing redundant bridge calls / log spam.
+        if (previous != null && java.util.Set.copyOf(previous).equals(java.util.Set.copyOf(statuses))) {
             return;
         }
         BridgeSettings settings = bridgeSettingsSupplier.get();

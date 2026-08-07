@@ -57,6 +57,16 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
     };
     private Consumer<TwitchAutomodUpdateMessage> onAutomodUpdate = message -> {
     };
+    private Consumer<TwitchFollowEvent> onFollow = event -> {
+    };
+    private Consumer<TwitchSubscribeEvent> onSubscribe = event -> {
+    };
+    private Consumer<TwitchRaidEvent> onRaid = event -> {
+    };
+    private volatile java.util.function.Supplier<String> broadcasterAccessTokenSupplier;
+    private volatile boolean followAlertEnabled;
+    private volatile boolean subscribeAlertEnabled;
+    private volatile boolean raidAlertEnabled;
     private Runnable onConnected = () -> {
     };
     public TwitchChatClient(String clientId, TwitchAppAccessTokenManager appAccessTokenManager,
@@ -83,6 +93,31 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
     }
     public void onAutomodUpdate(Consumer<TwitchAutomodUpdateMessage> listener) {
         this.onAutomodUpdate = listener;
+    }
+    public void onFollow(Consumer<TwitchFollowEvent> listener) {
+        this.onFollow = listener;
+    }
+    public void onSubscribe(Consumer<TwitchSubscribeEvent> listener) {
+        this.onSubscribe = listener;
+    }
+    public void onRaid(Consumer<TwitchRaidEvent> listener) {
+        this.onRaid = listener;
+    }
+    /**
+     * Sets the broadcaster's own user access token, used to create the {@code channel.follow} and
+     * {@code channel.subscribe} EventSub subscriptions - Twitch requires these to be created with a
+     * token that has the {@code moderator:read:followers} / {@code channel:read:subscriptions} scopes
+     * granted by the broadcaster themselves (the bot's own token is not sufficient). Optional: if never
+     * set (or set to null), follow/subscribe alerts are skipped with a warning log.
+     */
+    public void setBroadcasterAccessTokenSupplier(java.util.function.Supplier<String> supplier) {
+        this.broadcasterAccessTokenSupplier = supplier;
+    }
+    /** Controls which alert EventSub subscriptions are created on connect. All default to disabled. */
+    public void setAlertSubscriptions(boolean followEnabled, boolean subscribeEnabled, boolean raidEnabled) {
+        this.followAlertEnabled = followEnabled;
+        this.subscribeAlertEnabled = subscribeEnabled;
+        this.raidAlertEnabled = raidEnabled;
     }
     public void onConnected(Runnable listener) {
         this.onConnected = listener;
@@ -290,6 +325,9 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
             case "channel.chat.message" -> handleChatMessageEvent(event);
             case "automod.message.hold" -> handleAutomodHoldEvent(event);
             case "automod.message.update" -> handleAutomodUpdateEvent(event);
+            case "channel.follow" -> handleFollowEvent(event);
+            case "channel.subscribe" -> handleSubscribeEvent(event);
+            case "channel.raid" -> handleRaidEvent(event);
             default -> {
             }
         }
@@ -347,6 +385,30 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         String moderatorLogin = JsonUtil.optString(event, "moderator_user_login");
         onAutomodUpdate.accept(new TwitchAutomodUpdateMessage(channelLogin, messageId, userId, userLogin, status, moderatorLogin));
     }
+    private void handleFollowEvent(JsonObject event) {
+        String channelLogin = JsonUtil.optString(event, "broadcaster_user_login");
+        String userId = JsonUtil.optString(event, "user_id");
+        String userLogin = JsonUtil.optString(event, "user_login");
+        String displayName = JsonUtil.optString(event, "user_name", userLogin);
+        onFollow.accept(new TwitchFollowEvent(channelLogin, userId, userLogin, displayName));
+    }
+    private void handleSubscribeEvent(JsonObject event) {
+        String channelLogin = JsonUtil.optString(event, "broadcaster_user_login");
+        String userId = JsonUtil.optString(event, "user_id");
+        String userLogin = JsonUtil.optString(event, "user_login");
+        String displayName = JsonUtil.optString(event, "user_name", userLogin);
+        String tier = JsonUtil.optString(event, "tier", "1000");
+        boolean gift = event.has("is_gift") && !event.get("is_gift").isJsonNull() && event.get("is_gift").getAsBoolean();
+        onSubscribe.accept(new TwitchSubscribeEvent(channelLogin, userId, userLogin, displayName, tier, gift));
+    }
+    private void handleRaidEvent(JsonObject event) {
+        String channelLogin = JsonUtil.optString(event, "to_broadcaster_user_login");
+        String fromUserId = JsonUtil.optString(event, "from_broadcaster_user_id");
+        String fromUserLogin = JsonUtil.optString(event, "from_broadcaster_user_login");
+        String displayName = JsonUtil.optString(event, "from_broadcaster_user_name", fromUserLogin);
+        int viewers = event.has("viewers") && !event.get("viewers").isJsonNull() ? event.get("viewers").getAsInt() : 0;
+        onRaid.accept(new TwitchRaidEvent(channelLogin, fromUserId, fromUserLogin, displayName, viewers));
+    }
     private void subscribeToChannel(String channelLogin) {
         Optional<String> broadcasterId = resolveBroadcasterId(channelLogin);
         if (broadcasterId.isEmpty()) {
@@ -356,20 +418,48 @@ public final class TwitchChatClient extends AbstractHttpApiClient {
         JsonObject chatCondition = new JsonObject();
         chatCondition.addProperty("broadcaster_user_id", broadcasterId.get());
         chatCondition.addProperty("user_id", botUserId);
-        createEventSubSubscription("channel.chat.message", "1", chatCondition, channelLogin);
+        createEventSubSubscription("channel.chat.message", "1", chatCondition, channelLogin, userAccessTokenSupplier);
         JsonObject automodCondition = new JsonObject();
         automodCondition.addProperty("broadcaster_user_id", broadcasterId.get());
         automodCondition.addProperty("moderator_user_id", botUserId);
-        createEventSubSubscription("automod.message.hold", "1", automodCondition, channelLogin);
-        createEventSubSubscription("automod.message.update", "1", automodCondition, channelLogin);
+        createEventSubSubscription("automod.message.hold", "1", automodCondition, channelLogin, userAccessTokenSupplier);
+        createEventSubSubscription("automod.message.update", "1", automodCondition, channelLogin, userAccessTokenSupplier);
+        if (raidAlertEnabled) {
+            JsonObject raidCondition = new JsonObject();
+            raidCondition.addProperty("to_broadcaster_user_id", broadcasterId.get());
+            createEventSubSubscription("channel.raid", "1", raidCondition, channelLogin, userAccessTokenSupplier);
+        }
+        java.util.function.Supplier<String> broadcasterToken = broadcasterAccessTokenSupplier;
+        if (followAlertEnabled) {
+            if (broadcasterToken != null) {
+                JsonObject followCondition = new JsonObject();
+                followCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+                followCondition.addProperty("moderator_user_id", broadcasterId.get());
+                createEventSubSubscription("channel.follow", "2", followCondition, channelLogin, broadcasterToken);
+            } else {
+                LOGGER.warn("Follow alerts are enabled but no Twitch broadcaster token is configured "
+                        + "(required scope: moderator:read:followers) - follow alerts for #{} are skipped.", channelLogin);
+            }
+        }
+        if (subscribeAlertEnabled) {
+            if (broadcasterToken != null) {
+                JsonObject subscribeCondition = new JsonObject();
+                subscribeCondition.addProperty("broadcaster_user_id", broadcasterId.get());
+                createEventSubSubscription("channel.subscribe", "1", subscribeCondition, channelLogin, broadcasterToken);
+            } else {
+                LOGGER.warn("Subscribe alerts are enabled but no Twitch broadcaster token is configured "
+                        + "(required scope: channel:read:subscriptions) - subscribe alerts for #{} are skipped.", channelLogin);
+            }
+        }
     }
-    private void createEventSubSubscription(String type, String version, JsonObject condition, String channelLogin) {
+    private void createEventSubSubscription(String type, String version, JsonObject condition, String channelLogin,
+                                             java.util.function.Supplier<String> tokenSupplier) {
         String currentSessionId = sessionId;
         if (currentSessionId == null) {
             LOGGER.warn("No active Twitch EventSub session, {} subscription for #{} skipped.", type, channelLogin);
             return;
         }
-        String token = userAccessTokenSupplier.get();
+        String token = tokenSupplier.get();
         if (token == null || token.isBlank()) {
             LOGGER.warn("No Twitch user access token available, {} subscription for #{} skipped.", type, channelLogin);
             return;

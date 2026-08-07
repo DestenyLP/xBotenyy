@@ -9,7 +9,7 @@ import java.util.Optional;
 public class VoteCommand extends AbstractTwitchCommand {
     private final TwitchPollManager pollManager;
     public VoteCommand(TwitchPollManager pollManager) {
-        super("vote", "Stimmt bei der aktuell laufenden Umfrage ab.", List.of("v"), CommandPermission.EVERYONE, 1);
+        super("vote", "Stimmt bei der aktuell laufenden Umfrage ab.", List.of(), CommandPermission.EVERYONE, 1);
         this.pollManager = pollManager;
     }
     @Override

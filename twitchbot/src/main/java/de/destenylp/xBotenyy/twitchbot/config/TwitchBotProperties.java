@@ -98,6 +98,17 @@ public final class TwitchBotProperties {
         values.put("bridge.tls.mutual-auth", "false");
         values.put("moderation.sync.channel", "");
         values.put("moderation.sync.reconcile.interval.minutes", "15");
+        values.put("twitch.alert.follow.chat.enabled", "true");
+        values.put("twitch.alert.follow.chat.message", "\uD83C\uDF89 Danke f\u00fcr den Follow, {user}!");
+        values.put("twitch.alert.follow.discord.enabled", "false");
+        values.put("twitch.alert.subscribe.chat.enabled", "true");
+        values.put("twitch.alert.subscribe.chat.message", "\uD83C\uDF89 Vielen Dank f\u00fcr den Sub, {user}! ({tier})");
+        values.put("twitch.alert.subscribe.discord.enabled", "false");
+        values.put("twitch.alert.raid.chat.enabled", "true");
+        values.put("twitch.alert.raid.chat.message",
+                "\uD83D\uDE80 Danke f\u00fcr den Raid, {user}! {viewers} Zuschauer sind mit dabei, sagt Hallo!");
+        values.put("twitch.alert.raid.discord.enabled", "false");
+        values.put("discord.alert.webhook.url", "");
         values.putAll(AutomodSettingsFactory.defaultValues());
         values.putAll(de.destenylp.xBotenyy.common.persistence.BackupSettings.defaultValues());
         return values;
@@ -248,5 +259,37 @@ public final class TwitchBotProperties {
     }
     public long getModerationSyncReconcileIntervalMinutes() {
         return getLong("moderation.sync.reconcile.interval.minutes", 15, 1);
+    }
+    public boolean isFollowChatAlertEnabled() {
+        return Boolean.parseBoolean(getString("twitch.alert.follow.chat.enabled", "true"));
+    }
+    public String getFollowChatAlertMessage() {
+        return getString("twitch.alert.follow.chat.message", "\uD83C\uDF89 Danke f\u00fcr den Follow, {user}!");
+    }
+    public boolean isFollowDiscordAlertEnabled() {
+        return Boolean.parseBoolean(getString("twitch.alert.follow.discord.enabled", "false"));
+    }
+    public boolean isSubscribeChatAlertEnabled() {
+        return Boolean.parseBoolean(getString("twitch.alert.subscribe.chat.enabled", "true"));
+    }
+    public String getSubscribeChatAlertMessage() {
+        return getString("twitch.alert.subscribe.chat.message", "\uD83C\uDF89 Vielen Dank f\u00fcr den Sub, {user}! ({tier})");
+    }
+    public boolean isSubscribeDiscordAlertEnabled() {
+        return Boolean.parseBoolean(getString("twitch.alert.subscribe.discord.enabled", "false"));
+    }
+    public boolean isRaidChatAlertEnabled() {
+        return Boolean.parseBoolean(getString("twitch.alert.raid.chat.enabled", "true"));
+    }
+    public String getRaidChatAlertMessage() {
+        return getString("twitch.alert.raid.chat.message",
+                "\uD83D\uDE80 Danke f\u00fcr den Raid, {user}! {viewers} Zuschauer sind mit dabei, sagt Hallo!");
+    }
+    public boolean isRaidDiscordAlertEnabled() {
+        return Boolean.parseBoolean(getString("twitch.alert.raid.discord.enabled", "false"));
+    }
+    public String getDiscordAlertWebhookUrl() {
+        String raw = getString("discord.alert.webhook.url", "");
+        return raw.isBlank() ? getDiscordLogWebhookUrl() : raw;
     }
 }

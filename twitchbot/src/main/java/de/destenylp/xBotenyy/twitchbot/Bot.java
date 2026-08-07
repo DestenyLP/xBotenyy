@@ -118,12 +118,15 @@ public final class Bot extends AbstractBot {
         Optional<TwitchUserTokenManager> broadcasterTokenManager = TwitchUserTokenManager.create(
                 config.twitchClientId(), config.twitchClientSecret(), config.twitchBroadcasterRefreshToken(),
                 config.envFilePath(), "TWITCH_BROADCASTER_REFRESH_TOKEN");
+        java.util.function.Supplier<String> broadcasterAccessTokenSupplier = null;
         if (broadcasterTokenManager.isPresent()) {
             LOGGER.info("Twitch broadcaster refresh token found, channel info commands are available.");
             broadcasterTokenManager.get().refreshNow();
-            moderationApiClient.setBroadcasterAccessTokenSupplier(broadcasterTokenManager.get()::getAccessToken);
+            broadcasterAccessTokenSupplier = broadcasterTokenManager.get()::getAccessToken;
+            moderationApiClient.setBroadcasterAccessTokenSupplier(broadcasterAccessTokenSupplier);
         } else if (config.hasTwitchBroadcasterAccessToken()) {
-            moderationApiClient.setBroadcasterAccessTokenSupplier(config::twitchBroadcasterAccessToken);
+            broadcasterAccessTokenSupplier = config::twitchBroadcasterAccessToken;
+            moderationApiClient.setBroadcasterAccessTokenSupplier(broadcasterAccessTokenSupplier);
         } else {
             LOGGER.warn("No TWITCH_BROADCASTER_REFRESH_TOKEN set - !title and !game are disabled. "
                     + "See the README for setting up the broadcaster token.");
@@ -147,6 +150,20 @@ public final class Bot extends AbstractBot {
                 moderatorUserId, moderationApiClient::resolveUserId, channels, properties.getReconnectDelaySeconds(),
                 properties.getMaxReconnectDelaySeconds(), Duration.ofSeconds(10),
                 properties.getRestActionMaxAttempts(), Duration.ofSeconds(properties.getRestActionBaseDelaySeconds()));
+        de.destenylp.xBotenyy.twitchbot.alerts.TwitchAlertSettings alertSettings =
+                new de.destenylp.xBotenyy.twitchbot.alerts.TwitchAlertSettings(
+                        properties.isFollowChatAlertEnabled(), properties.getFollowChatAlertMessage(),
+                        properties.isFollowDiscordAlertEnabled(),
+                        properties.isSubscribeChatAlertEnabled(), properties.getSubscribeChatAlertMessage(),
+                        properties.isSubscribeDiscordAlertEnabled(),
+                        properties.isRaidChatAlertEnabled(), properties.getRaidChatAlertMessage(),
+                        properties.isRaidDiscordAlertEnabled());
+        de.destenylp.xBotenyy.twitchbot.alerts.TwitchAlertService alertService =
+                new de.destenylp.xBotenyy.twitchbot.alerts.TwitchAlertService(chatClient, discordWebhookClient,
+                        properties.getDiscordAlertWebhookUrl(), alertSettings);
+        chatClient.setBroadcasterAccessTokenSupplier(broadcasterAccessTokenSupplier);
+        chatClient.setAlertSubscriptions(alertSettings.anyFollowAlertEnabled(), alertSettings.anySubscribeAlertEnabled(),
+                alertSettings.anyRaidAlertEnabled());
         AutomodSettings automodSettings = AutomodSettingsFactory.from(properties::getRawProperty);
         GroqSafeguardClient moderationClient = automodSettings.getAiFilter().enabled() && config.hasGroqApiKey()
                 ? new GroqSafeguardClient(config.groqApiKey(), Duration.ofSeconds(Math.max(automodSettings.getAiFilter().timeoutSeconds(), 1)))
@@ -198,6 +215,34 @@ public final class Bot extends AbstractBot {
                         update.channelLogin(), e);
             }
         });
+        chatClient.onFollow(event -> {
+            try {
+                eventLogService.record(event.channelLogin(), event.userId(), "TWITCH_FOLLOW", "");
+                alertService.handleFollow(event);
+            } catch (Exception e) {
+                LOGGER.error("Unexpected error while processing a Twitch follow in channel {}: ",
+                        event.channelLogin(), e);
+            }
+        });
+        chatClient.onSubscribe(event -> {
+            try {
+                eventLogService.record(event.channelLogin(), event.userId(), "TWITCH_SUBSCRIBE", "tier=" + event.tier());
+                alertService.handleSubscribe(event);
+            } catch (Exception e) {
+                LOGGER.error("Unexpected error while processing a Twitch subscribe in channel {}: ",
+                        event.channelLogin(), e);
+            }
+        });
+        chatClient.onRaid(event -> {
+            try {
+                eventLogService.record(event.channelLogin(), event.fromUserId(), "TWITCH_RAID",
+                        "viewers=" + event.viewers());
+                alertService.handleRaid(event);
+            } catch (Exception e) {
+                LOGGER.error("Unexpected error while processing a Twitch raid in channel {}: ",
+                        event.channelLogin(), e);
+            }
+        });
         chatClient.onConnected(() -> LOGGER.info("Twitch bot is active in {} channels: {}", channels.size(), channels));
         startDataRetentionTask();
         startHeartbeat();
@@ -235,6 +280,7 @@ public final class Bot extends AbstractBot {
         commandManager.register(new VoteCommand(pollManager));
         commandManager.register(new LinkCommand(pendingLinkVerificationRepository));
         commandManager.register(new VerifyCommand(accountLinkRepository, moderationBridgeClient, properties::getBridgeSettings));
+        commandManager.register(new VanishCommand());
         LOGGER.info("{} built-in commands registered.", commandManager.getRegistry().size());
     }
     private void recordActivityQuietly(String channelLogin) {

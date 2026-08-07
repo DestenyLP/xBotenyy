@@ -21,6 +21,7 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
     - [Persistence](#persistence)
 - [Discord ↔ Twitch integration](#discord--twitch-integration)
     - [Discord logging (Twitch → Discord)](#discord-logging-twitch--discord)
+    - [Follow / Subscribe / Raid alerts](#follow--subscribe--raid-alerts)
     - [Advanced moderation](#advanced-moderation)
     - [Linking accounts](#linking-accounts)
     - [Syncing Twitch roles](#syncing-twitch-roles-with-discord)
@@ -216,38 +217,39 @@ moderation, as well as optional Discord integration (logging, moderation sync, r
 
 Prefix configurable (`twitch.chat.command.prefix`, default `!`):
 
-| Command | Permission | Function |
-|---|---|---|
-| `!ping` | everyone | Reachability check |
-| `!uptime` | everyone | Bot uptime |
-| `!strikes` | everyone | Your own AutoMod strikes |
-| `!watchtime [user]` | everyone | Watchtime of the user |
-| `!followage [user]` | everyone | How long someone has been following |
-| `!link` | everyone | Starts linking with your own Discord account |
-| `!verify <code>` | everyone | Confirms a code generated on Discord with `/link twitch` |
-| `!automod` / `!mod` | moderator | Queries AutoMod status |
-| `!command add/remove/list/cooldown` | moderator | Manages custom commands (incl. cooldown per command) |
-| `!commands` / `!help` | everyone | Lists commands |
-| `!broadcast add/remove/list` | moderator | Recurring chat announcements |
-| `!eventlog` | moderator | Event log settings |
-| `!warn <user> [reason]` | moderator | Manually warns a user |
-| `!timeout <user> <sec> [reason]` | moderator | Times out a user |
-| `!ban <user> [reason]` | moderator | Permanently bans a user |
-| `!unban <user>` | moderator | Lifts a ban/timeout |
-| `!purge` / `!clear` | moderator | Clears the entire chat |
-| `!permit <user> [sec]` | moderator | Temporary AutoMod exemption for a user |
-| `!title [new title]` | moderator | Shows/changes the stream title |
-| `!game [category]` | moderator | Shows/changes the stream category |
-| `!so <channel>` | moderator | Shoutout for another streamer |
-| `!clip` | everyone | Creates a clip of the current moment |
-| `!quote [number]` | everyone | Shows a random or specific quote |
-| `!quote add <text>` | moderator | Saves a new quote |
-| `!quote del <number>` | moderator | Removes a saved quote |
-| `!quote list` | everyone | Shows the count and first saved quotes |
-| `!poll start <question> \| <opt1> \| <opt2> [\| ...]` | moderator | Starts a chat poll (max. 5 options) |
-| `!poll results` | everyone | Shows the current interim results of the poll |
-| `!poll end` | moderator | Ends the poll and shows the final result |
-| `!vote <number>` | everyone | Votes in the running poll |
+| Command                                               | Permission | Function                                                 |
+|-------------------------------------------------------|---|----------------------------------------------------------|
+| `!ping`                                               | everyone | Reachability check                                       |
+| `!uptime`                                             | everyone | Bot uptime                                               |
+| `!strikes`                                            | everyone | Your own AutoMod strikes                                 |
+| `!watchtime [user]`                                   | everyone | Watchtime of the user                                    |
+| `!followage [user]`                                   | everyone | How long someone has been following                      |
+| `!link`                                               | everyone | Starts linking with your own Discord account             |
+| `!verify <code>`                                      | everyone | Confirms a code generated on Discord with `/link twitch` |
+| `!automod` / `!mod`                                   | moderator | Queries AutoMod status                                   |
+| `!command add/remove/list/cooldown`                   | moderator | Manages custom commands (incl. cooldown per command)     |
+| `!commands` / `!help`                                 | everyone | Lists commands                                           |
+| `!broadcast add/remove/list`                          | moderator | Recurring chat announcements                             |
+| `!eventlog`                                           | moderator | Event log settings                                       |
+| `!warn <user> [reason]`                               | moderator | Manually warns a user                                    |
+| `!timeout <user> <sec> [reason]`                      | moderator | Times out a user                                         |
+| `!ban <user> [reason]`                                | moderator | Permanently bans a user                                  |
+| `!unban <user>`                                       | moderator | Lifts a ban/timeout                                      |
+| `!purge` / `!clear`                                   | moderator | Clears the entire chat                                   |
+| `!permit <user> [sec]`                                | moderator | Temporary AutoMod exemption for a user                   |
+| `!title [new title]`                                  | moderator | Shows/changes the stream title                           |
+| `!game [category]`                                    | moderator | Shows/changes the stream category                        |
+| `!so <channel>`                                       | moderator | Shoutout for another streamer                            |
+| `!clip`                                               | everyone | Creates a clip of the current moment                     |
+| `!quote [number]`                                     | everyone | Shows a random or specific quote                         |
+| `!quote add <text>`                                   | moderator | Saves a new quote                                        |
+| `!quote del <number>`                                 | moderator | Removes a saved quote                                    |
+| `!quote list`                                         | everyone | Shows the count and first saved quotes                   |
+| `!poll start <question> \| <opt1> \| <opt2> [\| ...]` | moderator | Starts a chat poll (max. 5 options)                      |
+| `!poll results`                                       | everyone | Shows the current interim results of the poll            |
+| `!poll end`                                           | moderator | Ends the poll and shows the final result                 |
+| `!vote <number>`                                      | everyone | Votes in the running poll                                |
+| `!v`                                                  | everyone | Vanish from the chat for ever                            |
 
 *Custom command responses support the placeholders `{user}` and `{channel}`. Cooldown per custom command
 via `!command cooldown <name> <seconds>`, default 5 seconds. `!ban`/`!timeout`/`!unban`/`!warn` also write
@@ -378,6 +380,31 @@ automatically subscribes to the EventSub types `automod.message.hold` and `autom
 
 On the Discord bot side, the use of Discord slash commands is logged via the existing event log system
 (`/serverlog`, event type "Command usage") and requires no additional configuration.
+
+### Follow / Subscribe / Raid alerts
+
+The Twitch bot can announce new followers, new subscribers, and incoming raids - in the Twitch chat, as a
+Discord embed via webhook, or both at once, independently per event type.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `twitch.alert.follow.chat.enabled` | `true` | Posts a chat message for every new follow |
+| `twitch.alert.follow.chat.message` | `🎉 Danke für den Follow, {user}!` | Chat message template, placeholders: `{user}`, `{channel}` |
+| `twitch.alert.follow.discord.enabled` | `false` | Posts a Discord embed for every new follow |
+| `twitch.alert.subscribe.chat.enabled` | `true` | Posts a chat message for every new/renewed subscription |
+| `twitch.alert.subscribe.chat.message` | `🎉 Vielen Dank für den Sub, {user}! ({tier})` | Placeholders: `{user}`, `{channel}`, `{tier}` (`Tier 1`/`2`/`3`) |
+| `twitch.alert.subscribe.discord.enabled` | `false` | Posts a Discord embed for every new/renewed subscription |
+| `twitch.alert.raid.chat.enabled` | `true` | Posts a chat message for every incoming raid |
+| `twitch.alert.raid.chat.message` | `🚀 Danke für den Raid, {user}! {viewers} Zuschauer sind mit dabei, sagt Hallo!` | Placeholders: `{user}`, `{channel}`, `{viewers}` |
+| `twitch.alert.raid.discord.enabled` | `false` | Posts a Discord embed for every incoming raid |
+| `discord.alert.webhook.url` | *(empty)* | Webhook URL for the Discord alerts; if left empty, `discord.log.webhook.url` is reused |
+
+Only subscriptions that are actually enabled (chat and/or Discord) get set up with Twitch, so nothing is
+subscribed to unnecessarily. Follow alerts require the `moderator:read:followers` scope and subscribe alerts
+require `channel:read:subscriptions` - both are already part of the broadcaster authorization URL from step 1
+above, so the **broadcaster token** (`TWITCH_BROADCASTER_ACCESS_TOKEN`/`TWITCH_BROADCASTER_REFRESH_TOKEN`) must be
+configured for these two alert types; without it, follow/subscribe alerts are skipped with a warning log on
+startup (raid alerts don't need any extra scope and always work with just the bot token).
 
 ### Advanced moderation
 

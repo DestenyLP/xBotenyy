@@ -150,7 +150,11 @@ public class DiscordModerationService {
         ModerationRoleSettings settings = roleSettingsRepository.getOrEmpty(guild.getId());
         applySyncRole(guild, member, settings.syncSubscriberRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.SUBSCRIBER));
         applySyncRole(guild, member, settings.syncVipRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.VIP));
-        applySyncRole(guild, member, settings.syncModeratorRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.MODERATOR));
+        // The broadcaster is implicitly always a moderator of their own channel (Twitch's moderator
+        // list API never lists them explicitly), so grant the moderator role for either status.
+        applySyncRole(guild, member, settings.syncModeratorRoleId(),
+                activeStatuses.contains(TwitchRoleSyncStatus.MODERATOR)
+                        || activeStatuses.contains(TwitchRoleSyncStatus.BROADCASTER));
         applySyncRole(guild, member, settings.syncBroadcasterRoleId(), activeStatuses.contains(TwitchRoleSyncStatus.BROADCASTER));
     }
     private void applySyncRole(Guild guild, Member member, String roleId, boolean shouldHave) {

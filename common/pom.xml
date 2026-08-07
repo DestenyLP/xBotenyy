@@ -7,7 +7,7 @@
     <parent>
         <groupId>de.destenylp</groupId>
         <artifactId>xBotenyy-parent</artifactId>
-        <version>1.2-RELEASE</version>
+        <version>1.2.1-RELEASE</version>
     </parent>
 
     <artifactId>xBotenyyCommon</artifactId>
