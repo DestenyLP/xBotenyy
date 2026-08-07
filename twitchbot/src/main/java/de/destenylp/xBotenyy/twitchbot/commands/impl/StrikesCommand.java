@@ -1,10 +1,13 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
+
 public class StrikesCommand extends AbstractTwitchCommand {
     public StrikesCommand() {
         super("strikes", "Zeigt deine aktuellen AutoMod-Strikes in diesem Kanal.");
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         int strikes = context.services().automodEngine()
@@ -16,3 +19,4 @@ public class StrikesCommand extends AbstractTwitchCommand {
         }
     }
 }
+

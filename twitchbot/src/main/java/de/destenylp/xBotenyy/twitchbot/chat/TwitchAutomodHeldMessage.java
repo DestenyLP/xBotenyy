@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.chat;
+
 public record TwitchAutomodHeldMessage(
         String channelLogin,
         String messageId,
@@ -8,3 +9,4 @@ public record TwitchAutomodHeldMessage(
         String category,
         String level) {
 }
+

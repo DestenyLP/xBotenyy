@@ -1,29 +1,35 @@
 package de.destenylp.xBotenyy.discordbot.reports;
+
 import de.destenylp.xBotenyy.common.persistence.sql.AbstractSqlManager;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import de.destenylp.xBotenyy.common.persistence.sql.Jdbc;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
 public class ReportManager extends AbstractSqlManager implements ReportRepository {
     public ReportManager(Database database) {
         super(database);
     }
+
     @Override
     public Optional<ReportSettings> getSettings(String guildId) {
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM report_guild_settings WHERE guild_id = ?", resultSet -> mapSettings(guildId, resultSet),
                 guildId));
     }
+
     private ReportSettings mapSettings(String guildId, ResultSet resultSet) throws SQLException {
         ReportSettings settings = new ReportSettings(() -> getReports(guildId));
         settings.setChannelId(Jdbc.getString(resultSet, "channel_id"));
         settings.setNotifyRoleId(Jdbc.getString(resultSet, "notify_role_id"));
         return settings;
     }
+
     @Override
     public void updateChannel(String guildId, String channelId) {
         database.runInTransaction(connection -> {
@@ -32,6 +38,7 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
                     channelId, guildId);
         });
     }
+
     @Override
     public void updateNotifyRole(String guildId, String roleId) {
         database.runInTransaction(connection -> {
@@ -40,6 +47,7 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
                     roleId, guildId);
         });
     }
+
     @Override
     public Report createReport(Report draft) {
         return database.inTransaction(connection -> {
@@ -60,6 +68,7 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
             return draft;
         });
     }
+
     @Override
     public void save(Report report) {
         database.runInTransaction(connection -> Jdbc.update(connection, """
@@ -71,23 +80,27 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
                 report.getAssignedModId(), report.getAssignedModName(), report.getResolutionNote(),
                 report.getRejectionReason(), report.getGuildId(), report.getId()));
     }
+
     @Override
     public Optional<Report> getReport(String guildId, String id) {
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM reports WHERE guild_id = ? AND report_id = ? COLLATE NOCASE", this::mapReport,
                 guildId, id));
     }
+
     @Override
     public List<Report> getReports(String guildId) {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM reports WHERE guild_id = ? ORDER BY created_at", this::mapReport, guildId));
     }
+
     @Override
     public List<Report> getReportsByMember(String guildId, String memberId) {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM reports WHERE guild_id = ? AND reporter_id = ? ORDER BY created_at",
                 this::mapReport, guildId, memberId));
     }
+
     @Override
     public int pruneClosedReports(Duration retention) {
         long threshold = Instant.now().minus(retention).toEpochMilli();
@@ -95,6 +108,7 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
                 "DELETE FROM reports WHERE status IN (?, ?) AND updated_at < ?",
                 ReportStatus.RESOLVED, ReportStatus.REJECTED, threshold));
     }
+
     private Report mapReport(ResultSet resultSet) throws SQLException {
         return new Report(resultSet.getString("report_id"), resultSet.getString("guild_id"),
                 resultSet.getString("reporter_id"), resultSet.getString("reporter_name"),
@@ -107,3 +121,4 @@ public class ReportManager extends AbstractSqlManager implements ReportRepositor
                 resultSet.getString("rejection_reason"));
     }
 }
+

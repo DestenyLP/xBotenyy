@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.tickets.*;
@@ -17,17 +18,21 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+
 public class TicketCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(TicketCommand.class);
     private final TicketService service;
     private final TicketCloseCoordinator closeCoordinator;
+
     public TicketCommand(TicketService service, TicketCloseCoordinator closeCoordinator) {
         this.service = service;
         this.closeCoordinator = closeCoordinator;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("ticket", "Verwaltet das Support-Ticket-System")
@@ -58,6 +63,7 @@ public class TicketCommand extends AbstractGuildCommand {
                                 .addOption(OptionType.USER, "member", "Mitglied, das entfernt werden soll", true)
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         switch (subcommand) {
@@ -73,6 +79,7 @@ public class TicketCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handlePanel(SlashCommandInteractionEvent event) {
         if (!PermissionGuard.requireManageServer(event)) {
             return;
@@ -92,6 +99,7 @@ public class TicketCommand extends AbstractGuildCommand {
                     LOGGER.info("Ticket panel posted in guild {} channel {}", guild.getId(), channel.getId());
                 }, failure -> event.reply("Das Panel konnte nicht gepostet werden: " + failure.getMessage()).setEphemeral(true).queue());
     }
+
     private void handleSettings(SlashCommandInteractionEvent event) {
         if (!PermissionGuard.requireManageServer(event)) {
             return;
@@ -136,6 +144,7 @@ public class TicketCommand extends AbstractGuildCommand {
         LOGGER.info("Ticket settings updated for guild {}", guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "TICKET_SETTINGS_UPDATE", "settings=" + describeSettings(updated));
     }
+
     private String describeSettings(TicketSettings settings) {
         if (settings == null || !settings.isConfigured()) {
             return "Noch nicht vollständig konfiguriert. Nutze `/ticket settings category:<Kategorie> supportrole:@Team`.";
@@ -148,6 +157,7 @@ public class TicketCommand extends AbstractGuildCommand {
                 "Auto-Close nach Inaktivität: " + (settings.getAutoCloseInactivityHours() > 0 ? settings.getAutoCloseInactivityHours() + "h" : "Deaktiviert") + "\n" +
                 "Tickets gesamt: " + settings.getTickets().size();
     }
+
     private void handleList(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         TicketSettings settings = service.getSettings(guild.getId()).orElse(null);
@@ -157,6 +167,7 @@ public class TicketCommand extends AbstractGuildCommand {
         List<Ticket> open = service.getOpenTickets(guild.getId());
         event.replyEmbeds(TicketEmbedFactory.buildOverviewEmbed(guild.getName(), open)).setEphemeral(true).queue();
     }
+
     private void handleClaim(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -180,6 +191,7 @@ public class TicketCommand extends AbstractGuildCommand {
         LOGGER.info("Ticket {} claimed by {} in guild {}", ticket.getId(), member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "TICKET_CLAIM", "ticketId=" + ticket.getId());
     }
+
     private void handleUnclaim(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -203,6 +215,7 @@ public class TicketCommand extends AbstractGuildCommand {
         LOGGER.info("Ticket {} unclaimed by {} in guild {}", ticket.getId(), member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "TICKET_UNCLAIM", "ticketId=" + ticket.getId());
     }
+
     private void handleClose(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -234,6 +247,7 @@ public class TicketCommand extends AbstractGuildCommand {
         Ticket closedTicket = service.getTicket(guild.getId(), ticket.getId()).orElseThrow();
         closeCoordinator.finalizeClose(event.getChannel().asTextChannel(), closedTicket);
     }
+
     private void handlePriority(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -258,6 +272,7 @@ public class TicketCommand extends AbstractGuildCommand {
         event.reply("Priorität wurde auf **" + priorityOpt.get().getLabel() + "** gesetzt.").setEphemeral(true).queue();
         AuditLog.record(guild.getId(), member.getId(), "TICKET_PRIORITY", "ticketId=" + ticket.getId() + " priority=" + priorityOpt.get().getKey());
     }
+
     private void handleAdd(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -287,6 +302,7 @@ public class TicketCommand extends AbstractGuildCommand {
         event.reply("<@" + target.getId() + "> wurde zum Ticket hinzugefügt.").queue();
         AuditLog.record(guild.getId(), member.getId(), "TICKET_ADD_MEMBER", "ticketId=" + ticket.getId() + " member=" + target.getId());
     }
+
     private void handleRemove(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -314,6 +330,7 @@ public class TicketCommand extends AbstractGuildCommand {
         event.reply("<@" + target.getId() + "> wurde aus dem Ticket entfernt.").queue();
         AuditLog.record(guild.getId(), member.getId(), "TICKET_REMOVE_MEMBER", "ticketId=" + ticket.getId() + " member=" + target.getId());
     }
+
     private boolean requireStaff(SlashCommandInteractionEvent event, TicketSettings settings) {
         Member member = event.getMember();
         if (member == null || !TicketService.isStaff(member, settings)) {
@@ -322,6 +339,7 @@ public class TicketCommand extends AbstractGuildCommand {
         }
         return true;
     }
+
     private Optional<Ticket> requireTicketChannel(SlashCommandInteractionEvent event, String guildId) {
         Optional<Ticket> ticketOpt = service.getTicketByChannel(guildId, event.getChannel().getId());
         if (ticketOpt.isEmpty()) {
@@ -329,6 +347,7 @@ public class TicketCommand extends AbstractGuildCommand {
         }
         return ticketOpt;
     }
+
     private void refreshTicketMessage(SlashCommandInteractionEvent event, Ticket ticket) {
         if (ticket.getControlMessageId() == null) {
             return;
@@ -341,3 +360,4 @@ public class TicketCommand extends AbstractGuildCommand {
                         ticket.getControlMessageId(), failure.getMessage()));
     }
 }
+

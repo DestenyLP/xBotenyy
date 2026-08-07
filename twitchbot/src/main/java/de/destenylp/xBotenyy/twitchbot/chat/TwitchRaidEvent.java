@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.chat;
+
 public record TwitchRaidEvent(
         String channelLogin,
         String fromUserId,
@@ -6,3 +7,4 @@ public record TwitchRaidEvent(
         String displayName,
         int viewers) {
 }
+

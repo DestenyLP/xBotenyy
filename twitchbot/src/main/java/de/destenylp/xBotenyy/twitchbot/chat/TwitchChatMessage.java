@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.chat;
+
 public record TwitchChatMessage(
         String channelLogin,
         String messageId,
@@ -14,3 +15,4 @@ public record TwitchChatMessage(
         return moderator || broadcaster;
     }
 }
+

@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.common.commands;
+
 public enum CommandDispatchResult {
     EXECUTED,
     UNKNOWN_COMMAND,
@@ -6,3 +7,4 @@ public enum CommandDispatchResult {
     ON_COOLDOWN,
     ERROR
 }
+

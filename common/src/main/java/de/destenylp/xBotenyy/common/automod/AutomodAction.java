@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.common.automod;
+
 public enum AutomodAction {
     NONE(0, "Nur protokollieren"),
     DELETE(1, "Nachricht löschen"),
@@ -8,10 +9,12 @@ public enum AutomodAction {
     BAN(5, "Löschen + Bann");
     private final int severity;
     private final String label;
+
     AutomodAction(int severity, String label) {
         this.severity = severity;
         this.label = label;
     }
+
     public static AutomodAction max(AutomodAction first, AutomodAction second) {
         if (first == null) {
             return second;
@@ -21,6 +24,7 @@ public enum AutomodAction {
         }
         return first.severity >= second.severity ? first : second;
     }
+
     public static AutomodAction fromKey(String key, AutomodAction fallback) {
         if (key == null || key.isBlank()) {
             return fallback;
@@ -31,13 +35,17 @@ public enum AutomodAction {
             return fallback;
         }
     }
+
     public int getSeverity() {
         return severity;
     }
+
     public String getLabel() {
         return label;
     }
+
     public boolean deletesMessage() {
         return this != NONE;
     }
 }
+

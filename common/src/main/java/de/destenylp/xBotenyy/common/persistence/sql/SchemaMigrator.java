@@ -1,6 +1,8 @@
 package de.destenylp.xBotenyy.common.persistence.sql;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -16,11 +18,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
 public final class SchemaMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaMigrator.class);
     private static final Pattern MIGRATION_FILENAME = Pattern.compile("V(\\d+)__(.+)\\.sql");
+
     private SchemaMigrator() {
     }
+
     public static void migrate(Database database, String migrationsResourcePath) {
         List<Migration> migrations = discoverMigrations(migrationsResourcePath);
         if (migrations.isEmpty()) {
@@ -36,6 +41,7 @@ public final class SchemaMigrator {
             applyMigration(database, migration);
         }
     }
+
     private static void applyMigration(Database database, Migration migration) {
         LOGGER.info("Applying migration V{} ({}) ...", migration.version(), migration.description());
         database.runInTransaction(connection -> {
@@ -54,6 +60,7 @@ public final class SchemaMigrator {
         });
         LOGGER.info("Migration V{} applied successfully.", migration.version());
     }
+
     private static void ensureMigrationsTable(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
             statement.execute("""
@@ -65,6 +72,7 @@ public final class SchemaMigrator {
                     """);
         }
     }
+
     private static boolean isApplied(Connection connection, int version) throws SQLException {
         try (PreparedStatement statement =
                      connection.prepareStatement("SELECT 1 FROM schema_migrations WHERE version = ?")) {
@@ -74,6 +82,7 @@ public final class SchemaMigrator {
             }
         }
     }
+
     private static List<String> splitStatements(String sql) {
         List<String> statements = new ArrayList<>();
         StringBuilder current = new StringBuilder();
@@ -96,6 +105,7 @@ public final class SchemaMigrator {
                 .filter(statement -> !statement.isBlank())
                 .toList();
     }
+
     private static List<Migration> discoverMigrations(String migrationsResourcePath) {
         try {
             URL resource = SchemaMigrator.class.getClassLoader().getResource(migrationsResourcePath);
@@ -126,12 +136,14 @@ public final class SchemaMigrator {
                     : new IOException(e));
         }
     }
+
     private static List<String> listFromFilesystem(URL resource) throws URISyntaxException, IOException {
         Path directory = Path.of(resource.toURI());
         try (Stream<Path> files = Files.list(directory)) {
             return files.map(path -> path.getFileName().toString()).toList();
         }
     }
+
     private static List<String> listFromJar(URL resource, String migrationsResourcePath) throws IOException, URISyntaxException {
         String[] parts = resource.toURI().toString().split("!");
         java.net.URI jarUri = java.net.URI.create(parts[0]);
@@ -155,6 +167,7 @@ public final class SchemaMigrator {
             }
         }
     }
+
     private static String readResource(String path) throws IOException {
         try (InputStream in = SchemaMigrator.class.getClassLoader().getResourceAsStream(path)) {
             if (in == null) {
@@ -170,6 +183,8 @@ public final class SchemaMigrator {
             return builder.toString();
         }
     }
+
     private record Migration(int version, String description, String sql) {
     }
 }
+

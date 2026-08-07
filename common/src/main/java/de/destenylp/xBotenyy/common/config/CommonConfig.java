@@ -1,11 +1,14 @@
 package de.destenylp.xBotenyy.common.config;
+
 import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+
 public record CommonConfig(
         String discordBotToken,
         String twitchClientId,
@@ -21,6 +24,7 @@ public record CommonConfig(
     private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
     private static final String ENV_FILE_NAME = ".env";
     private static final String ENV_DIR_OVERRIDE_VAR = "XBOTENYY_ENV_DIR";
+
     public static Optional<CommonConfig> load() {
         String envDirectory = resolveEnvDirectory();
         Dotenv dotenv = Dotenv.configure()
@@ -44,6 +48,7 @@ public record CommonConfig(
                 twitchBotRefreshToken, twitchBroadcasterAccessToken, twitchBroadcasterRefreshToken,
                 envFilePath, groqApiKey));
     }
+
     private static String resolveEnvDirectory() {
         String override = System.getenv(ENV_DIR_OVERRIDE_VAR);
         if (override == null || override.isBlank()) {
@@ -61,9 +66,11 @@ public record CommonConfig(
                 candidateDirectories().get(0));
         return candidateDirectories().get(0);
     }
+
     private static List<String> candidateDirectories() {
         return List.of("common", ".", "..", "../common", "../..", "../../common");
     }
+
     private static String resolve(String key, Dotenv dotenv) {
         String value = System.getenv(key);
         if (value == null || value.isBlank()) {
@@ -71,31 +78,41 @@ public record CommonConfig(
         }
         return value;
     }
+
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
     }
+
     public boolean hasDiscordToken() {
         return discordBotToken != null;
     }
+
     public boolean hasTwitchAppCredentials() {
         return twitchClientId != null && twitchClientSecret != null;
     }
+
     public boolean hasTwitchChatCredentials() {
         return twitchClientId != null && twitchClientSecret != null && twitchChatBotUsername != null;
     }
+
     public boolean hasTwitchModeratorAccessToken() {
         return twitchModeratorAccessToken != null;
     }
+
     public boolean hasTwitchBotRefreshToken() {
         return twitchBotRefreshToken != null && twitchClientSecret != null;
     }
+
     public boolean hasTwitchBroadcasterAccessToken() {
         return twitchBroadcasterAccessToken != null;
     }
+
     public boolean hasTwitchBroadcasterRefreshToken() {
         return twitchBroadcasterRefreshToken != null && twitchClientSecret != null;
     }
+
     public boolean hasGroqApiKey() {
         return groqApiKey != null;
     }
 }
+

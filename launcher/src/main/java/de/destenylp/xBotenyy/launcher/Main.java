@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.launcher;
+
 import de.destenylp.xBotenyy.launcher.bot.BotRegistry;
 import de.destenylp.xBotenyy.launcher.bot.DiscordManagedBot;
 import de.destenylp.xBotenyy.launcher.bot.ManagedBot;
@@ -11,12 +12,16 @@ import de.destenylp.xBotenyy.launcher.scheduler.SchedulerStore;
 import de.destenylp.xBotenyy.launcher.scheduler.TaskScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.CountDownLatch;
+
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
     private static final long SHUTDOWN_STOP_TIMEOUT_SECONDS = 30;
+
     private Main() {
     }
+
     public static void main(String[] args) throws InterruptedException {
         LaunchMode mode = LaunchMode.fromArgs(args);
         LauncherSettings settings = LauncherSettings.loadFromEnvironment();
@@ -49,6 +54,7 @@ public final class Main {
         shutdownLatch.await();
         LOGGER.info("xBotenyy Launcher has been shut down.");
     }
+
     private static ConsoleCommandRegistry buildCommandRegistry() {
         ConsoleCommandRegistry registry = new ConsoleCommandRegistry();
         registry.register(new HelpCommand());
@@ -61,8 +67,9 @@ public final class Main {
         registry.register(new ExitCommand());
         return registry;
     }
+
     private static synchronized void initiateLauncherShutdown(BotRegistry registry, TaskScheduler scheduler,
-                                                                CountDownLatch shutdownLatch) {
+                                                              CountDownLatch shutdownLatch) {
         if (shutdownLatch.getCount() == 0) {
             return;
         }
@@ -74,3 +81,4 @@ public final class Main {
         shutdownLatch.countDown();
     }
 }
+

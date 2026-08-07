@@ -1,11 +1,15 @@
 package de.destenylp.xBotenyy.discordbot.messaging;
+
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+
 import java.util.Optional;
+
 public final class MessageDispatcher {
     private MessageDispatcher() {
     }
+
     public static Optional<MessageCreateAction> prepare(MessageChannel channel, RenderedMessage message) {
         if (message.isEmpty()) {
             return Optional.empty();
@@ -19,6 +23,7 @@ public final class MessageDispatcher {
         }
         return Optional.of(action);
     }
+
     public static Optional<MessageEditAction> prepareEdit(MessageChannel channel, String messageId, RenderedMessage message) {
         if (message.isEmpty()) {
             return Optional.empty();
@@ -34,3 +39,4 @@ public final class MessageDispatcher {
         return Optional.of(action);
     }
 }
+

@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.commands;
+
 import de.destenylp.xBotenyy.common.commands.*;
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatMessage;
@@ -7,8 +8,10 @@ import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.CustomCommandRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Optional;
+
 public class TwitchCommandManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchCommandManager.class);
     private final String prefix;
@@ -19,6 +22,7 @@ public class TwitchCommandManager {
     private final TwitchEventLogService eventLogService;
     private final TwitchDiscordLogService discordLogService;
     private final CooldownManager customCommandCooldownManager = new CooldownManager();
+
     public TwitchCommandManager(String prefix, CustomCommandRepository customCommandRepository,
                                 TwitchBotServices services, TwitchEventLogService eventLogService,
                                 TwitchDiscordLogService discordLogService) {
@@ -31,6 +35,7 @@ public class TwitchCommandManager {
                 context -> resolvePermission(context.message()),
                 context -> context.message().userId());
     }
+
     private static CommandPermission resolvePermission(TwitchChatMessage message) {
         if (message.broadcaster()) {
             return CommandPermission.BROADCASTER;
@@ -46,12 +51,25 @@ public class TwitchCommandManager {
         }
         return CommandPermission.EVERYONE;
     }
+
+    private static String describeResult(CommandDispatchResult result) {
+        return switch (result) {
+            case EXECUTED -> "Ausgefuehrt";
+            case NO_PERMISSION -> "Keine Berechtigung";
+            case ON_COOLDOWN -> "Cooldown";
+            case ERROR -> "Fehler";
+            default -> result.name();
+        };
+    }
+
     public CommandRegistry<TwitchCommandContext> getRegistry() {
         return registry;
     }
+
     public void register(de.destenylp.xBotenyy.common.commands.Command<TwitchCommandContext> command) {
         registry.register(command);
     }
+
     public boolean handleMessage(TwitchChatMessage message) {
         if (!message.content().startsWith(prefix)) {
             return false;
@@ -70,6 +88,7 @@ public class TwitchCommandManager {
         }
         return handleCustomCommand(message, commandName);
     }
+
     private void dispatchBuiltIn(String commandName, TwitchCommandContext context) {
         Metrics.increment("twitch.commands_executed");
         CommandDispatchResult result = dispatcher.dispatch(commandName, context);
@@ -85,15 +104,7 @@ public class TwitchCommandManager {
         }
         discordLogService.logCommandUsage(context.message(), commandName, describeResult(result));
     }
-    private static String describeResult(CommandDispatchResult result) {
-        return switch (result) {
-            case EXECUTED -> "Ausgefuehrt";
-            case NO_PERMISSION -> "Keine Berechtigung";
-            case ON_COOLDOWN -> "Cooldown";
-            case ERROR -> "Fehler";
-            default -> result.name();
-        };
-    }
+
     private boolean handleCustomCommand(TwitchChatMessage message, String commandName) {
         Optional<CustomCommandRepository.CustomCommandRecord> custom =
                 customCommandRepository.find(message.channelLogin(), commandName);
@@ -119,3 +130,4 @@ public class TwitchCommandManager {
         return true;
     }
 }
+

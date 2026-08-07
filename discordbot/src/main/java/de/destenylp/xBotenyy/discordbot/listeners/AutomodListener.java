@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
+
 import de.destenylp.xBotenyy.common.automod.AutomodAction;
 import de.destenylp.xBotenyy.common.automod.AutomodVerdict;
 import de.destenylp.xBotenyy.common.util.AuditLog;
@@ -15,14 +16,18 @@ import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
 public class AutomodListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(AutomodListener.class);
     private final AutomodService service;
+
     public AutomodListener(AutomodService service) {
         this.service = service;
     }
+
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (!event.isFromGuild()) {
@@ -34,6 +39,7 @@ public class AutomodListener extends ListenerAdapter {
             LOGGER.error("Unexpected error in AutoMod for guild {}: ", event.getGuild().getId(), e);
         }
     }
+
     @Override
     public void onMessageUpdate(MessageUpdateEvent event) {
         if (!event.isFromGuild()) {
@@ -45,6 +51,7 @@ public class AutomodListener extends ListenerAdapter {
             LOGGER.error("Unexpected error in AutoMod for guild {}: ", event.getGuild().getId(), e);
         }
     }
+
     private void handleMessage(Message message) {
         if (!service.getSettings().isEnabled()) {
             return;
@@ -67,6 +74,7 @@ public class AutomodListener extends ListenerAdapter {
         }
         service.evaluateAiAsync(message, aiVerdict -> aiVerdict.ifPresent(v -> applyVerdict(message, guild, member, v)));
     }
+
     private void applyVerdict(Message message, Guild guild, Member member, AutomodVerdict verdict) {
         AutomodAction finalAction = service.registerViolationAndEscalate(guild.getId(), member.getId(), verdict.action());
         int strikes = service.getCurrentStrikes(guild.getId(), member.getId());
@@ -96,6 +104,7 @@ public class AutomodListener extends ListenerAdapter {
         BotMetrics.incrementAutomodViolationsDetected();
         logToChannel(message, member, verdict, finalAction, strikes);
     }
+
     private void notifyMember(Member member, AutomodVerdict verdict, Guild guild) {
         member.getUser().openPrivateChannel().queue(
                 privateChannel -> privateChannel.sendMessage("⚠️ Deine Nachricht auf **" + guild.getName()
@@ -104,6 +113,7 @@ public class AutomodListener extends ListenerAdapter {
                         }, failure -> LOGGER.warn("Could not warn member {} via DM: {}", member.getId(), failure.getMessage())),
                 failure -> LOGGER.warn("Could not open a DM channel to {}: {}", member.getId(), failure.getMessage()));
     }
+
     private void logToChannel(Message message, Member member, AutomodVerdict verdict, AutomodAction finalAction, int strikes) {
         String logChannelId = service.getSettings().getLogChannelId();
         if (logChannelId == null || logChannelId.isBlank()) {
@@ -120,3 +130,4 @@ public class AutomodListener extends ListenerAdapter {
                 }, failure -> LOGGER.warn("Could not send AutoMod log: {}", failure.getMessage()));
     }
 }
+

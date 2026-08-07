@@ -1,14 +1,11 @@
 package de.destenylp.xBotenyy.common.moderation.bridge;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsExchange;
-import com.sun.net.httpserver.HttpsParameters;
-import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -18,15 +15,18 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
+
 public final class ModerationBridgeServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModerationBridgeServer.class);
     private final BridgeSettings settings;
     private final ModerationBridgeHandler handler;
     private HttpServer server;
+
     public ModerationBridgeServer(BridgeSettings settings, ModerationBridgeHandler handler) {
         this.settings = settings;
         this.handler = handler;
     }
+
     public void start() {
         try {
             if (settings.tlsEnabled()) {
@@ -54,6 +54,7 @@ public final class ModerationBridgeServer {
                     e.getMessage());
         }
     }
+
     private HttpsServer createHttpsServer() throws Exception {
         SSLContext sslContext = BridgeTlsSupport.buildServerContext(settings);
         HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(settings.bindHost(), settings.port()), 0);
@@ -69,11 +70,13 @@ public final class ModerationBridgeServer {
         });
         return httpsServer;
     }
+
     public void stop() {
         if (server != null) {
             server.stop(0);
         }
     }
+
     private void handleAction(HttpExchange exchange) throws IOException {
         if (!authorize(exchange)) {
             return;
@@ -88,6 +91,7 @@ public final class ModerationBridgeServer {
             respond(exchange, 500, new BridgeActionResult(false, "Interner Fehler").toJson());
         }
     }
+
     private void handleLinkConfirm(HttpExchange exchange) throws IOException {
         if (!authorize(exchange)) {
             return;
@@ -102,6 +106,7 @@ public final class ModerationBridgeServer {
             respond(exchange, 500, new BridgeLinkConfirmResult(false, null, null, null, null, "Interner Fehler").toJson());
         }
     }
+
     private void handleRoleSync(HttpExchange exchange) throws IOException {
         if (!authorize(exchange)) {
             return;
@@ -116,6 +121,7 @@ public final class ModerationBridgeServer {
             respond(exchange, 500, new BridgeRoleSyncResult(false, "Interner Fehler").toJson());
         }
     }
+
     private boolean authorize(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(405, -1);
@@ -139,6 +145,7 @@ public final class ModerationBridgeServer {
         }
         return true;
     }
+
     private boolean hasVerifiedClientCertificate(HttpExchange exchange) {
         if (!(exchange instanceof HttpsExchange httpsExchange)) {
             return false;
@@ -149,12 +156,14 @@ public final class ModerationBridgeServer {
             return false;
         }
     }
+
     private JsonObject readJson(HttpExchange exchange) throws IOException {
         try (InputStream in = exchange.getRequestBody()) {
             String body = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             return JsonParser.parseString(body).getAsJsonObject();
         }
     }
+
     private void respond(HttpExchange exchange, int status, JsonObject body) throws IOException {
         byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -164,3 +173,4 @@ public final class ModerationBridgeServer {
         }
     }
 }
+

@@ -1,10 +1,12 @@
 package de.destenylp.xBotenyy.twitchbot.broadcast;
+
 import de.destenylp.xBotenyy.common.observability.Metrics;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatClient;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.TwitchBroadcastRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 public class TwitchBroadcastScheduler {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchBroadcastScheduler.class);
     private final TwitchBroadcastRepository repository;
@@ -21,6 +24,7 @@ public class TwitchBroadcastScheduler {
     private final Set<String> channels;
     private final ConcurrentHashMap<String, AtomicLong> messagesSinceLastBroadcast = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicInteger> roundRobinCursor = new ConcurrentHashMap<>();
+
     public TwitchBroadcastScheduler(TwitchBroadcastRepository repository, TwitchChatClient chatClient,
                                     TwitchEventLogService eventLogService, Set<String> channels) {
         this.repository = repository;
@@ -28,13 +32,16 @@ public class TwitchBroadcastScheduler {
         this.eventLogService = eventLogService;
         this.channels = channels;
     }
+
     public void recordActivity(String channelLogin) {
         messagesSinceLastBroadcast.computeIfAbsent(channelLogin, ignored -> new AtomicLong()).incrementAndGet();
     }
+
     public void start(ScheduledExecutorService scheduler, long checkIntervalSeconds) {
         scheduler.scheduleAtFixedRate(this::tick, checkIntervalSeconds, checkIntervalSeconds, TimeUnit.SECONDS);
         LOGGER.info("Broadcast system started, check interval {}s.", checkIntervalSeconds);
     }
+
     private void tick() {
         for (String channelLogin : channels) {
             try {
@@ -44,6 +51,7 @@ public class TwitchBroadcastScheduler {
             }
         }
     }
+
     private void checkChannel(String channelLogin) {
         List<TwitchBroadcastMessage> enabled = repository.listEnabled(channelLogin);
         if (enabled.isEmpty()) {
@@ -65,6 +73,7 @@ public class TwitchBroadcastScheduler {
             }
         }
     }
+
     private void send(String channelLogin, TwitchBroadcastMessage broadcastMessage) {
         chatClient.sendMessage(channelLogin, broadcastMessage.message());
         repository.markSent(channelLogin, broadcastMessage.id());
@@ -72,3 +81,4 @@ public class TwitchBroadcastScheduler {
         Metrics.increment("twitch.broadcasts_sent");
     }
 }
+

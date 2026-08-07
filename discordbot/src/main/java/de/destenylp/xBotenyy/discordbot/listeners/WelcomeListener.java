@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
+
 import de.destenylp.xBotenyy.discordbot.messaging.MessageDispatcher;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.welcome.WelcomeMessageFactory;
@@ -13,13 +14,17 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class WelcomeListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeListener.class);
     private final WelcomeService service;
+
     public WelcomeListener(WelcomeService service) {
         this.service = service;
     }
+
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         try {
@@ -28,6 +33,7 @@ public class WelcomeListener extends ListenerAdapter {
             LOGGER.error("Unexpected error with welcome message for guild {}: ", event.getGuild().getId(), e);
         }
     }
+
     private void handleGuildMemberJoin(GuildMemberJoinEvent event) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -58,9 +64,11 @@ public class WelcomeListener extends ListenerAdapter {
                     failure -> LOGGER.warn("Could not send welcome DM to {}: {}", member.getId(), failure.getMessage()));
         }
     }
+
     private void sendTo(MessageChannel target, Member member, Guild guild, TextChannel welcomeChannel, WelcomeVariant variant) {
         MessageDispatcher.prepare(target, WelcomeMessageFactory.build(variant, member, guild, welcomeChannel))
                 .ifPresent(action -> action.queue(null,
                         failure -> LOGGER.warn("Failed to send welcome message: {}", failure.getMessage())));
     }
 }
+

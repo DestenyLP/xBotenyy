@@ -1,12 +1,16 @@
 package de.destenylp.xBotenyy.launcher.console.impl;
+
 import de.destenylp.xBotenyy.launcher.LauncherSettings;
 import de.destenylp.xBotenyy.launcher.console.CommandContext;
 import de.destenylp.xBotenyy.launcher.console.ConsoleCommand;
+
 import java.util.List;
 import java.util.Locale;
+
 public final class SetCommand implements ConsoleCommand {
     private static final List<String> MAX_RESTARTS_KEYS = List.of("maxrestarts", "max-restarts", "maxrestart", "attempts");
     private static final List<String> RESTART_DELAY_KEYS = List.of("restartdelay", "restart-delay", "delay");
+
     private static int parseInt(String value, String fieldName) {
         try {
             return Integer.parseInt(value);
@@ -14,6 +18,7 @@ public final class SetCommand implements ConsoleCommand {
             throw new IllegalArgumentException(fieldName + " must be an integer, was: " + value);
         }
     }
+
     private static long parseLong(String value, String fieldName) {
         try {
             return Long.parseLong(value);
@@ -21,22 +26,27 @@ public final class SetCommand implements ConsoleCommand {
             throw new IllegalArgumentException(fieldName + " must be an integer, was: " + value);
         }
     }
+
     @Override
     public String name() {
         return "set";
     }
+
     @Override
     public List<String> aliases() {
         return List.of("config", "settings");
     }
+
     @Override
     public String usage() {
         return "set [maxrestarts <n> | restartdelay <seconds>]";
     }
+
     @Override
     public String description() {
         return "Shows or changes the restart settings (maxrestarts, restartdelay) at runtime.";
     }
+
     @Override
     public void execute(String[] args, CommandContext context) {
         LauncherSettings settings = context.settings();
@@ -66,6 +76,7 @@ public final class SetCommand implements ConsoleCommand {
         throw new IllegalArgumentException("Unknown setting '" + args[0]
                 + "'. Valid values: maxrestarts, restartdelay.");
     }
+
     private void printCurrent(CommandContext context, LauncherSettings settings) {
         context.print("Current settings:");
         context.print("  maxrestarts  = " + settings.getMaxRestartAttempts()
@@ -75,3 +86,4 @@ public final class SetCommand implements ConsoleCommand {
         context.print("Change with: set maxrestarts <n>  |  set restartdelay <seconds>");
     }
 }
+

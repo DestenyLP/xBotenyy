@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.messaging.MessageDispatcher;
 import de.destenylp.xBotenyy.discordbot.messaging.MessageRenderer;
@@ -24,9 +25,12 @@ import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class MessageCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageCommand.class);
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("message", "Erstellt Nachrichten mit Platzhaltern, z.B. als Basis für Reaction Roles")
@@ -52,6 +56,7 @@ public class MessageCommand extends AbstractGuildCommand {
                         new SubcommandData("placeholders", "Zeigt alle verfügbaren Platzhalter")
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (("create".equals(subcommand) || "edit".equals(subcommand)) && !PermissionGuard.requireAdministrator(event)) {
@@ -65,6 +70,7 @@ public class MessageCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleCreate(SlashCommandInteractionEvent event) {
         String content = event.getOption("content").getAsString();
         boolean embed = event.getOption("embed").getAsBoolean();
@@ -112,15 +118,18 @@ public class MessageCommand extends AbstractGuildCommand {
                 message -> onCreated(event, targetChannel, message),
                 failure -> onCreateFailed(event, failure));
     }
+
     private void onCreated(SlashCommandInteractionEvent event, TextChannel channel, Message message) {
         event.getHook().sendMessage("Nachricht gesendet! Nachrichten-ID: `" + message.getId() + "`\n" +
                 "Diese ID kannst du z.B. mit `/reactionrole add message-id:" + message.getId() + "` weiterverwenden.").queue();
         LOGGER.info("Message {} created in channel {}", message.getId(), channel.getId());
     }
+
     private void onCreateFailed(SlashCommandInteractionEvent event, Throwable failure) {
         LOGGER.error("Failed to send message: {}", failure.getMessage());
         event.getHook().sendMessage("Die Nachricht konnte nicht gesendet werden.").queue();
     }
+
     private void handleEdit(SlashCommandInteractionEvent event) {
         String messageId = event.getOption("message-id").getAsString();
         String content = event.getOption("content").getAsString();
@@ -177,16 +186,20 @@ public class MessageCommand extends AbstractGuildCommand {
                 },
                 failure -> onRetrieveForEditFailed(event, messageId, failure));
     }
+
     private void onEdited(SlashCommandInteractionEvent event, TextChannel channel, Message message) {
         event.getHook().sendMessage("Nachricht bearbeitet! Nachrichten-ID: `" + message.getId() + "`").queue();
         LOGGER.info("Message {} edited in channel {}", message.getId(), channel.getId());
     }
+
     private void onEditFailed(SlashCommandInteractionEvent event, String messageId, Throwable failure) {
         LOGGER.error("Failed to edit message {}: {}", messageId, failure.getMessage());
         event.getHook().sendMessage("Die Nachricht konnte nicht bearbeitet werden.").queue();
     }
+
     private void onRetrieveForEditFailed(SlashCommandInteractionEvent event, String messageId, Throwable failure) {
         LOGGER.error("Failed to retrieve message {} for edit: {}", messageId, failure.getMessage());
         event.getHook().sendMessage("Die Nachricht konnte nicht gefunden werden (falscher Kanal oder falsche ID?).").queue();
     }
 }
+

@@ -1,17 +1,22 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
+
 import java.util.List;
 import java.util.Optional;
+
 public class GameCommand extends AbstractTwitchCommand {
     private final TwitchEventLogService eventLogService;
+
     public GameCommand(TwitchEventLogService eventLogService) {
         super("game", "Zeigt oder aendert die Stream-Kategorie.", List.of("category"),
                 CommandPermission.MODERATOR, 5);
         this.eventLogService = eventLogService;
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         String channel = context.message().channelLogin();
@@ -47,3 +52,4 @@ public class GameCommand extends AbstractTwitchCommand {
         }
     }
 }
+

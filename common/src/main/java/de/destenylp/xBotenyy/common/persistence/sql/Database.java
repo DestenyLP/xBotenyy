@@ -1,7 +1,9 @@
 package de.destenylp.xBotenyy.common.persistence.sql;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sqlite.SQLiteConfig;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,15 +12,18 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.locks.ReentrantLock;
+
 public final class Database implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Connection connection;
     private final Path databaseFile;
+
     private Database(Connection connection, Path databaseFile) {
         this.connection = connection;
         this.databaseFile = databaseFile;
     }
+
     public static Database open(Path databaseFile, String migrationsResourcePath) {
         try {
             if (databaseFile.getParent() != null) {
@@ -43,6 +48,7 @@ public final class Database implements AutoCloseable {
             throw new IllegalStateException("Konnte SQLite Datenbank " + databaseFile + " nicht oeffnen", e);
         }
     }
+
     private static void deleteQuietly(Path file) {
         try {
             Files.deleteIfExists(file);
@@ -50,6 +56,7 @@ public final class Database implements AutoCloseable {
             LOGGER.debug("Could not delete {}: {}", file, e.getMessage());
         }
     }
+
     private static Connection openConnection(Path databaseFile, SQLiteConfig.JournalMode journalMode) throws SQLException {
         SQLiteConfig config = new SQLiteConfig();
         config.setJournalMode(journalMode);
@@ -66,12 +73,15 @@ public final class Database implements AutoCloseable {
         }
         return connection;
     }
+
     public Path getDatabaseFile() {
         return databaseFile;
     }
+
     Connection rawConnection() {
         return connection;
     }
+
     public <T> T withConnection(SqlFunction<Connection, T> work) {
         lock.lock();
         try {
@@ -82,12 +92,14 @@ public final class Database implements AutoCloseable {
             lock.unlock();
         }
     }
+
     public void useConnection(SqlConsumer<Connection> work) {
         withConnection(connection -> {
             work.accept(connection);
             return null;
         });
     }
+
     public <T> T inTransaction(SqlFunction<Connection, T> work) {
         lock.lock();
         try {
@@ -109,12 +121,14 @@ public final class Database implements AutoCloseable {
             lock.unlock();
         }
     }
+
     public void runInTransaction(SqlConsumer<Connection> work) {
         inTransaction(connection -> {
             work.accept(connection);
             return null;
         });
     }
+
     public void backupInto(Path targetFile) {
         withConnection(connection -> {
             try {
@@ -131,6 +145,7 @@ public final class Database implements AutoCloseable {
             return null;
         });
     }
+
     public void vacuum() {
         withConnection(connection -> {
             try (Statement statement = connection.createStatement()) {
@@ -139,6 +154,7 @@ public final class Database implements AutoCloseable {
             return null;
         });
     }
+
     @Override
     public void close() {
         lock.lock();
@@ -150,17 +166,21 @@ public final class Database implements AutoCloseable {
             lock.unlock();
         }
     }
+
     @FunctionalInterface
     public interface SqlFunction<T, R> {
         R apply(T input) throws SQLException;
     }
+
     @FunctionalInterface
     public interface SqlConsumer<T> {
         void accept(T input) throws SQLException;
     }
+
     public static final class DatabaseException extends RuntimeException {
         public DatabaseException(String message, Throwable cause) {
             super(message, cause);
         }
     }
 }
+

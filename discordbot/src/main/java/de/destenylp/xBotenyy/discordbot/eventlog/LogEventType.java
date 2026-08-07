@@ -1,6 +1,8 @@
 package de.destenylp.xBotenyy.discordbot.eventlog;
+
 import java.awt.*;
 import java.util.Optional;
+
 public enum LogEventType {
     MEMBER_JOIN("member-join", "Mitglied beigetreten", "\uD83D\uDCE5", new Color(87, 242, 135)),
     MEMBER_LEAVE("member-leave", "Mitglied verlassen", "\uD83D\uDCE4", new Color(237, 66, 69)),
@@ -23,12 +25,14 @@ public enum LogEventType {
     private final String label;
     private final String emoji;
     private final Color color;
+
     LogEventType(String key, String label, String emoji, Color color) {
         this.key = key;
         this.label = label;
         this.emoji = emoji;
         this.color = color;
     }
+
     public static Optional<LogEventType> fromKey(String key) {
         if (key == null) {
             return Optional.empty();
@@ -40,16 +44,21 @@ public enum LogEventType {
         }
         return Optional.empty();
     }
+
     public String getKey() {
         return key;
     }
+
     public String getLabel() {
         return label;
     }
+
     public String getEmoji() {
         return emoji;
     }
+
     public Color getColor() {
         return color;
     }
 }
+

@@ -1,19 +1,24 @@
 package de.destenylp.xBotenyy.discordbot.giveaways;
+
 import net.dv8tion.jda.api.JDA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
+
 public final class GiveawayEndTask implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GiveawayEndTask.class);
     private final JDA jda;
     private final GiveawayService service;
     private final GiveawayEndCoordinator coordinator;
+
     public GiveawayEndTask(JDA jda, GiveawayService service, GiveawayEndCoordinator coordinator) {
         this.jda = jda;
         this.service = service;
         this.coordinator = coordinator;
     }
+
     @Override
     public void run() {
         try {
@@ -22,6 +27,7 @@ public final class GiveawayEndTask implements Runnable {
             LOGGER.error("Error while automatically ending due giveaways: ", e);
         }
     }
+
     private void endDueGiveaways() {
         Map<String, List<Giveaway>> due = service.findDueGiveaways();
         due.forEach((guildId, giveaways) -> giveaways.forEach(giveaway -> {
@@ -35,3 +41,4 @@ public final class GiveawayEndTask implements Runnable {
         }));
     }
 }
+

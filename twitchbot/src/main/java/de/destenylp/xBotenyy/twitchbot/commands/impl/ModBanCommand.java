@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
@@ -7,22 +8,26 @@ import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.moderation.TwitchModerationSyncTrigger;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
 public class ModBanCommand extends AbstractTwitchCommand {
     private static final String USAGE = "Nutzung: !ban <nutzer> [grund]";
     private final TwitchEventLogService eventLogService;
     private final ModerationCaseRepository caseRepository;
     private final TwitchModerationSyncTrigger syncTrigger;
+
     public ModBanCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
-                          TwitchModerationSyncTrigger syncTrigger) {
+                         TwitchModerationSyncTrigger syncTrigger) {
         super("ban", "Bannt einen Nutzer dauerhaft aus dem Kanal.", List.of(),
                 CommandPermission.MODERATOR, 2);
         this.eventLogService = eventLogService;
         this.caseRepository = caseRepository;
         this.syncTrigger = syncTrigger;
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         if (context.arg(0) == null) {
@@ -54,3 +59,4 @@ public class ModBanCommand extends AbstractTwitchCommand {
         }
     }
 }
+

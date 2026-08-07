@@ -1,27 +1,33 @@
 package de.destenylp.xBotenyy.discordbot.socials;
+
 import de.destenylp.xBotenyy.common.persistence.sql.AbstractSqlManager;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import de.destenylp.xBotenyy.common.persistence.sql.Jdbc;
 import de.destenylp.xBotenyy.discordbot.messaging.MessageTemplate;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+
 public class SocialManager extends AbstractSqlManager implements SocialRepository {
     public SocialManager(Database database) {
         super(database);
     }
+
     @Override
     public List<SocialAccount> getAccounts(String guildId) {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM social_accounts WHERE guild_id = ? ORDER BY name COLLATE NOCASE",
                 this::mapAccount, guildId));
     }
+
     @Override
     public Optional<SocialAccount> getAccount(String guildId, String id) {
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM social_accounts WHERE guild_id = ? AND account_id = ? COLLATE NOCASE",
                 this::mapAccount, guildId, id));
     }
+
     @Override
     public SocialAccount addAccount(String guildId, SocialAccount draft) {
         return database.inTransaction(connection -> {
@@ -31,10 +37,12 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
             return draft;
         });
     }
+
     @Override
     public void save(String guildId, SocialAccount account) {
         database.runInTransaction(connection -> writeRow(connection, guildId, account, false));
     }
+
     private void writeRow(java.sql.Connection connection, String guildId, SocialAccount account, boolean insert)
             throws SQLException {
         MessageTemplate yt = account.getYoutubeTemplate();
@@ -84,30 +92,35 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
                     guildId, account.getId());
         }
     }
+
     @Override
     public boolean removeAccount(String guildId, String id) {
         int removed = database.withConnection(connection -> Jdbc.update(connection,
                 "DELETE FROM social_accounts WHERE guild_id = ? AND account_id = ? COLLATE NOCASE", guildId, id));
         return removed > 0;
     }
+
     @Override
     public Map<String, List<SocialAccount>> findAccountsWithYoutube() {
         return database.withConnection(connection -> groupByGuild(Jdbc.query(connection,
                 "SELECT * FROM social_accounts WHERE enabled = 1 AND youtube_channel_id IS NOT NULL",
                 this::mapGuildAccount)));
     }
+
     @Override
     public Map<String, List<SocialAccount>> findAccountsWithTwitch() {
         return database.withConnection(connection -> groupByGuild(Jdbc.query(connection,
                 "SELECT * FROM social_accounts WHERE enabled = 1 AND twitch_login IS NOT NULL",
                 this::mapGuildAccount)));
     }
+
     @Override
     public Map<String, List<SocialAccount>> findAccountsWithTiktok() {
         return database.withConnection(connection -> groupByGuild(Jdbc.query(connection,
                 "SELECT * FROM social_accounts WHERE enabled = 1 AND tiktok_username IS NOT NULL",
                 this::mapGuildAccount)));
     }
+
     private Map<String, List<SocialAccount>> groupByGuild(List<GuildAccount> rows) {
         Map<String, List<SocialAccount>> result = new HashMap<>();
         for (GuildAccount row : rows) {
@@ -115,9 +128,11 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         }
         return result;
     }
+
     private GuildAccount mapGuildAccount(ResultSet resultSet) throws SQLException {
         return new GuildAccount(resultSet.getString("guild_id"), mapAccount(resultSet));
     }
+
     private SocialAccount mapAccount(ResultSet resultSet) throws SQLException {
         SocialAccount account = SocialAccount.builder()
                 .name(resultSet.getString("name"))
@@ -166,6 +181,8 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         tt.setTimestamp(Jdbc.getBoolean(resultSet, "tt_timestamp"));
         return account;
     }
+
     private record GuildAccount(String guildId, SocialAccount account) {
     }
 }
+

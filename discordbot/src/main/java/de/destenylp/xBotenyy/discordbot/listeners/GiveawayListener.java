@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
+
 import de.destenylp.xBotenyy.discordbot.giveaways.Giveaway;
 import de.destenylp.xBotenyy.discordbot.giveaways.GiveawayEmbedFactory;
 import de.destenylp.xBotenyy.discordbot.giveaways.GiveawayService;
@@ -9,13 +10,17 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class GiveawayListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(GiveawayListener.class);
     private final GiveawayService service;
+
     public GiveawayListener(GiveawayService service) {
         this.service = service;
     }
+
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         try {
@@ -28,6 +33,7 @@ public class GiveawayListener extends ListenerAdapter {
             }
         }
     }
+
     private void handleButtonInteraction(ButtonInteractionEvent event) {
         String componentId = event.getComponentId();
         if (!componentId.startsWith("giveaway:enter:")) {
@@ -73,3 +79,4 @@ public class GiveawayListener extends ListenerAdapter {
                         giveaway.getMessageId(), failure.getMessage()));
     }
 }
+

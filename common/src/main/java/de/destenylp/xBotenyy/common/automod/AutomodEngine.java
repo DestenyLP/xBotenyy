@@ -1,8 +1,10 @@
 package de.destenylp.xBotenyy.common.automod;
+
 import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
 import de.destenylp.xBotenyy.common.core.Prunable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
@@ -12,6 +14,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 public class AutomodEngine implements Prunable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AutomodEngine.class);
     private static final Pattern INVITE_PATTERN = Pattern.compile(
@@ -24,10 +27,12 @@ public class AutomodEngine implements Prunable {
     private final AutomodActivityTracker activityTracker = new AutomodActivityTracker();
     private final AutomodStrikeTracker strikeTracker = new AutomodStrikeTracker();
     private final ExecutorService aiExecutor = Executors.newFixedThreadPool(2, aiThreadFactory());
+
     public AutomodEngine(AutomodSettings settings, GroqSafeguardClient moderationClient) {
         this.settings = settings;
         this.moderationClient = moderationClient;
     }
+
     private static ThreadFactory aiThreadFactory() {
         return runnable -> {
             Thread thread = new Thread(runnable, "automod-ai");
@@ -35,9 +40,11 @@ public class AutomodEngine implements Prunable {
             return thread;
         };
     }
+
     public String getServiceName() {
         return "AutoMod";
     }
+
     @Override
     public int pruneOldEntries(Duration retention) {
         long expiryMillis = Duration.ofMinutes(Math.max(settings.getStrikeConfig().expiryMinutes(), 1)).toMillis();
@@ -45,24 +52,30 @@ public class AutomodEngine implements Prunable {
         int removedActivity = activityTracker.purgeStaleEntries(retention.toMillis());
         return removedStrikes + removedActivity;
     }
+
     public void shutdown() {
         aiExecutor.shutdownNow();
     }
+
     public AutomodSettings getSettings() {
         return settings;
     }
+
     public boolean isAiAvailable() {
         return moderationClient != null;
     }
+
     public boolean isExempt(java.util.Collection<String> memberIdentifiers) {
         if (memberIdentifiers == null) {
             return true;
         }
         return memberIdentifiers.stream().anyMatch(id -> settings.getExemptRoleIds().contains(id));
     }
+
     public boolean isChannelExempt(String channelId) {
         return channelId != null && settings.getExemptChannelIds().contains(channelId);
     }
+
     public Optional<AutomodVerdict> evaluate(String content, String activityKey, int mentionCount) {
         long now = System.currentTimeMillis();
         int spamCount = -1;
@@ -94,6 +107,7 @@ public class AutomodEngine implements Prunable {
         }
         return Optional.empty();
     }
+
     public Optional<AutomodVerdict> evaluateTextOnly(String content) {
         Optional<String> wordMatch = settings.getWordFilter().findMatch(content);
         if (wordMatch.isPresent()) {
@@ -132,6 +146,7 @@ public class AutomodEngine implements Prunable {
         }
         return Optional.empty();
     }
+
     public void evaluateAiAsync(String content, Consumer<Optional<AutomodVerdict>> callback) {
         AutomodSettings.AiFilterConfig aiFilter = settings.getAiFilter();
         if (!aiFilter.enabled() || moderationClient == null || content == null || content.isBlank() || content.length() < 3) {
@@ -155,6 +170,7 @@ public class AutomodEngine implements Prunable {
             callback.accept(verdict);
         });
     }
+
     public AutomodAction registerViolationAndEscalate(String scopeId, String actorId, AutomodAction baseAction) {
         AutomodSettings.StrikeConfig strikeConfig = settings.getStrikeConfig();
         if (!strikeConfig.enabled()) {
@@ -173,12 +189,15 @@ public class AutomodEngine implements Prunable {
         }
         return AutomodAction.max(baseAction, escalated);
     }
+
     public int getCurrentStrikes(String scopeId, String actorId) {
         return strikeTracker.getCurrentStrikes(scopeId + ":" + actorId);
     }
+
     public Duration getTimeoutDuration() {
         return Duration.ofMinutes(Math.max(settings.getStrikeConfig().timeoutDurationMinutes(), 1));
     }
+
     private int computeCapsPercentage(String content) {
         int letters = 0;
         int uppercase = 0;
@@ -197,3 +216,4 @@ public class AutomodEngine implements Prunable {
         return (int) Math.round((uppercase * 100.0) / letters);
     }
 }
+

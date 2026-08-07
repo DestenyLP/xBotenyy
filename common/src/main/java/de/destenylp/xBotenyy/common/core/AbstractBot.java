@@ -1,12 +1,15 @@
 package de.destenylp.xBotenyy.common.core;
+
 import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.common.persistence.BackupService;
 import de.destenylp.xBotenyy.common.persistence.BackupSettings;
 import org.slf4j.Logger;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 public abstract class AbstractBot {
     protected final Logger logger;
     protected final CommonConfig config;
@@ -14,11 +17,13 @@ public abstract class AbstractBot {
     private final CountDownLatch shutdownLatch = new CountDownLatch(1);
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private volatile boolean shutdownHookRegistered = false;
+
     protected AbstractBot(Logger logger, CommonConfig config, String schedulerThreadName, int schedulerThreadCount) {
         this.logger = logger;
         this.config = config;
         this.scheduler = Executors.newScheduledThreadPool(schedulerThreadCount, threadFactory(schedulerThreadName));
     }
+
     private static ThreadFactory threadFactory(String name) {
         return runnable -> {
             Thread thread = new Thread(runnable, name);
@@ -26,6 +31,7 @@ public abstract class AbstractBot {
             return thread;
         };
     }
+
     protected final void scheduleHeartbeat(long intervalMinutes) {
         scheduler.scheduleAtFixedRate(() -> {
             try {
@@ -40,7 +46,9 @@ public abstract class AbstractBot {
             }
         }, intervalMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
+
     protected abstract String heartbeatSummary();
+
     protected final void scheduleDataRetention(long initialDelayMinutes, long intervalMinutes, Duration retention,
                                                List<PrunableResource> resources) {
         scheduler.scheduleAtFixedRate(() -> {
@@ -65,6 +73,7 @@ public abstract class AbstractBot {
             }
         }, initialDelayMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
+
     protected final void scheduleBackup(BackupSettings settings, BackupService service) {
         if (!settings.enabled()) {
             logger.info("Automatic database backups are disabled (backup.enabled=false).");
@@ -74,6 +83,7 @@ public abstract class AbstractBot {
         logger.info("Backup schedule started: every {}h, {} copies are kept.",
                 settings.interval().toHours(), settings.maxBackupsToKeep());
     }
+
     protected final synchronized void registerShutdownHook() {
         if (shutdownHookRegistered) {
             return;
@@ -81,7 +91,9 @@ public abstract class AbstractBot {
         shutdownHookRegistered = true;
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "shutdown-hook"));
     }
+
     protected abstract void onShutdown();
+
     public final void shutdown() {
         if (!shuttingDown.compareAndSet(false, true)) {
             return;
@@ -96,10 +108,13 @@ public abstract class AbstractBot {
         logger.info("Bot has been stopped.");
         shutdownLatch.countDown();
     }
+
     public final boolean isShuttingDown() {
         return shuttingDown.get();
     }
+
     public final void awaitShutdown() throws InterruptedException {
         shutdownLatch.await();
     }
 }
+

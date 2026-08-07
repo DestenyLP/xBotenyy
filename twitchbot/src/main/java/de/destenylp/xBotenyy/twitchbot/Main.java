@@ -1,12 +1,16 @@
 package de.destenylp.xBotenyy.twitchbot;
+
 import de.destenylp.xBotenyy.common.config.CommonConfig;
 import de.destenylp.xBotenyy.twitchbot.config.TwitchBotProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+
     private Main() {
     }
+
     public static void main(String[] args) {
         TwitchBotProperties properties = TwitchBotProperties.load();
         CommonConfig config = CommonConfig.load().orElseThrow();
@@ -35,3 +39,4 @@ public final class Main {
         }
     }
 }
+

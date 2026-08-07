@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.broadcast;
+
 public record TwitchBroadcastMessage(
         long id,
         String channelLogin,
@@ -20,3 +21,4 @@ public record TwitchBroadcastMessage(
         return elapsedSeconds >= intervalSeconds;
     }
 }
+

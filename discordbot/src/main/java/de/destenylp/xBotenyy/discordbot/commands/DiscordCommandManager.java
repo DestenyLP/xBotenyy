@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.commands.*;
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogEmbedFactory;
@@ -12,8 +13,10 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Optional;
+
 public class DiscordCommandManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscordCommandManager.class);
     private final CommandRegistry<SlashCommandInteractionEvent> registry = new CommandRegistry<>();
@@ -22,9 +25,11 @@ public class DiscordCommandManager {
             DiscordCommandManager::resolvePermission,
             event -> event.getUser().getId());
     private final EventLogService eventLogService;
+
     public DiscordCommandManager(EventLogService eventLogService) {
         this.eventLogService = eventLogService;
     }
+
     private static void replyError(SlashCommandInteractionEvent event) {
         String message = "Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es erneut.";
         if (event.isAcknowledged()) {
@@ -33,6 +38,7 @@ public class DiscordCommandManager {
             event.reply(message).setEphemeral(true).queue();
         }
     }
+
     private static CommandPermission resolvePermission(SlashCommandInteractionEvent event) {
         Member member = event.getMember();
         if (member == null) {
@@ -46,17 +52,21 @@ public class DiscordCommandManager {
         }
         return CommandPermission.EVERYONE;
     }
+
     public void register(DiscordCommand command) {
         registry.register(command);
     }
+
     public int size() {
         return registry.size();
     }
+
     public List<CommandData> allCommandData() {
         return registry.all().stream()
                 .map(command -> ((DiscordCommand) command).getCommandData())
                 .toList();
     }
+
     public void handle(SlashCommandInteractionEvent event) {
         CommandDispatchResult result = dispatcher.dispatch(event.getName(), event);
         String guildId = event.getGuild() != null ? event.getGuild().getId() : "DM";
@@ -76,6 +86,7 @@ public class DiscordCommandManager {
             logCommandUsage(event, result);
         }
     }
+
     private void logCommandUsage(SlashCommandInteractionEvent event, CommandDispatchResult result) {
         if (event.getGuild() == null) {
             return;
@@ -97,3 +108,4 @@ public class DiscordCommandManager {
         }
     }
 }
+

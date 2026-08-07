@@ -1,14 +1,19 @@
 package de.destenylp.xBotenyy.discordbot.placeholders;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
 public final class PlaceholderEngine {
     private static final Map<String, Function<PlaceholderContext, String>> RESOLVERS = new ConcurrentHashMap<>();
+
     private PlaceholderEngine() {
     }
+
     public static void register(String key, Function<PlaceholderContext, String> resolver) {
         RESOLVERS.put(key, resolver);
     }
+
     public static String apply(String text, PlaceholderContext context) {
         if (text == null) {
             return null;
@@ -26,3 +31,4 @@ public final class PlaceholderEngine {
         return result;
     }
 }
+

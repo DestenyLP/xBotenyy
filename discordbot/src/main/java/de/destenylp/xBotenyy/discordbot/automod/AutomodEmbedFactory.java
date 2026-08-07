@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.automod;
+
 import de.destenylp.xBotenyy.common.automod.AutomodAction;
 import de.destenylp.xBotenyy.common.automod.AutomodVerdict;
 import de.destenylp.xBotenyy.discordbot.core.AbstractEmbedFactory;
@@ -7,9 +8,11 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+
 public final class AutomodEmbedFactory extends AbstractEmbedFactory {
     private AutomodEmbedFactory() {
     }
+
     public static MessageEmbed buildLogEmbed(Member member, MessageChannel channel, AutomodVerdict verdict,
                                              AutomodAction finalAction, int strikeCount, String messageContent) {
         EmbedBuilder eb = new EmbedBuilder();
@@ -28,3 +31,4 @@ public final class AutomodEmbedFactory extends AbstractEmbedFactory {
         return eb.build();
     }
 }
+

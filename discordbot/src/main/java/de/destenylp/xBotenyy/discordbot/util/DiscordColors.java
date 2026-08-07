@@ -1,17 +1,23 @@
 package de.destenylp.xBotenyy.discordbot.util;
+
 import java.awt.*;
 import java.util.Optional;
+
 public final class DiscordColors {
     public static final Color BLURPLE = new Color(88, 101, 242);
     private static volatile Color brand = BLURPLE;
+
     private DiscordColors() {
     }
+
     public static void configure(Color brandColor) {
         brand = brandColor != null ? brandColor : BLURPLE;
     }
+
     public static Color brand() {
         return brand;
     }
+
     public static Optional<Color> parse(String hex) {
         if (hex == null || hex.isBlank()) {
             return Optional.empty();
@@ -22,7 +28,9 @@ public final class DiscordColors {
             return Optional.empty();
         }
     }
+
     public static Color parseOrDefault(String hex, Color fallback) {
         return parse(hex).orElse(fallback);
     }
 }
+

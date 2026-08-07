@@ -1,10 +1,12 @@
 package de.destenylp.xBotenyy.twitchbot.automod;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.destenylp.xBotenyy.common.core.AbstractHttpApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
 public class TwitchModerationApiClient extends AbstractHttpApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchModerationApiClient.class);
     private static final String HELIX_BASE = "https://api.twitch.tv/helix";
@@ -24,41 +27,50 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
     private final Map<String, String> userIdCache = new ConcurrentHashMap<>();
     private final Map<String, String> gameIdCache = new ConcurrentHashMap<>();
     private volatile java.util.function.Supplier<String> broadcasterAccessTokenSupplier;
+
     public TwitchModerationApiClient(String clientId, String moderatorAccessToken, Duration requestTimeout) {
         super(requestTimeout);
         this.clientId = clientId;
         this.moderatorAccessTokenSupplier = () -> moderatorAccessToken;
     }
+
     public TwitchModerationApiClient(String clientId, String moderatorAccessToken, Duration requestTimeout,
                                      int maxAttempts, Duration baseRetryDelay) {
         super(requestTimeout, maxAttempts, baseRetryDelay);
         this.clientId = clientId;
         this.moderatorAccessTokenSupplier = () -> moderatorAccessToken;
     }
+
     public TwitchModerationApiClient(String clientId, java.util.function.Supplier<String> moderatorAccessTokenSupplier,
                                      Duration requestTimeout, int maxAttempts, Duration baseRetryDelay) {
         super(requestTimeout, maxAttempts, baseRetryDelay);
         this.clientId = clientId;
         this.moderatorAccessTokenSupplier = moderatorAccessTokenSupplier;
     }
+
     public void setBroadcasterAccessTokenSupplier(java.util.function.Supplier<String> broadcasterAccessTokenSupplier) {
         this.broadcasterAccessTokenSupplier = broadcasterAccessTokenSupplier;
     }
+
     public boolean hasBroadcasterAccessToken() {
         return broadcasterAccessTokenSupplier != null;
     }
+
     public Optional<java.util.Set<String>> getSubscriberUserIds(String broadcasterId) {
         return getBroadcasterPaginatedIds(HELIX_BASE + "/subscriptions?broadcaster_id=" + broadcasterId + "&first=100",
                 "user_id", "Twitch Abonnenten-Liste fuer " + broadcasterId);
     }
+
     public Optional<java.util.Set<String>> getVipUserIds(String broadcasterId) {
         return getBroadcasterPaginatedIds(HELIX_BASE + "/channels/vips?broadcaster_id=" + broadcasterId + "&first=100",
                 "user_id", "Twitch VIP-Liste fuer " + broadcasterId);
     }
+
     public Optional<java.util.Set<String>> getModeratorUserIds(String broadcasterId) {
         return getBroadcasterPaginatedIds(HELIX_BASE + "/moderation/moderators?broadcaster_id=" + broadcasterId + "&first=100",
                 "user_id", "Twitch Moderatoren-Liste fuer " + broadcasterId);
     }
+
     private Optional<java.util.Set<String>> getBroadcasterPaginatedIds(String baseUri, String idField, String description) {
         java.util.Set<String> ids = new java.util.HashSet<>();
         if (broadcasterAccessTokenSupplier == null) {
@@ -93,6 +105,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
         } while (cursor != null && !cursor.isBlank());
         return Optional.of(ids);
     }
+
     public Optional<String> resolveUserId(String login) {
         String cached = userIdCache.get(login.toLowerCase());
         if (cached != null) {
@@ -120,6 +133,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     public boolean deleteMessage(String broadcasterId, String moderatorId, String messageId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/moderation/chat?broadcaster_id=" + broadcasterId
@@ -137,6 +151,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return false;
         }
     }
+
     public boolean banUser(String broadcasterId, String moderatorId, String targetUserId, String reason, long durationSeconds) {
         try {
             JsonObject data = new JsonObject();
@@ -164,6 +179,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return false;
         }
     }
+
     public List<ChatterRecord> getAllChatters(String broadcasterId, String moderatorId) {
         List<ChatterRecord> chatters = new ArrayList<>();
         String cursor = null;
@@ -199,6 +215,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
         } while (cursor != null && !cursor.isBlank());
         return chatters;
     }
+
     public Optional<Instant> getFollowedAt(String broadcasterId, String userId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/channels/followers?broadcaster_id=" + broadcasterId + "&user_id=" + userId);
@@ -221,6 +238,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     public boolean unbanUser(String broadcasterId, String moderatorId, String targetUserId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/moderation/bans?broadcaster_id=" + broadcasterId
@@ -238,6 +256,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return false;
         }
     }
+
     public boolean clearChat(String broadcasterId, String moderatorId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/moderation/chat?broadcaster_id=" + broadcasterId
@@ -255,6 +274,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return false;
         }
     }
+
     public Optional<ChannelInfo> getChannelInformation(String broadcasterId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/channels?broadcaster_id=" + broadcasterId);
@@ -278,6 +298,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     public Optional<String> resolveGameId(String gameName) {
         String cached = gameIdCache.get(gameName.toLowerCase(java.util.Locale.ROOT));
         if (cached != null) {
@@ -306,6 +327,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     public boolean updateChannelInformation(String broadcasterId, String title, String gameId) {
         if (broadcasterAccessTokenSupplier == null) {
             LOGGER.warn("No broadcaster token configured, channel info for {} cannot be changed.", broadcasterId);
@@ -339,6 +361,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return false;
         }
     }
+
     public boolean sendShoutout(String fromBroadcasterId, String toBroadcasterId, String moderatorId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/chat/shoutouts?from_broadcaster_id=" + fromBroadcasterId
@@ -357,6 +380,7 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return false;
         }
     }
+
     public Optional<String> createClip(String broadcasterId) {
         try {
             URI uri = URI.create(HELIX_BASE + "/clips?broadcaster_id=" + broadcasterId);
@@ -378,13 +402,17 @@ public class TwitchModerationApiClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     private HttpRequest.Builder authorizedRequest(URI uri) {
         return requestBuilder(uri)
                 .header("Client-Id", clientId)
                 .header("Authorization", "Bearer " + moderatorAccessTokenSupplier.get());
     }
+
     public record ChannelInfo(String broadcasterId, String title, String gameId, String gameName) {
     }
+
     public record ChatterRecord(String userId, String userLogin) {
     }
 }
+

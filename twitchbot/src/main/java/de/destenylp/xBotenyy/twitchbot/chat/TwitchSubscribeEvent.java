@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.chat;
+
 public record TwitchSubscribeEvent(
         String channelLogin,
         String userId,
@@ -7,3 +8,4 @@ public record TwitchSubscribeEvent(
         String tier,
         boolean gift) {
 }
+

@@ -1,22 +1,23 @@
 package de.destenylp.xBotenyy.discordbot.socials;
+
 import de.destenylp.xBotenyy.discordbot.messaging.MessageDispatcher;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
+
 public abstract class AbstractFeedCheckTask<T> implements Runnable {
     protected final JDA jda;
     protected final SocialService service;
+
     protected AbstractFeedCheckTask(JDA jda, SocialService service) {
         this.jda = jda;
         this.service = service;
     }
+
     @Override
     public final void run() {
         recordPollAttempt();
@@ -27,6 +28,7 @@ public abstract class AbstractFeedCheckTask<T> implements Runnable {
             logger().error("Error while checking {} accounts: ", platformName(), e);
         }
     }
+
     private void checkAccounts() {
         Map<String, List<SocialAccount>> byGuild = findAccounts();
         if (byGuild.isEmpty()) {
@@ -38,6 +40,7 @@ public abstract class AbstractFeedCheckTask<T> implements Runnable {
                         .add(new GuildAccount(guildId, account))));
         bySource.forEach(this::checkSource);
     }
+
     private void checkSource(String sourceId, List<GuildAccount> guildAccounts) {
         try {
             Optional<T> latest = fetchLatest(sourceId);
@@ -53,6 +56,7 @@ public abstract class AbstractFeedCheckTask<T> implements Runnable {
             logger().warn("Error while checking {} source {}: {}", platformName(), sourceId, e.getMessage());
         }
     }
+
     private void handleAccount(String guildId, SocialAccount account, T item) {
         String itemId = idOf(item);
         String lastId = lastIdOf(account);
@@ -68,6 +72,7 @@ public abstract class AbstractFeedCheckTask<T> implements Runnable {
         service.saveAccount(guildId, account);
         announce(guildId, account, item);
     }
+
     private void announce(String guildId, SocialAccount account, T item) {
         Guild guild = jda.getGuildById(guildId);
         if (guild == null) {
@@ -87,19 +92,34 @@ public abstract class AbstractFeedCheckTask<T> implements Runnable {
         logger().info("New {} item for account {} announced in guild {}: {}",
                 platformName(), account.getId(), guildId, idOf(item));
     }
+
     protected abstract Logger logger();
+
     protected abstract String platformName();
+
     protected abstract Map<String, List<SocialAccount>> findAccounts();
+
     protected abstract String sourceIdOf(SocialAccount account);
+
     protected abstract String describeSource(String sourceId);
+
     protected abstract Optional<T> fetchLatest(String sourceId);
+
     protected abstract String idOf(T item);
+
     protected abstract String lastIdOf(SocialAccount account);
+
     protected abstract void setLastId(SocialAccount account, String id);
+
     protected abstract RenderedMessage buildMessage(SocialAccount account, T item, Guild guild);
+
     protected abstract void recordPollAttempt();
+
     protected abstract void recordError(String message);
+
     protected abstract void onAnnounced();
+
     private record GuildAccount(String guildId, SocialAccount account) {
     }
 }
+

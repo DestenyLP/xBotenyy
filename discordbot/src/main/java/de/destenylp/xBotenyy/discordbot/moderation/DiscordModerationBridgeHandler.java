@@ -1,21 +1,18 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
+
 import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
 import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
 import de.destenylp.xBotenyy.common.moderation.PendingLinkVerification;
 import de.destenylp.xBotenyy.common.moderation.PendingLinkVerificationRepository;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeActionRequest;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeActionResult;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmRequest;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmResult;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeRoleSyncRequest;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeRoleSyncResult;
-import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeHandler;
+import de.destenylp.xBotenyy.common.moderation.bridge.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscordModerationBridgeHandler.class);
     private final JDA jda;
@@ -23,15 +20,17 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
     private final DiscordModerationService moderationService;
     private final AccountLinkRepository accountLinkRepository;
     private final PendingLinkVerificationRepository pendingLinkVerificationRepository;
+
     public DiscordModerationBridgeHandler(JDA jda, String syncGuildId, DiscordModerationService moderationService,
-                                           AccountLinkRepository accountLinkRepository,
-                                           PendingLinkVerificationRepository pendingLinkVerificationRepository) {
+                                          AccountLinkRepository accountLinkRepository,
+                                          PendingLinkVerificationRepository pendingLinkVerificationRepository) {
         this.jda = jda;
         this.syncGuildId = syncGuildId;
         this.moderationService = moderationService;
         this.accountLinkRepository = accountLinkRepository;
         this.pendingLinkVerificationRepository = pendingLinkVerificationRepository;
     }
+
     @Override
     public BridgeActionResult applyAction(BridgeActionRequest request) {
         if (syncGuildId == null || syncGuildId.isBlank()) {
@@ -59,6 +58,7 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
             return new BridgeActionResult(false, "Zeitueberschreitung bei der Ausfuehrung.");
         }
     }
+
     @Override
     public BridgeLinkConfirmResult confirmLink(BridgeLinkConfirmRequest request) {
         Optional<PendingLinkVerification> pendingOpt = pendingLinkVerificationRepository.consume(request.code());
@@ -78,6 +78,7 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
         return new BridgeLinkConfirmResult(true, pending.discordUserId(), pending.discordUsername(),
                 request.twitchUserId(), request.twitchLogin(), "Verknuepfung erfolgreich.");
     }
+
     @Override
     public BridgeRoleSyncResult syncRoles(BridgeRoleSyncRequest request) {
         if (syncGuildId == null || syncGuildId.isBlank()) {
@@ -95,3 +96,4 @@ public class DiscordModerationBridgeHandler implements ModerationBridgeHandler {
         return new BridgeRoleSyncResult(true, "OK");
     }
 }
+

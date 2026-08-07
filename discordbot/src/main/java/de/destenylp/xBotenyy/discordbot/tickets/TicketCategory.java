@@ -1,5 +1,7 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
+
 import java.util.Optional;
+
 public enum TicketCategory {
     GENERAL("allgemein", "\uD83D\uDCC4", "Allgemeine Frage", "Eine allgemeine Frage oder ein Anliegen an das Team.", 0),
     TECHNICAL("technisch", "\uD83D\uDEE0", "Technisches Problem", "Ein Bug, Fehler oder technisches Problem melden.", 0),
@@ -14,6 +16,7 @@ public enum TicketCategory {
     private final String label;
     private final String description;
     private final int defaultPriorityWeight;
+
     TicketCategory(String key, String emoji, String label, String description, int defaultPriorityWeight) {
         this.key = key;
         this.emoji = emoji;
@@ -21,6 +24,7 @@ public enum TicketCategory {
         this.description = description;
         this.defaultPriorityWeight = defaultPriorityWeight;
     }
+
     public static Optional<TicketCategory> fromKey(String key) {
         if (key == null) {
             return Optional.empty();
@@ -32,18 +36,23 @@ public enum TicketCategory {
         }
         return Optional.empty();
     }
+
     public String getKey() {
         return key;
     }
+
     public String getEmoji() {
         return emoji;
     }
+
     public String getLabel() {
         return label;
     }
+
     public String getDescription() {
         return description;
     }
+
     public TicketPriority getDefaultPriority() {
         if (defaultPriorityWeight >= 8) {
             return TicketPriority.URGENT;
@@ -54,3 +63,4 @@ public enum TicketCategory {
         return TicketPriority.MEDIUM;
     }
 }
+

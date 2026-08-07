@@ -1,14 +1,17 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.poll.TwitchPoll;
 import de.destenylp.xBotenyy.twitchbot.poll.TwitchPollManager;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
 public class PollCommand extends AbstractTwitchCommand {
     private static final String USAGE = "Nutzung: !poll start <frage> | <option 1> | <option 2> [| ...] | "
             + "!poll results | !poll end";
@@ -16,12 +19,14 @@ public class PollCommand extends AbstractTwitchCommand {
     private static final int MAX_OPTIONS = 5;
     private final TwitchPollManager pollManager;
     private final TwitchEventLogService eventLogService;
+
     public PollCommand(TwitchPollManager pollManager, TwitchEventLogService eventLogService) {
         super("poll", "Startet, beendet oder wertet eine Chat-Umfrage aus.", List.of("umfrage"),
                 CommandPermission.EVERYONE, 2);
         this.pollManager = pollManager;
         this.eventLogService = eventLogService;
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         String channel = context.message().channelLogin();
@@ -33,6 +38,7 @@ public class PollCommand extends AbstractTwitchCommand {
             default -> context.reply(USAGE);
         }
     }
+
     private void handleStart(TwitchCommandContext context, String channel) {
         if (!context.message().isPrivileged()) {
             context.reply("Nur Moderatoren koennen eine Umfrage starten.");
@@ -66,6 +72,7 @@ public class PollCommand extends AbstractTwitchCommand {
         context.reply("Umfrage gestartet: " + question + " -> " + poll.formatOptions()
                 + " | Abstimmen mit !vote <nummer>");
     }
+
     private void handleEnd(TwitchCommandContext context, String channel) {
         if (!context.message().isPrivileged()) {
             context.reply("Nur Moderatoren koennen eine Umfrage beenden.");
@@ -81,6 +88,7 @@ public class PollCommand extends AbstractTwitchCommand {
         context.reply("Umfrage beendet: " + poll.get().question() + " -> " + poll.get().formatResults()
                 + " (" + poll.get().totalVotes() + " Stimme(n))");
     }
+
     private void handleResults(TwitchCommandContext context, String channel) {
         Optional<TwitchPoll> poll = pollManager.get(channel);
         if (poll.isEmpty()) {
@@ -91,3 +99,4 @@ public class PollCommand extends AbstractTwitchCommand {
                 + " (" + poll.get().totalVotes() + " Stimme(n))");
     }
 }
+

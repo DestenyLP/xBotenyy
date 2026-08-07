@@ -1,21 +1,27 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
+
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.TimeUnit;
+
 public class TicketCloseCoordinator {
     private static final Logger LOGGER = LoggerFactory.getLogger(TicketCloseCoordinator.class);
     private final TicketService service;
     private final long channelDeleteDelaySeconds;
+
     public TicketCloseCoordinator(TicketService service) {
         this(service, 20);
     }
+
     public TicketCloseCoordinator(TicketService service, long channelDeleteDelaySeconds) {
         this.service = service;
         this.channelDeleteDelaySeconds = Math.max(0, channelDeleteDelaySeconds);
     }
+
     public void finalizeClose(TextChannel channel, Ticket ticket) {
         JDA jda = channel.getJDA();
         channel.sendMessageEmbeds(TicketEmbedFactory.buildTicketEmbed(ticket))
@@ -33,6 +39,7 @@ public class TicketCloseCoordinator {
         LOGGER.info("Ticket {} in guild {} closed, transcript generation started", ticket.getId(), ticket.getGuildId());
         BotMetrics.incrementTicketsClosed();
     }
+
     private void postToLogChannel(JDA jda, Ticket ticket, TicketTranscriptService.TranscriptFile transcript) {
         TicketSettings settings = service.getSettings(ticket.getGuildId()).orElse(null);
         if (settings == null) {
@@ -75,6 +82,7 @@ public class TicketCloseCoordinator {
             }
         }
     }
+
     public void refreshLogMessage(JDA jda, Ticket ticket) {
         if (ticket.getLogChannelId() == null || ticket.getLogMessageId() == null) {
             return;
@@ -89,6 +97,7 @@ public class TicketCloseCoordinator {
                 }, failure -> LOGGER.warn("Log entry {} for ticket {} could not be updated with the rating: {}",
                         ticket.getLogMessageId(), ticket.getId(), failure.getMessage()));
     }
+
     private void requestRating(JDA jda, Ticket ticket) {
         jda.retrieveUserById(ticket.getAuthorId()).queue(
                 user -> user.openPrivateChannel().queue(
@@ -100,6 +109,7 @@ public class TicketCloseCoordinator {
                         failure -> LOGGER.debug("Could not open a DM channel with {}: {}", ticket.getAuthorId(), failure.getMessage())),
                 failure -> LOGGER.debug("Could not resolve user {}: {}", ticket.getAuthorId(), failure.getMessage()));
     }
+
     private void scheduleChannelDeletion(TextChannel channel, Ticket ticket) {
         channel.sendMessage("\uD83D\uDD12 Dieses Ticket wird in " + channelDeleteDelaySeconds + " Sekunden archiviert...")
                 .queue(success -> {
@@ -112,3 +122,4 @@ public class TicketCloseCoordinator {
                         failure -> LOGGER.warn("Ticket channel {} could not be deleted: {}", channel.getId(), failure.getMessage()));
     }
 }
+

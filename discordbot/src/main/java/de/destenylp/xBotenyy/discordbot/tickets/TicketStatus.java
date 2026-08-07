@@ -1,6 +1,9 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
+
 import de.destenylp.xBotenyy.discordbot.core.EntityStatus;
+
 import java.awt.*;
+
 public enum TicketStatus implements EntityStatus {
     OPEN("Offen", "\uD83D\uDD35", new Color(88, 101, 242)),
     CLAIMED("In Bearbeitung", "\uD83D\uDFE1", new Color(250, 166, 26)),
@@ -9,21 +12,27 @@ public enum TicketStatus implements EntityStatus {
     private final String label;
     private final String emoji;
     private final Color color;
+
     TicketStatus(String label, String emoji, Color color) {
         this.label = label;
         this.emoji = emoji;
         this.color = color;
     }
+
     public String getLabel() {
         return label;
     }
+
     public String getEmoji() {
         return emoji;
     }
+
     public Color getColor() {
         return color;
     }
+
     public boolean isClosed() {
         return this == CLOSED;
     }
 }
+

@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.giveaways.Giveaway;
@@ -22,16 +23,20 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+
 public class GiveawayCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(GiveawayCommand.class);
     private final GiveawayService service;
     private final GiveawayEndCoordinator coordinator = new GiveawayEndCoordinator();
+
     public GiveawayCommand(GiveawayService service) {
         this.service = service;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("giveaway", "Verwalte Gewinnspiele")
@@ -54,6 +59,7 @@ public class GiveawayCommand extends AbstractGuildCommand {
                         new SubcommandData("list", "Zeigt alle laufenden Gewinnspiele")
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -68,6 +74,7 @@ public class GiveawayCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleStart(SlashCommandInteractionEvent event, Guild guild) {
         String prize = event.getOption("preis").getAsString();
         long winners = event.getOption("gewinner").getAsLong();
@@ -113,6 +120,7 @@ public class GiveawayCommand extends AbstractGuildCommand {
                     event.getHook().sendMessage("Das Gewinnspiel konnte nicht gepostet werden.").queue();
                 });
     }
+
     private void handleEnd(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("gewinnspiel-id").getAsString();
         Optional<Giveaway> giveawayOpt = service.getGiveaway(guild.getId(), id);
@@ -131,6 +139,7 @@ public class GiveawayCommand extends AbstractGuildCommand {
         AuditLog.record(guild.getId(), event.getUser().getId(), "GIVEAWAY_END", "id=" + id);
         coordinator.announceEnd(event.getJDA(), giveaway);
     }
+
     private void handleReroll(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("gewinnspiel-id").getAsString();
         boolean success = service.reroll(guild.getId(), id);
@@ -144,6 +153,7 @@ public class GiveawayCommand extends AbstractGuildCommand {
         AuditLog.record(guild.getId(), event.getUser().getId(), "GIVEAWAY_REROLL", "id=" + id);
         coordinator.announceReroll(event.getJDA(), giveaway);
     }
+
     private void handleCancel(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("gewinnspiel-id").getAsString();
         Optional<Giveaway> giveawayOpt = service.getGiveaway(guild.getId(), id);
@@ -162,8 +172,10 @@ public class GiveawayCommand extends AbstractGuildCommand {
         AuditLog.record(guild.getId(), event.getUser().getId(), "GIVEAWAY_CANCEL", "id=" + id);
         coordinator.announceCancel(event.getJDA(), giveaway);
     }
+
     private void handleList(SlashCommandInteractionEvent event, Guild guild) {
         event.replyEmbeds(GiveawayEmbedFactory.buildListEmbed(guild.getName(), service.getRunningGiveaways(guild.getId())))
                 .setEphemeral(true).queue();
     }
 }
+

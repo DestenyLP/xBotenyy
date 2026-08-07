@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.eventlog.EventLogRule;
@@ -22,13 +23,17 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class EventLogCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventLogCommand.class);
     private final EventLogService service;
+
     public EventLogCommand(EventLogService service) {
         this.service = service;
     }
+
     @Override
     public CommandData getCommandData() {
         OptionData eventOption = new OptionData(OptionType.STRING, "event", "Event-Typ", true);
@@ -54,6 +59,7 @@ public class EventLogCommand extends AbstractGuildCommand {
                         new SubcommandData("status", "Zeigt die aktuelle Logging-Konfiguration")
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -68,6 +74,7 @@ public class EventLogCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleSetup(SlashCommandInteractionEvent event, Guild guild) {
         TextChannel channel = event.getOption("channel").getAsChannel().asTextChannel();
         service.setup(guild.getId(), channel.getId());
@@ -77,6 +84,7 @@ public class EventLogCommand extends AbstractGuildCommand {
         LOGGER.info("Event log setup for guild {} with channel {}", guild.getId(), channel.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "EVENTLOG_SETUP", "channel=" + channel.getId());
     }
+
     private void handleChannel(SlashCommandInteractionEvent event, Guild guild) {
         TextChannel channel = event.getOption("channel").getAsChannel().asTextChannel();
         service.setDefaultChannel(guild.getId(), channel.getId());
@@ -84,6 +92,7 @@ public class EventLogCommand extends AbstractGuildCommand {
         LOGGER.info("Event log default channel updated for guild {}", guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "EVENTLOG_CHANNEL_UPDATE", "channel=" + channel.getId());
     }
+
     private void handleToggle(SlashCommandInteractionEvent event, Guild guild) {
         Optional<LogEventType> typeOpt = LogEventType.fromKey(event.getOption("event").getAsString());
         if (typeOpt.isEmpty()) {
@@ -98,6 +107,7 @@ public class EventLogCommand extends AbstractGuildCommand {
         LOGGER.info("Event log type {} set to {} for guild {}", type, enabled, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "EVENTLOG_TOGGLE", "type=" + type.getKey() + " enabled=" + enabled);
     }
+
     private void handleEventChannel(SlashCommandInteractionEvent event, Guild guild) {
         Optional<LogEventType> typeOpt = LogEventType.fromKey(event.getOption("event").getAsString());
         if (typeOpt.isEmpty()) {
@@ -115,6 +125,7 @@ public class EventLogCommand extends AbstractGuildCommand {
         LOGGER.info("Event log channel override for {} set to {} in guild {}", type, channelId, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "EVENTLOG_EVENT_CHANNEL", "type=" + type.getKey() + " channel=" + channelId);
     }
+
     private void handleStatus(SlashCommandInteractionEvent event, Guild guild) {
         EventLogSettings settings = service.getSettings(guild.getId()).orElse(null);
         EmbedBuilder eb = new EmbedBuilder();
@@ -138,3 +149,4 @@ public class EventLogCommand extends AbstractGuildCommand {
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
 }
+

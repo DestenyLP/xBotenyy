@@ -1,11 +1,14 @@
 package de.destenylp.xBotenyy.discordbot.giveaways;
+
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 public class GiveawayEndCoordinator {
     private static final Logger LOGGER = LoggerFactory.getLogger(GiveawayEndCoordinator.class);
+
     public void announceEnd(JDA jda, Giveaway giveaway) {
         TextChannel channel = resolveChannel(jda, giveaway);
         if (channel == null) {
@@ -25,6 +28,7 @@ public class GiveawayEndCoordinator {
         LOGGER.info("Giveaway {} in guild {} ended with {} winner(s)", giveaway.getId(), giveaway.getGuildId(), giveaway.getWinnerIds().size());
         BotMetrics.incrementGiveawaysEnded();
     }
+
     public void announceReroll(JDA jda, Giveaway giveaway) {
         TextChannel channel = resolveChannel(jda, giveaway);
         if (channel == null) {
@@ -43,6 +47,7 @@ public class GiveawayEndCoordinator {
                         giveaway.getId(), failure.getMessage()));
         LOGGER.info("Giveaway {} in guild {} rerolled with {} winner(s)", giveaway.getId(), giveaway.getGuildId(), giveaway.getWinnerIds().size());
     }
+
     public void announceCancel(JDA jda, Giveaway giveaway) {
         TextChannel channel = resolveChannel(jda, giveaway);
         if (channel == null) {
@@ -57,6 +62,7 @@ public class GiveawayEndCoordinator {
         }
         LOGGER.info("Giveaway {} in guild {} cancelled", giveaway.getId(), giveaway.getGuildId());
     }
+
     private TextChannel resolveChannel(JDA jda, Giveaway giveaway) {
         if (giveaway.getChannelId() == null) {
             return null;
@@ -68,3 +74,4 @@ public class GiveawayEndCoordinator {
         return channel;
     }
 }
+

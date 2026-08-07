@@ -1,5 +1,7 @@
 package de.destenylp.xBotenyy.launcher.scheduler;
+
 import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -7,16 +9,19 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+
 public final class SchedulerStore {
     private static final String ENV_STORE_FILE = "LAUNCHER_SCHEDULER_FILE";
     private static final String DEFAULT_STORE_FILE = "scheduler-tasks.txt";
     private final Path storeFile;
     private final Logger logger;
+
     public SchedulerStore(Logger logger) {
         this.logger = logger;
         String configured = System.getenv(ENV_STORE_FILE);
         this.storeFile = Path.of(configured == null || configured.isBlank() ? DEFAULT_STORE_FILE : configured);
     }
+
     public List<ScheduledTask> load() {
         List<ScheduledTask> tasks = new ArrayList<>();
         if (!Files.exists(storeFile)) {
@@ -39,6 +44,7 @@ public final class SchedulerStore {
         }
         return tasks;
     }
+
     public synchronized void save(List<ScheduledTask> tasks) {
         List<String> lines = new ArrayList<>();
         for (ScheduledTask task : tasks) {
@@ -52,3 +58,4 @@ public final class SchedulerStore {
         }
     }
 }
+

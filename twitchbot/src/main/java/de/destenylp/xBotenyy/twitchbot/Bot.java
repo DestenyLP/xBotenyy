@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot;
+
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodSettingsFactory;
 import de.destenylp.xBotenyy.common.automod.ai.GroqSafeguardClient;
@@ -35,6 +36,7 @@ import de.destenylp.xBotenyy.twitchbot.persistence.*;
 import de.destenylp.xBotenyy.twitchbot.poll.TwitchPollManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -42,10 +44,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 public final class Bot extends AbstractBot {
     private static final Logger LOGGER = LoggerFactory.getLogger(Bot.class);
     private final TwitchBotProperties properties;
     private final Instant startedAt = Instant.now();
+    private final TwitchPollManager pollManager = new TwitchPollManager();
     private Database database;
     private TwitchChatClient chatClient;
     private TwitchAutomodAdapter automodAdapter;
@@ -57,7 +61,6 @@ public final class Bot extends AbstractBot {
     private TwitchBroadcastRepository broadcastRepository;
     private TwitchBroadcastScheduler broadcastScheduler;
     private TwitchQuoteRepository quoteRepository;
-    private final TwitchPollManager pollManager = new TwitchPollManager();
     private DiscordWebhookClient discordWebhookClient;
     private TwitchDiscordLogService discordLogService;
     private ModerationCaseRepository moderationCaseRepository;
@@ -70,10 +73,12 @@ public final class Bot extends AbstractBot {
     private BackupService backupService;
     private String moderatorUserId;
     private Set<String> channels;
+
     public Bot(CommonConfig config, TwitchBotProperties properties) {
         super(LOGGER, config, "twitchbot-scheduler", 2);
         this.properties = properties;
     }
+
     public void start() {
         channels = properties.getChatChannels();
         if (channels.isEmpty()) {
@@ -253,6 +258,7 @@ public final class Bot extends AbstractBot {
         LOGGER.info("Starting Twitch bot as {} for channels: {}", config.twitchChatBotUsername(), channels);
         chatClient.connect();
     }
+
     private void registerCommands(TwitchCommandManager commandManager, CustomCommandRepository customCommandRepository) {
         commandManager.register(new PingCommand());
         commandManager.register(new UptimeCommand());
@@ -283,6 +289,7 @@ public final class Bot extends AbstractBot {
         commandManager.register(new VanishCommand());
         LOGGER.info("{} built-in commands registered.", commandManager.getRegistry().size());
     }
+
     private void recordActivityQuietly(String channelLogin) {
         try {
             channelRepository.recordActivity(channelLogin);
@@ -292,6 +299,7 @@ public final class Bot extends AbstractBot {
                     channelLogin, e.getMessage());
         }
     }
+
     private void startDataRetentionTask() {
         List<PrunableResource> resources = List.of(
                 PrunableResource.of("AutoMod-Eintraege", automodAdapter.getEngine()),
@@ -300,6 +308,7 @@ public final class Bot extends AbstractBot {
         scheduleDataRetention(intervalMinutes, intervalMinutes,
                 Duration.ofHours(properties.getDataRetentionHours()), resources);
     }
+
     private void startWatchtimeTracking(TwitchModerationApiClient moderationApiClient) {
         long intervalSeconds = properties.getWatchtimePollIntervalSeconds();
         scheduler.scheduleAtFixedRate(() -> {
@@ -323,6 +332,7 @@ public final class Bot extends AbstractBot {
             }
         }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
     }
+
     private void startRoleReconciliation(TwitchModerationApiClient moderationApiClient) {
         long intervalMinutes = properties.getModerationSyncReconcileIntervalMinutes();
         scheduler.scheduleAtFixedRate(() -> {
@@ -335,9 +345,11 @@ public final class Bot extends AbstractBot {
             }
         }, intervalMinutes, intervalMinutes, TimeUnit.MINUTES);
     }
+
     private void startHeartbeat() {
         scheduleHeartbeat(properties.getHeartbeatIntervalMinutes());
     }
+
     @Override
     protected String heartbeatSummary() {
         String metricsSnapshot = Metrics.snapshot().entrySet().stream()
@@ -346,12 +358,14 @@ public final class Bot extends AbstractBot {
                 .collect(Collectors.joining(" "));
         return "channels=" + channels.size() + " " + metricsSnapshot;
     }
+
     private void startBackupSchedule() {
         BackupSettings backupSettings = BackupSettings.from(properties::getRawProperty);
         backupService = new BackupService(database, backupSettings.resolveDirectory(properties.getDataDirectory()),
                 "xbotenyy-twitch", backupSettings.maxBackupsToKeep());
         scheduleBackup(backupSettings, backupService);
     }
+
     @Override
     protected void onShutdown() {
         if (chatClient != null) {

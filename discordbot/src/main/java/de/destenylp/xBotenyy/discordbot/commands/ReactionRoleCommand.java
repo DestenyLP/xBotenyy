@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleEntry;
@@ -26,15 +27,19 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 public class ReactionRoleCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactionRoleCommand.class);
     private final ReactionRoleService service;
+
     public ReactionRoleCommand(ReactionRoleService service) {
         this.service = service;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("reactionrole", "Verwalte Reaction Roles")
@@ -61,6 +66,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
                                 .addOption(OptionType.STRING, "message-id", "ID der Reaction-Role Nachricht", true)
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -73,6 +79,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleAdd(SlashCommandInteractionEvent event) {
         String messageId = event.getOption("message-id").getAsString();
         Role role = event.getOption("role").getAsRole();
@@ -116,6 +123,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
             event.getHook().sendMessage("Die Nachricht konnte nicht gefunden werden (falscher Kanal oder falsche ID?).").queue();
         });
     }
+
     private void addReactionRole(SlashCommandInteractionEvent event, Message message, ReactionRoleMessage rrMessage,
                                  Role role, Emoji emoji) {
         message.addReaction(emoji).queue(success -> {
@@ -129,6 +137,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
             event.getHook().sendMessage("Die Reaction konnte nicht hinzugefügt werden.").queue();
         });
     }
+
     private void addButtonRole(SlashCommandInteractionEvent event, Message message, ReactionRoleMessage rrMessage,
                                Role role, Emoji emoji, String label, String styleRaw) {
         ButtonStyle style = service.parseButtonStyle(styleRaw);
@@ -160,10 +169,12 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
             event.getHook().sendMessage("Der Button konnte nicht hinzugefügt werden.").queue();
         });
     }
+
     private String resolveRoleName(Guild guild, String roleId) {
         Role role = guild.getRoleById(roleId);
         return role != null ? role.getName() : "Rolle";
     }
+
     private void handleRemove(SlashCommandInteractionEvent event) {
         String messageId = event.getOption("message-id").getAsString();
         String identifier = event.getOption("identifier").getAsString();
@@ -204,6 +215,7 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
                     failure -> event.getHook().sendMessage("Zuweisung entfernt.").queue());
         }
     }
+
     private void handleList(SlashCommandInteractionEvent event) {
         String messageId = event.getOption("message-id").getAsString();
         Optional<ReactionRoleMessage> rrMessageOpt = service.findMessage(event.getGuild().getId(), messageId);
@@ -227,3 +239,4 @@ public class ReactionRoleCommand extends AbstractGuildCommand {
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
 }
+

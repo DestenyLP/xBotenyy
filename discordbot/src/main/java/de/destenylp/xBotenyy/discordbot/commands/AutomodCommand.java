@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.automod.AutomodSettings;
 import de.destenylp.xBotenyy.common.automod.AutomodVerdict;
 import de.destenylp.xBotenyy.discordbot.automod.AutomodService;
@@ -10,12 +11,16 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+
 import java.util.Optional;
+
 public class AutomodCommand extends AbstractGuildCommand {
     private final AutomodService service;
+
     public AutomodCommand(AutomodService service) {
         this.service = service;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("automod", "AutoMod-Diagnose (Konfiguration erfolgt ausschließlich über discordbot.properties)")
@@ -24,6 +29,7 @@ public class AutomodCommand extends AbstractGuildCommand {
                         new SubcommandData("test", "Prüft einen Text gegen die Filter, ohne eine echte Nachricht zu senden")
                                 .addOption(OptionType.STRING, "text", "Zu prüfender Text", true));
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -35,6 +41,7 @@ public class AutomodCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleStatus(SlashCommandInteractionEvent event) {
         AutomodSettings settings = service.getSettings();
         StringBuilder sb = new StringBuilder();
@@ -68,6 +75,7 @@ public class AutomodCommand extends AbstractGuildCommand {
         }
         event.reply(sb.toString()).setEphemeral(true).queue();
     }
+
     private void handleTest(SlashCommandInteractionEvent event) {
         String text = event.getOption("text").getAsString();
         Optional<AutomodVerdict> verdict = service.evaluateTextOnly(text);
@@ -80,10 +88,13 @@ public class AutomodCommand extends AbstractGuildCommand {
         event.reply("🚫 Regel ausgelöst: **" + result.ruleType().getLabel() + "**\nGrund: " + result.reason()
                 + "\nKonfigurierte Aktion: " + result.action().getLabel()).setEphemeral(true).queue();
     }
+
     private String ruleLine(boolean enabled, String detail) {
         return (enabled ? "✅ Aktiviert" : "❌ Deaktiviert") + (enabled ? " (" + detail + ")" : "");
     }
+
     private String describeChannel(String channelId) {
         return channelId == null || channelId.isBlank() ? "Nicht gesetzt" : "<#" + channelId + ">";
     }
 }
+

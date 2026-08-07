@@ -1,7 +1,9 @@
 package de.destenylp.xBotenyy.common.automod;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 public final class AutomodSettings {
     private final boolean enabled;
     private final Set<String> exemptRoleIds;
@@ -18,6 +20,7 @@ public final class AutomodSettings {
     private final LinkFilterConfig linkFilter;
     private final AiFilterConfig aiFilter;
     private final StrikeConfig strikeConfig;
+
     public AutomodSettings(boolean enabled, Set<String> exemptRoleIds, Set<String> exemptChannelIds,
                            boolean bypassManageServer, boolean bypassAdministrator, String logChannelId,
                            WordFilterConfig wordFilter,
@@ -41,56 +44,73 @@ public final class AutomodSettings {
         this.aiFilter = aiFilter;
         this.strikeConfig = strikeConfig;
     }
+
     public boolean isEnabled() {
         return enabled;
     }
+
     public Set<String> getExemptRoleIds() {
         return exemptRoleIds;
     }
+
     public Set<String> getExemptChannelIds() {
         return exemptChannelIds;
     }
+
     public boolean isBypassManageServer() {
         return bypassManageServer;
     }
+
     public boolean isBypassAdministrator() {
         return bypassAdministrator;
     }
+
     public String getLogChannelId() {
         return logChannelId;
     }
+
     public WordFilterConfig getWordFilter() {
         return wordFilter;
     }
+
     public InviteFilterConfig getInviteFilter() {
         return inviteFilter;
     }
+
     public MentionFilterConfig getMentionFilter() {
         return mentionFilter;
     }
+
     public CapsFilterConfig getCapsFilter() {
         return capsFilter;
     }
+
     public SpamFilterConfig getSpamFilter() {
         return spamFilter;
     }
+
     public DuplicateFilterConfig getDuplicateFilter() {
         return duplicateFilter;
     }
+
     public LinkFilterConfig getLinkFilter() {
         return linkFilter;
     }
+
     public AiFilterConfig getAiFilter() {
         return aiFilter;
     }
+
     public StrikeConfig getStrikeConfig() {
         return strikeConfig;
     }
+
     public static final class WordFilterConfig {
         private final boolean enabled;
         private final AutomodAction action;
         private final Set<String> compactWords;
         private final Pattern spacedPattern;
+
         public WordFilterConfig(boolean enabled, AutomodAction action, Set<String> rawWords) {
             this.enabled = enabled;
             this.action = action;
@@ -111,12 +131,15 @@ public final class AutomodSettings {
             this.spacedPattern = patternParts.isEmpty() ? null
                     : Pattern.compile("\\b(" + String.join("|", patternParts) + ")\\b");
         }
+
         public boolean isEnabled() {
             return enabled;
         }
+
         public AutomodAction getAction() {
             return action;
         }
+
         public Optional<String> findMatch(String rawContent) {
             if (!enabled || rawContent == null || rawContent.isBlank()) {
                 return Optional.empty();
@@ -136,21 +159,30 @@ public final class AutomodSettings {
             return Optional.empty();
         }
     }
+
     public record InviteFilterConfig(boolean enabled, Set<String> whitelistCodes, AutomodAction action) {
     }
+
     public record MentionFilterConfig(boolean enabled, int maxMentions, AutomodAction action) {
     }
+
     public record CapsFilterConfig(boolean enabled, int minLength, int maxPercentage, AutomodAction action) {
     }
+
     public record SpamFilterConfig(boolean enabled, int maxMessages, int windowSeconds, AutomodAction action) {
     }
+
     public record DuplicateFilterConfig(boolean enabled, int maxRepeats, AutomodAction action) {
     }
+
     public record LinkFilterConfig(boolean enabled, Set<String> whitelistDomains, AutomodAction action) {
     }
+
     public record AiFilterConfig(boolean enabled, double threshold, int timeoutSeconds, AutomodAction action) {
     }
+
     public record StrikeConfig(boolean enabled, int expiryMinutes, int timeoutThreshold, int timeoutDurationMinutes,
                                int kickThreshold, int banThreshold) {
     }
 }
+

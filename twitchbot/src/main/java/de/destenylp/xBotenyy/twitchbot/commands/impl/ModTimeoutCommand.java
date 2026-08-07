@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.common.moderation.ModerationAction;
 import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
@@ -7,23 +8,27 @@ import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.moderation.TwitchModerationSyncTrigger;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
 public class ModTimeoutCommand extends AbstractTwitchCommand {
     private static final String USAGE = "Nutzung: !timeout <nutzer> <sekunden> [grund]";
     private static final long MAX_DURATION_SECONDS = 1209600;
     private final TwitchEventLogService eventLogService;
     private final ModerationCaseRepository caseRepository;
     private final TwitchModerationSyncTrigger syncTrigger;
+
     public ModTimeoutCommand(TwitchEventLogService eventLogService, ModerationCaseRepository caseRepository,
-                              TwitchModerationSyncTrigger syncTrigger) {
+                             TwitchModerationSyncTrigger syncTrigger) {
         super("timeout", "Timeoutet einen Nutzer fuer eine bestimmte Dauer.", List.of("to"),
                 CommandPermission.MODERATOR, 2);
         this.eventLogService = eventLogService;
         this.caseRepository = caseRepository;
         this.syncTrigger = syncTrigger;
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         if (context.args().size() < 2) {
@@ -68,3 +73,4 @@ public class ModTimeoutCommand extends AbstractTwitchCommand {
         }
     }
 }
+

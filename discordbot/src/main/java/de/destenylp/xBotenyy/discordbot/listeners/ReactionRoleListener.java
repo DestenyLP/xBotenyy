@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
+
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleEntry;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleMessage;
@@ -14,13 +15,17 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class ReactionRoleListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactionRoleListener.class);
     private final ReactionRoleService service;
+
     public ReactionRoleListener(ReactionRoleService service) {
         this.service = service;
     }
+
     @Override
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
         try {
@@ -29,6 +34,7 @@ public class ReactionRoleListener extends ListenerAdapter {
             LOGGER.error("Unexpected error on reaction-add for message {}: ", event.getMessageId(), e);
         }
     }
+
     private void handleReactionAdd(MessageReactionAddEvent event) {
         if (!event.isFromGuild() || event.getUser() == null || event.getUser().isBot()) {
             return;
@@ -59,6 +65,7 @@ public class ReactionRoleListener extends ListenerAdapter {
                     LOGGER, "Rollenvergabe " + role.getId() + " -> " + member.getId());
         }));
     }
+
     @Override
     public void onMessageReactionRemove(MessageReactionRemoveEvent event) {
         try {
@@ -67,6 +74,7 @@ public class ReactionRoleListener extends ListenerAdapter {
             LOGGER.error("Unexpected error on reaction-remove for message {}: ", event.getMessageId(), e);
         }
     }
+
     private void handleReactionRemove(MessageReactionRemoveEvent event) {
         if (!event.isFromGuild()) {
             return;
@@ -96,6 +104,7 @@ public class ReactionRoleListener extends ListenerAdapter {
                     LOGGER, "Rollenentzug " + role.getId() + " -> " + member.getId());
         }));
     }
+
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         try {
@@ -108,6 +117,7 @@ public class ReactionRoleListener extends ListenerAdapter {
             }
         }
     }
+
     private void handleButtonInteraction(ButtonInteractionEvent event) {
         String componentId = event.getComponentId();
         if (!componentId.startsWith("reactionrole:")) {
@@ -148,3 +158,4 @@ public class ReactionRoleListener extends ListenerAdapter {
         }
     }
 }
+

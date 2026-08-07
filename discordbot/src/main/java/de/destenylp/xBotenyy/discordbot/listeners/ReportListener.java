@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.reports.*;
@@ -19,17 +20,21 @@ import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class ReportListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportListener.class);
     private final ReportService service;
     private final int shortFieldMaxLength;
     private final int longFieldMaxLength;
+
     public ReportListener(ReportService service, int shortFieldMaxLength, int longFieldMaxLength) {
         this.service = service;
         this.shortFieldMaxLength = shortFieldMaxLength;
         this.longFieldMaxLength = longFieldMaxLength;
     }
+
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         try {
@@ -40,6 +45,7 @@ public class ReportListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
+
     private void handleStringSelectInteraction(StringSelectInteractionEvent event) {
         if (!"report:category".equals(event.getComponentId())) {
             return;
@@ -78,6 +84,7 @@ public class ReportListener extends ListenerAdapter {
                 .build();
         event.replyModal(modal).queue();
     }
+
     @Override
     public void onModalInteraction(ModalInteractionEvent event) {
         try {
@@ -88,6 +95,7 @@ public class ReportListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
+
     private void handleModalInteraction(ModalInteractionEvent event) {
         String modalId = event.getModalId();
         if (modalId.startsWith("report:modal:")) {
@@ -98,6 +106,7 @@ public class ReportListener extends ListenerAdapter {
             handleRejectSubmission(event, modalId.substring("report:rejectmodal:".length()));
         }
     }
+
     private void handleReportSubmission(ModalInteractionEvent event, String categoryKey) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -144,6 +153,7 @@ public class ReportListener extends ListenerAdapter {
                     .setEphemeral(true).queue();
         });
     }
+
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         try {
@@ -154,6 +164,7 @@ public class ReportListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
+
     private void handleReportButtonInteraction(ButtonInteractionEvent event) {
         String componentId = event.getComponentId();
         if (!componentId.startsWith("report:")) {
@@ -192,6 +203,7 @@ public class ReportListener extends ListenerAdapter {
             }
         }
     }
+
     private void handleClaim(ButtonInteractionEvent event, Guild guild, Member member, String reportId) {
         boolean success = service.claim(guild.getId(), reportId, member.getId(), member.getUser().getName());
         if (!success) {
@@ -205,6 +217,7 @@ public class ReportListener extends ListenerAdapter {
         LOGGER.info("Report {} claimed by {} in guild {}", reportId, member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "REPORT_CLAIM", "reportId=" + reportId);
     }
+
     private void handleResolvePrompt(ButtonInteractionEvent event, String reportId) {
         TextInput note = TextInput.create("note", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("Was wurde unternommen? Diese Notiz erhält das Mitglied per DM.")
@@ -216,6 +229,7 @@ public class ReportListener extends ListenerAdapter {
                 .build();
         event.replyModal(modal).queue();
     }
+
     private void handleRejectPrompt(ButtonInteractionEvent event, String reportId) {
         TextInput reason = TextInput.create("reason", TextInputStyle.PARAGRAPH)
                 .setPlaceholder("Warum wird dieser Report abgelehnt? Das Mitglied erhält diese Begründung per DM.")
@@ -226,6 +240,7 @@ public class ReportListener extends ListenerAdapter {
                 .build();
         event.replyModal(modal).queue();
     }
+
     private void handleResolveSubmission(ModalInteractionEvent event, String reportId) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -245,6 +260,7 @@ public class ReportListener extends ListenerAdapter {
         LOGGER.info("Report {} resolved by {} in guild {}", reportId, member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "REPORT_RESOLVE", "reportId=" + reportId);
     }
+
     private void handleRejectSubmission(ModalInteractionEvent event, String reportId) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -264,6 +280,7 @@ public class ReportListener extends ListenerAdapter {
         LOGGER.info("Report {} rejected by {} in guild {}", reportId, member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "REPORT_REJECT", "reportId=" + reportId);
     }
+
     private void updateChannelMessage(ModalInteractionEvent event, Report report) {
         if (report.getReportChannelId() == null || report.getReportMessageId() == null) {
             return;
@@ -278,6 +295,7 @@ public class ReportListener extends ListenerAdapter {
                         .queue(),
                 failure -> LOGGER.error("Failed to update report message {}: {}", report.getReportMessageId(), failure.getMessage()));
     }
+
     private void notifyMember(ModalInteractionEvent event, Report report, MessageEmbed embed) {
         event.getJDA().retrieveUserById(report.getReporterId()).queue(
                 user -> user.openPrivateChannel().queue(
@@ -288,10 +306,12 @@ public class ReportListener extends ListenerAdapter {
                         failure -> LOGGER.warn("Could not open DM channel with user {}: {}", report.getReporterId(), failure.getMessage())),
                 failure -> LOGGER.warn("Could not retrieve user {}: {}", report.getReporterId(), failure.getMessage()));
     }
+
     private String getValue(ModalInteractionEvent event, String id) {
         ModalMapping mapping = event.getValue(id);
         return mapping != null ? mapping.getAsString() : null;
     }
+
     private void replyGenericError(IReplyCallback event) {
         if (event.isAcknowledged()) {
             event.getHook().sendMessage("Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es erneut.").queue();
@@ -300,3 +320,4 @@ public class ReportListener extends ListenerAdapter {
         }
     }
 }
+

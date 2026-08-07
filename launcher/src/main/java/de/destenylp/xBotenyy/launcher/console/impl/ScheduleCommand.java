@@ -1,10 +1,12 @@
 package de.destenylp.xBotenyy.launcher.console.impl;
+
 import de.destenylp.xBotenyy.launcher.console.CommandContext;
 import de.destenylp.xBotenyy.launcher.console.ConsoleCommand;
 import de.destenylp.xBotenyy.launcher.scheduler.DurationParser;
 import de.destenylp.xBotenyy.launcher.scheduler.ScheduledAction;
 import de.destenylp.xBotenyy.launcher.scheduler.ScheduledTask;
 import de.destenylp.xBotenyy.launcher.scheduler.TaskScheduler;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -13,26 +15,32 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
+
 public final class ScheduleCommand implements ConsoleCommand {
     private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter DAILY_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
+
     @Override
     public String name() {
         return "schedule";
     }
+
     @Override
     public List<String> aliases() {
         return List.of("sched", "cron");
     }
+
     @Override
     public String usage() {
         return "schedule <add|list|remove|enable|disable> ...";
     }
+
     @Override
     public String description() {
         return "Manages scheduled tasks (restart/stop/start) for the bots, e.g. daily restarts.";
     }
+
     @Override
     public void execute(String[] args, CommandContext context) {
         if (args.length == 0) {
@@ -50,6 +58,7 @@ public final class ScheduleCommand implements ConsoleCommand {
             default -> printUsage(context);
         }
     }
+
     private void printUsage(CommandContext context) {
         context.print("Usage:");
         context.print("  schedule add <discord|twitch|all> <restart|stop|start> interval <value>  [timeoutSeconds]");
@@ -60,6 +69,7 @@ public final class ScheduleCommand implements ConsoleCommand {
         context.print("  schedule enable <id>");
         context.print("  schedule disable <id>");
     }
+
     private void handleAdd(String[] args, CommandContext context) {
         if (args.length < 4) {
             throw new IllegalArgumentException("Usage: " + usage());
@@ -86,6 +96,7 @@ public final class ScheduleCommand implements ConsoleCommand {
         context.print("Scheduled task created: " + task);
         context.print("Next run: " + TIMESTAMP_FORMAT.format(Instant.ofEpochMilli(task.getNextRunMillis())));
     }
+
     private void handleList(CommandContext context) {
         List<ScheduledTask> tasks = context.scheduler().all();
         if (tasks.isEmpty()) {
@@ -101,6 +112,7 @@ public final class ScheduleCommand implements ConsoleCommand {
                     task.getAction(), next, last);
         }
     }
+
     private void handleRemove(String[] args, CommandContext context) {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage: schedule remove <id>");
@@ -108,6 +120,7 @@ public final class ScheduleCommand implements ConsoleCommand {
         boolean removed = context.scheduler().remove(args[0]);
         context.print(removed ? "Task " + args[0] + " removed." : "No task with ID '" + args[0] + "' found.");
     }
+
     private void handleToggle(String[] args, CommandContext context, boolean enabled) {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage: schedule " + (enabled ? "enable" : "disable") + " <id>");
@@ -117,6 +130,7 @@ public final class ScheduleCommand implements ConsoleCommand {
                 ? "Task " + args[0] + (enabled ? " enabled." : " disabled.")
                 : "No task with ID '" + args[0] + "' found.");
     }
+
     private long parseTimeout(String raw) {
         try {
             long value = Long.parseLong(raw.trim());
@@ -128,6 +142,7 @@ public final class ScheduleCommand implements ConsoleCommand {
             throw new IllegalArgumentException("timeoutSeconds must be a positive integer, was: " + raw);
         }
     }
+
     private LocalTime parseDailyTime(String raw) {
         try {
             return LocalTime.parse(raw.trim(), DAILY_TIME_FORMAT);
@@ -136,3 +151,4 @@ public final class ScheduleCommand implements ConsoleCommand {
         }
     }
 }
+

@@ -1,14 +1,18 @@
 package de.destenylp.xBotenyy.discordbot.messaging;
+
 import de.destenylp.xBotenyy.discordbot.placeholders.PlaceholderContext;
 import de.destenylp.xBotenyy.discordbot.placeholders.PlaceholderEngine;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import de.destenylp.xBotenyy.discordbot.util.DiscordLimits;
 import net.dv8tion.jda.api.EmbedBuilder;
+
 import java.time.Instant;
 import java.util.Optional;
+
 public final class MessageRenderer {
     private MessageRenderer() {
     }
+
     public static RenderedMessage render(MessageTemplate template, PlaceholderContext context) {
         String content = PlaceholderEngine.apply(template.getContent(), context);
         if (!template.isEmbed()) {
@@ -53,6 +57,7 @@ public final class MessageRenderer {
         }
         return new RenderedMessage(null, embedBuilder.build());
     }
+
     public static Optional<String> validate(MessageTemplate template, PlaceholderContext context) {
         String content = PlaceholderEngine.apply(template.getContent(), context);
         if (!template.isEmbed()) {
@@ -75,6 +80,7 @@ public final class MessageRenderer {
         }
         return DiscordLimits.validateEmbedFooter(footer);
     }
+
     private static String truncate(String value, int max) {
         if (value == null || value.length() <= max) {
             return value;
@@ -82,3 +88,4 @@ public final class MessageRenderer {
         return value.substring(0, max);
     }
 }
+

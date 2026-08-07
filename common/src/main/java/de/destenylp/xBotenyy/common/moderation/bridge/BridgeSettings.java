@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.common.moderation.bridge;
+
 public record BridgeSettings(
         boolean enabled,
         String bindHost,
@@ -15,13 +16,17 @@ public record BridgeSettings(
     public boolean isServerEnabled() {
         return enabled && token != null && !token.isBlank();
     }
+
     public boolean isPeerConfigured() {
         return enabled && peerUrl != null && !peerUrl.isBlank() && token != null && !token.isBlank();
     }
+
     public boolean isTlsProperlyConfigured() {
         return tlsEnabled && keystorePath != null && !keystorePath.isBlank();
     }
+
     public String tlsFingerprint() {
         return tlsEnabled + "|" + keystorePath + "|" + truststorePath + "|" + mutualTlsEnabled;
     }
 }
+

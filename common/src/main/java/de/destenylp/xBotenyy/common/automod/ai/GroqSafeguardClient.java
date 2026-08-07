@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.common.automod.ai;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -6,12 +7,14 @@ import de.destenylp.xBotenyy.common.core.AbstractHttpApiClient;
 import de.destenylp.xBotenyy.common.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+
 public class GroqSafeguardClient extends AbstractHttpApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(GroqSafeguardClient.class);
     private static final String MODERATION_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -36,10 +39,12 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
             {"violation": 0 oder 1, "category": "Kurzname der Kategorie oder null", "rationale": "kurze Begruendung"}
             """;
     private final String apiKey;
+
     public GroqSafeguardClient(String apiKey, Duration requestTimeout) {
         super(requestTimeout);
         this.apiKey = apiKey;
     }
+
     public Optional<ModerationResult> moderate(String text) {
         if (apiKey == null || apiKey.isBlank() || text == null || text.isBlank()) {
             return Optional.empty();
@@ -79,6 +84,7 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     private Optional<ModerationResult> parseVerdict(String content) {
         try {
             String jsonPart = extractJsonObject(content);
@@ -92,6 +98,7 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     private String extractJsonObject(String content) {
         int start = content.indexOf('{');
         int end = content.lastIndexOf('}');
@@ -100,6 +107,8 @@ public class GroqSafeguardClient extends AbstractHttpApiClient {
         }
         return content.substring(start, end + 1);
     }
+
     public record ModerationResult(boolean flagged, String topCategory, String rationale) {
     }
 }
+

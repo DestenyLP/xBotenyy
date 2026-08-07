@@ -1,10 +1,13 @@
 package de.destenylp.xBotenyy.launcher.bot;
+
 import de.destenylp.xBotenyy.common.core.AbstractBot;
 import de.destenylp.xBotenyy.launcher.LauncherSettings;
 import org.slf4j.Logger;
+
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
 public abstract class AbstractManagedBot<T extends AbstractBot> implements ManagedBot {
     private final BotId id;
     private final String displayName;
@@ -16,12 +19,14 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
     private volatile BotStatus status = BotStatus.STOPPED;
     private volatile boolean manualStopRequested = false;
     private volatile long lastStartedAtMillis = -1;
+
     protected AbstractManagedBot(BotId id, String displayName, Logger logger, LauncherSettings settings) {
         this.id = id;
         this.displayName = displayName;
         this.logger = logger;
         this.settings = settings;
     }
+
     private static void sleepQuietly(Duration duration) {
         try {
             Thread.sleep(duration.toMillis());
@@ -29,28 +34,36 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             Thread.currentThread().interrupt();
         }
     }
+
     protected abstract T createInstance();
+
     protected abstract void performStart(T instance) throws Exception;
+
     @Override
     public final BotId getId() {
         return id;
     }
+
     @Override
     public final String getDisplayName() {
         return displayName;
     }
+
     @Override
     public final BotStatus getStatus() {
         return status;
     }
+
     @Override
     public final int getRestartCount() {
         return restartCount.get();
     }
+
     @Override
     public final long getLastStartedAtMillis() {
         return lastStartedAtMillis;
     }
+
     @Override
     public final void start() {
         synchronized (lifecycleLock) {
@@ -70,6 +83,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
             supervisorThread.start();
         }
     }
+
     @Override
     public final boolean stop(long timeoutSeconds) {
         synchronized (lifecycleLock) {
@@ -104,6 +118,7 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
         }
         return stoppedInTime;
     }
+
     private void runSupervised() {
         int attempt = 0;
         while (true) {
@@ -155,3 +170,4 @@ public abstract class AbstractManagedBot<T extends AbstractBot> implements Manag
         }
     }
 }
+

@@ -1,6 +1,8 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
+
 import java.awt.*;
 import java.util.Optional;
+
 public enum TicketPriority {
     LOW("low", "Niedrig", "\uD83D\uDFE2", new Color(87, 242, 135)),
     MEDIUM("medium", "Mittel", "\uD83D\uDFE1", new Color(250, 166, 26)),
@@ -10,12 +12,14 @@ public enum TicketPriority {
     private final String label;
     private final String emoji;
     private final Color color;
+
     TicketPriority(String key, String label, String emoji, Color color) {
         this.key = key;
         this.label = label;
         this.emoji = emoji;
         this.color = color;
     }
+
     public static Optional<TicketPriority> fromKey(String key) {
         if (key == null) {
             return Optional.empty();
@@ -27,16 +31,21 @@ public enum TicketPriority {
         }
         return Optional.empty();
     }
+
     public String getKey() {
         return key;
     }
+
     public String getLabel() {
         return label;
     }
+
     public String getEmoji() {
         return emoji;
     }
+
     public Color getColor() {
         return color;
     }
 }
+

@@ -1,12 +1,17 @@
 package de.destenylp.xBotenyy.launcher.console;
+
 import de.destenylp.xBotenyy.launcher.bot.BotRegistry;
 import de.destenylp.xBotenyy.launcher.bot.ManagedBot;
+
 import java.util.List;
 import java.util.Locale;
+
 public final class BotTargetResolver {
     private static final List<String> ALL_TOKENS = List.of("all", "both", "*");
+
     private BotTargetResolver() {
     }
+
     public static List<ManagedBot> resolve(String[] args, BotRegistry registry, String commandName) {
         if (args.length == 0) {
             throw new IllegalArgumentException("Please specify a bot. Usage: "
@@ -25,3 +30,4 @@ public final class BotTargetResolver {
                         + "'. Valid values: discord, twitch, all."));
     }
 }
+

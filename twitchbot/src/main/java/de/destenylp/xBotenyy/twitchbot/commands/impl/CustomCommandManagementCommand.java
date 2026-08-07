@@ -1,24 +1,29 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.CustomCommandRepository;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
 public class CustomCommandManagementCommand extends AbstractTwitchCommand {
     private static final List<String> RESERVED_NAMES =
             List.of("ping", "uptime", "automod", "mod", "strikes", "commands", "help", "command",
                     "quote", "zitat", "poll", "umfrage", "vote", "v");
     private final CustomCommandRepository repository;
     private final TwitchEventLogService eventLogService;
+
     public CustomCommandManagementCommand(CustomCommandRepository repository, TwitchEventLogService eventLogService) {
         super("command", "Verwaltet Custom-Commands (add/remove/list).", List.of("cmd"),
                 CommandPermission.MODERATOR, 2);
         this.repository = repository;
         this.eventLogService = eventLogService;
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         String channel = context.message().channelLogin();
@@ -32,6 +37,7 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
                     + "!command cooldown <name> <sekunden> | !command list");
         }
     }
+
     private void handleAdd(TwitchCommandContext context, String channel) {
         if (context.args().size() < 3) {
             context.reply("Nutzung: !command add <name> <antwort>");
@@ -47,6 +53,7 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
         eventLogService.record(channel, context.message().userId(), "CUSTOM_COMMAND_ADDED", "name=" + name);
         context.reply("Befehl '" + name + "' wurde gespeichert.");
     }
+
     private void handleRemove(TwitchCommandContext context, String channel) {
         if (context.arg(1) == null) {
             context.reply("Nutzung: !command remove <name>");
@@ -61,6 +68,7 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
             context.reply("Es gibt keinen Custom-Command mit dem Namen '" + name + "'.");
         }
     }
+
     private void handleCooldown(TwitchCommandContext context, String channel) {
         if (context.arg(1) == null || context.arg(2) == null) {
             context.reply("Nutzung: !command cooldown <name> <sekunden>");
@@ -83,6 +91,7 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
             context.reply("Es gibt keinen Custom-Command mit dem Namen '" + name + "'.");
         }
     }
+
     private void handleList(TwitchCommandContext context, String channel) {
         List<CustomCommandRepository.CustomCommandRecord> commands = repository.list(channel);
         if (commands.isEmpty()) {
@@ -95,3 +104,4 @@ public class CustomCommandManagementCommand extends AbstractTwitchCommand {
         context.reply("Custom-Commands: " + joined);
     }
 }
+

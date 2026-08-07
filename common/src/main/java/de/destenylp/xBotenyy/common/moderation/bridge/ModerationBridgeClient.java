@@ -1,8 +1,10 @@
 package de.destenylp.xBotenyy.common.moderation.bridge;
+
 import com.google.gson.JsonParser;
 import de.destenylp.xBotenyy.common.core.AbstractHttpApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -11,26 +13,32 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+
 public final class ModerationBridgeClient extends AbstractHttpApiClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModerationBridgeClient.class);
     private volatile String cachedTlsFingerprint;
     private volatile HttpClient cachedTlsClient;
+
     public ModerationBridgeClient() {
         super(Duration.ofSeconds(10), 2, Duration.ofSeconds(2));
     }
+
     public Optional<BridgeActionResult> sendAction(BridgeSettings settings, BridgeActionRequest request) {
         return post(settings, "/bridge/v1/action", request.toJson().toString())
                 .map(body -> BridgeActionResult.fromJson(JsonParser.parseString(body).getAsJsonObject()));
     }
+
     public Optional<BridgeLinkConfirmResult> sendLinkConfirm(BridgeSettings settings,
-                                                              BridgeLinkConfirmRequest request) {
+                                                             BridgeLinkConfirmRequest request) {
         return post(settings, "/bridge/v1/link/confirm", request.toJson().toString())
                 .map(body -> BridgeLinkConfirmResult.fromJson(JsonParser.parseString(body).getAsJsonObject()));
     }
+
     public Optional<BridgeRoleSyncResult> sendRoleSync(BridgeSettings settings, BridgeRoleSyncRequest request) {
         return post(settings, "/bridge/v1/roles/sync", request.toJson().toString())
                 .map(body -> BridgeRoleSyncResult.fromJson(JsonParser.parseString(body).getAsJsonObject()));
     }
+
     private Optional<String> post(BridgeSettings settings, String path, String jsonBody) {
         String url = settings.peerUrl() + path;
         if (settings.tlsEnabled() && !url.toLowerCase().startsWith("https://")) {
@@ -57,6 +65,7 @@ public final class ModerationBridgeClient extends AbstractHttpApiClient {
             return Optional.empty();
         }
     }
+
     private synchronized HttpClient clientFor(BridgeSettings settings) throws Exception {
         if (!settings.tlsEnabled()) {
             return httpClient;
@@ -76,3 +85,4 @@ public final class ModerationBridgeClient extends AbstractHttpApiClient {
         return client;
     }
 }
+

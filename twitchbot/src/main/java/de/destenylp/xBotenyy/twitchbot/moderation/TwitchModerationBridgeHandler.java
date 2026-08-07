@@ -1,21 +1,13 @@
 package de.destenylp.xBotenyy.twitchbot.moderation;
-import de.destenylp.xBotenyy.common.moderation.AccountLinkRepository;
-import de.destenylp.xBotenyy.common.moderation.ModerationAction;
-import de.destenylp.xBotenyy.common.moderation.ModerationCaseRepository;
-import de.destenylp.xBotenyy.common.moderation.ModerationPlatform;
-import de.destenylp.xBotenyy.common.moderation.PendingLinkVerification;
-import de.destenylp.xBotenyy.common.moderation.PendingLinkVerificationRepository;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeActionRequest;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeActionResult;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmRequest;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeLinkConfirmResult;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeRoleSyncRequest;
-import de.destenylp.xBotenyy.common.moderation.bridge.BridgeRoleSyncResult;
-import de.destenylp.xBotenyy.common.moderation.bridge.ModerationBridgeHandler;
+
+import de.destenylp.xBotenyy.common.moderation.*;
+import de.destenylp.xBotenyy.common.moderation.bridge.*;
 import de.destenylp.xBotenyy.twitchbot.automod.TwitchModerationApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Optional;
+
 public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchModerationBridgeHandler.class);
     private static final String SYNC_MODERATOR_ID = "DISCORD_SYNC";
@@ -26,11 +18,12 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
     private final ModerationCaseRepository caseRepository;
     private final AccountLinkRepository accountLinkRepository;
     private final PendingLinkVerificationRepository pendingLinkVerificationRepository;
+
     public TwitchModerationBridgeHandler(String syncChannel, String moderatorUserId,
-                                          TwitchModerationApiClient moderationApiClient,
-                                          ModerationCaseRepository caseRepository,
-                                          AccountLinkRepository accountLinkRepository,
-                                          PendingLinkVerificationRepository pendingLinkVerificationRepository) {
+                                         TwitchModerationApiClient moderationApiClient,
+                                         ModerationCaseRepository caseRepository,
+                                         AccountLinkRepository accountLinkRepository,
+                                         PendingLinkVerificationRepository pendingLinkVerificationRepository) {
         this.syncChannel = syncChannel;
         this.moderatorUserId = moderatorUserId;
         this.moderationApiClient = moderationApiClient;
@@ -38,6 +31,7 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         this.accountLinkRepository = accountLinkRepository;
         this.pendingLinkVerificationRepository = pendingLinkVerificationRepository;
     }
+
     @Override
     public BridgeActionResult applyAction(BridgeActionRequest request) {
         if (syncChannel == null || syncChannel.isBlank()) {
@@ -54,8 +48,10 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         boolean success = switch (request.action()) {
             case TIMEOUT -> moderationApiClient.banUser(broadcasterId.get(), moderatorUserId, request.targetUserId(),
                     reason, request.durationSeconds() > 0 ? request.durationSeconds() : 600);
-            case BAN -> moderationApiClient.banUser(broadcasterId.get(), moderatorUserId, request.targetUserId(), reason, 0);
-            case UNBAN, UNTIMEOUT -> moderationApiClient.unbanUser(broadcasterId.get(), moderatorUserId, request.targetUserId());
+            case BAN ->
+                    moderationApiClient.banUser(broadcasterId.get(), moderatorUserId, request.targetUserId(), reason, 0);
+            case UNBAN, UNTIMEOUT ->
+                    moderationApiClient.unbanUser(broadcasterId.get(), moderatorUserId, request.targetUserId());
             case WARN -> true;
             default -> false;
         };
@@ -74,6 +70,7 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         }
         return new BridgeActionResult(true, "OK");
     }
+
     @Override
     public BridgeLinkConfirmResult confirmLink(BridgeLinkConfirmRequest request) {
         Optional<PendingLinkVerification> pendingOpt = pendingLinkVerificationRepository.consume(request.code());
@@ -89,8 +86,10 @@ public class TwitchModerationBridgeHandler implements ModerationBridgeHandler {
         return new BridgeLinkConfirmResult(true, request.discordUserId(), request.discordUsername(),
                 pending.twitchUserId(), pending.twitchLogin(), "Verknuepfung erfolgreich.");
     }
+
     @Override
     public BridgeRoleSyncResult syncRoles(BridgeRoleSyncRequest request) {
         return new BridgeRoleSyncResult(false, "Rollen-Sync wird nur in Richtung Discord unterstuetzt.");
     }
 }
+

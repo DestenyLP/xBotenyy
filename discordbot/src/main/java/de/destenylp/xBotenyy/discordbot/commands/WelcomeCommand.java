@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
@@ -23,17 +24,21 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+
 public class WelcomeCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(WelcomeCommand.class);
     private final WelcomeService service;
     private final int previewMaxLength;
+
     public WelcomeCommand(WelcomeService service, int previewMaxLength) {
         this.service = service;
         this.previewMaxLength = previewMaxLength;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("welcome", "Verwalte die Willkommensnachrichten")
@@ -68,6 +73,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
                         new SubcommandData("placeholders", "Zeigt alle verfügbaren Platzhalter")
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -84,6 +90,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleSettings(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         OptionMapping channelOption = event.getOption("channel");
@@ -112,6 +119,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
                         + " enabled=" + (updated != null && updated.isEnabled())
                         + " dm=" + (updated != null && updated.isDmEnabled()));
     }
+
     private String describeSettings(WelcomeSettings settings) {
         if (settings == null) {
             return "Noch nicht konfiguriert. Nutze `/welcome settings channel:#kanal enabled:true`.";
@@ -121,6 +129,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
                 "Zusätzlich per DM: " + (settings.isDmEnabled() ? "Ja" : "Nein") + "\n" +
                 "Anzahl Varianten: " + settings.getVariants().size();
     }
+
     private void handleAdd(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         String content = event.getOption("content").getAsString();
@@ -158,6 +167,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
         LOGGER.info("Added welcome variant {} for guild {}", variant.getId(), guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "WELCOME_VARIANT_ADD", "variantId=" + variant.getId());
     }
+
     private void handleEdit(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         String id = event.getOption("id").getAsString();
@@ -197,6 +207,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
         LOGGER.info("Edited welcome variant {} for guild {}", id, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "WELCOME_VARIANT_EDIT", "variantId=" + id);
     }
+
     private FieldEdit<String> fieldEditFrom(OptionMapping option) {
         if (option == null) {
             return FieldEdit.notProvided();
@@ -204,6 +215,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
         String value = option.getAsString();
         return WelcomeService.isClearValue(value) ? FieldEdit.clear() : FieldEdit.value(value);
     }
+
     private void handleRemove(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         String id = event.getOption("id").getAsString();
@@ -216,6 +228,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
             event.reply("Es wurde keine Variante mit dieser ID gefunden.").setEphemeral(true).queue();
         }
     }
+
     private void handleList(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         List<WelcomeVariant> variants = service.getVariants(guild.getId());
@@ -238,6 +251,7 @@ public class WelcomeCommand extends AbstractGuildCommand {
         }
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
+
     private void handleTest(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         OptionMapping idOption = event.getOption("id");
@@ -275,7 +289,9 @@ public class WelcomeCommand extends AbstractGuildCommand {
         }
         action.queue();
     }
+
     private void handlePlaceholders(SlashCommandInteractionEvent event) {
         event.replyEmbeds(PlaceholderCatalog.buildOverviewEmbed()).setEphemeral(true).queue();
     }
 }
+

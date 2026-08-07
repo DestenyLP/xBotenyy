@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.giveaways;
+
 import de.destenylp.xBotenyy.discordbot.core.AbstractEmbedFactory;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -6,10 +7,13 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+
 import java.util.List;
+
 public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
     private GiveawayEmbedFactory() {
     }
+
     public static MessageEmbed buildAnnouncementEmbed(Giveaway giveaway) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(giveaway.getStatus().getColor());
@@ -27,6 +31,7 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
         appendCreatedIdFooter(eb, giveaway.getCreatedAt(), giveaway.getId());
         return eb.build();
     }
+
     public static List<ActionRow> buildEnterComponents(Giveaway giveaway) {
         Button button = Button.primary("giveaway:enter:" + giveaway.getId(),
                         "Teilnehmen (" + giveaway.getParticipantIds().size() + ")")
@@ -34,6 +39,7 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
                 .withDisabled(!giveaway.isRunning());
         return List.of(ActionRow.of(button));
     }
+
     public static MessageEmbed buildEndedEmbed(Giveaway giveaway) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(giveaway.getStatus().getColor());
@@ -44,6 +50,7 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
         appendCreatedIdFooter(eb, giveaway.getCreatedAt(), giveaway.getId());
         return eb.build();
     }
+
     public static MessageEmbed buildCancelledEmbed(Giveaway giveaway) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(giveaway.getStatus().getColor());
@@ -52,6 +59,7 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
         appendCreatedIdFooter(eb, giveaway.getCreatedAt(), giveaway.getId());
         return eb.build();
     }
+
     private static String describeWinners(Giveaway giveaway) {
         if (giveaway.getWinnerIds().isEmpty()) {
             return "Niemand hat an diesem Gewinnspiel teilgenommen.";
@@ -62,6 +70,7 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
                 .orElse("-");
         return "Gewinner: " + mentions;
     }
+
     public static String buildWinnerAnnouncementContent(Giveaway giveaway) {
         if (giveaway.getWinnerIds().isEmpty()) {
             return "\uD83D\uDE22 Niemand hat an dem Gewinnspiel für **" + giveaway.getPrize() + "** teilgenommen.";
@@ -72,6 +81,7 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
                 .orElse("-");
         return "\uD83C\uDF89 Herzlichen Glückwunsch " + mentions + "! Ihr habt **" + giveaway.getPrize() + "** gewonnen!";
     }
+
     public static MessageEmbed buildListEmbed(String guildName, List<Giveaway> runningGiveaways) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
@@ -95,3 +105,4 @@ public final class GiveawayEmbedFactory extends AbstractEmbedFactory {
         return eb.build();
     }
 }
+

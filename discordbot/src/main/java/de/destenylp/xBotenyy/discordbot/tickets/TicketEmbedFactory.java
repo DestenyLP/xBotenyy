@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.tickets;
+
 import de.destenylp.xBotenyy.discordbot.core.AbstractEmbedFactory;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -8,10 +9,13 @@ import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+
 import java.util.List;
+
 public final class TicketEmbedFactory extends AbstractEmbedFactory {
     private TicketEmbedFactory() {
     }
+
     public static MessageEmbed buildPanelEmbed() {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
@@ -20,6 +24,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
                 "Ein privater Kanal wird erstellt, in dem dir das Team weiterhilft.");
         return eb.build();
     }
+
     public static List<ActionRow> buildPanelComponents() {
         StringSelectMenu.Builder menu = StringSelectMenu.create("ticket:panel:category")
                 .setPlaceholder("Kategorie auswählen...");
@@ -30,6 +35,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         }
         return List.of(ActionRow.of(menu.build()));
     }
+
     public static MessageEmbed buildTicketEmbed(Ticket ticket) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(ticket.getStatus() == TicketStatus.CLOSED ? ticket.getStatus().getColor() : ticket.getPriority().getColor());
@@ -60,6 +66,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         appendCreatedIdFooter(eb, ticket.getCreatedAt(), ticket.getId());
         return eb.build();
     }
+
     public static List<ActionRow> buildTicketComponents(Ticket ticket) {
         boolean closed = ticket.getStatus().isClosed();
         boolean claimed = ticket.getStatus() == TicketStatus.CLAIMED;
@@ -78,6 +85,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         }
         return List.of(ActionRow.of(claim, close), ActionRow.of(prioMenu.build()));
     }
+
     public static MessageEmbed buildLogEmbed(Ticket ticket) {
         EmbedBuilder eb = statusEmbed(TicketStatus.CLOSED);
         eb.setTitle("\uD83D\uDCC1 Ticket #" + ticket.getId() + " geschlossen – " + ticket.getSubject());
@@ -100,6 +108,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         appendCreatedIdFooter(eb, ticket.getCreatedAt(), ticket.getId());
         return eb.build();
     }
+
     private static String formatDuration(long minutes) {
         if (minutes < 60) {
             return minutes + " Minute(n)";
@@ -112,6 +121,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         long days = hours / 24;
         return days + "d " + (hours % 24) + "h";
     }
+
     public static MessageEmbed buildMemberOverviewEmbed(List<Ticket> tickets) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
@@ -129,6 +139,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         }
         return eb.build();
     }
+
     public static MessageEmbed buildRatingRequestEmbed(Ticket ticket) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
@@ -137,6 +148,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
                 "Wir würden uns über eine kurze Bewertung freuen!");
         return eb.build();
     }
+
     public static List<ActionRow> buildRatingComponents(Ticket ticket) {
         Button[] stars = new Button[5];
         for (int i = 1; i <= 5; i++) {
@@ -144,6 +156,7 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         }
         return List.of(ActionRow.of(List.of(stars)));
     }
+
     public static MessageEmbed buildOverviewEmbed(String guildName, List<Ticket> openTickets) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
@@ -166,3 +179,4 @@ public final class TicketEmbedFactory extends AbstractEmbedFactory {
         return eb.build();
     }
 }
+

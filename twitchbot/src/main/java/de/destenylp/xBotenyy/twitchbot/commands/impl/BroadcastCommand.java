@@ -1,13 +1,16 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.common.commands.CommandPermission;
 import de.destenylp.xBotenyy.twitchbot.broadcast.TwitchBroadcastMessage;
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
 import de.destenylp.xBotenyy.twitchbot.eventlog.TwitchEventLogService;
 import de.destenylp.xBotenyy.twitchbot.persistence.TwitchBroadcastRepository;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
 public class BroadcastCommand extends AbstractTwitchCommand {
     private static final String USAGE = "Nutzung: !broadcast add <intervall_sek> <min_nachrichten> <text> | "
             + "!broadcast remove <id> | !broadcast enable <id> | !broadcast disable <id> | !broadcast list";
@@ -15,6 +18,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
     private final TwitchEventLogService eventLogService;
     private final long defaultIntervalSeconds;
     private final int defaultMinMessages;
+
     public BroadcastCommand(TwitchBroadcastRepository repository, TwitchEventLogService eventLogService,
                             long defaultIntervalSeconds, int defaultMinMessages) {
         super("broadcast", "Verwaltet wiederkehrende Chat-Ansagen.", List.of("ansage"),
@@ -24,6 +28,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
         this.defaultIntervalSeconds = defaultIntervalSeconds;
         this.defaultMinMessages = defaultMinMessages;
     }
+
     private static Long parseId(String raw) {
         try {
             return raw == null ? null : Long.parseLong(raw);
@@ -31,6 +36,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
             return null;
         }
     }
+
     private static long parseLong(String raw, long fallback) {
         try {
             return raw == null ? fallback : Long.parseLong(raw);
@@ -38,6 +44,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
             return fallback;
         }
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         String channel = context.message().channelLogin();
@@ -51,6 +58,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
             default -> context.reply(USAGE);
         }
     }
+
     private void handleAdd(TwitchCommandContext context, String channel) {
         if (context.args().size() < 4) {
             context.reply(USAGE);
@@ -66,6 +74,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
         context.reply("Broadcast #" + created.id() + " gespeichert (alle " + created.intervalSeconds()
                 + "s, mind. " + created.minMessages() + " Chat-Nachrichten).");
     }
+
     private void handleRemove(TwitchCommandContext context, String channel) {
         Long id = parseId(context.arg(1));
         if (id == null) {
@@ -80,6 +89,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
             context.reply("Es gibt keinen Broadcast mit der ID " + id + ".");
         }
     }
+
     private void handleToggle(TwitchCommandContext context, String channel, boolean enabled) {
         Long id = parseId(context.arg(1));
         if (id == null) {
@@ -95,6 +105,7 @@ public class BroadcastCommand extends AbstractTwitchCommand {
             context.reply("Es gibt keinen Broadcast mit der ID " + id + ".");
         }
     }
+
     private void handleList(TwitchCommandContext context, String channel) {
         List<TwitchBroadcastMessage> broadcasts = repository.list(channel);
         if (broadcasts.isEmpty()) {
@@ -107,3 +118,4 @@ public class BroadcastCommand extends AbstractTwitchCommand {
         context.reply("Broadcasts: " + joined);
     }
 }
+

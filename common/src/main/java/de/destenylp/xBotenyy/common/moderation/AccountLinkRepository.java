@@ -1,15 +1,20 @@
 package de.destenylp.xBotenyy.common.moderation;
+
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
+
 public class AccountLinkRepository {
     private final Database database;
+
     public AccountLinkRepository(Database database) {
         this.database = database;
     }
+
     public void save(String discordUserId, String twitchUserId, String twitchLogin) {
         database.useConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -25,6 +30,7 @@ public class AccountLinkRepository {
             }
         });
     }
+
     public Optional<AccountLink> findByDiscordUserId(String discordUserId) {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -36,6 +42,7 @@ public class AccountLinkRepository {
             }
         });
     }
+
     public Optional<AccountLink> findByTwitchUserId(String twitchUserId) {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -47,6 +54,7 @@ public class AccountLinkRepository {
             }
         });
     }
+
     public java.util.List<AccountLink> findAll() {
         return database.withConnection(connection -> {
             java.util.List<AccountLink> links = new java.util.ArrayList<>();
@@ -59,6 +67,7 @@ public class AccountLinkRepository {
             return links;
         });
     }
+
     public void delete(String discordUserId) {
         database.useConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -68,6 +77,7 @@ public class AccountLinkRepository {
             }
         });
     }
+
     private AccountLink map(ResultSet resultSet) throws SQLException {
         return new AccountLink(
                 resultSet.getString("discord_user_id"),
@@ -76,3 +86,4 @@ public class AccountLinkRepository {
                 resultSet.getLong("linked_at"));
     }
 }
+

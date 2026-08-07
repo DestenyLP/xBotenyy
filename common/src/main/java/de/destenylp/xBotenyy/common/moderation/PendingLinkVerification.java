@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.common.moderation;
+
 public record PendingLinkVerification(
         String code,
         String discordUserId,
@@ -8,3 +9,4 @@ public record PendingLinkVerification(
         ModerationPlatform initiatedFrom,
         long expiresAt) {
 }
+

@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands.report;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.reports.ReportCategory;
@@ -22,12 +23,15 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 public class ReportCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportCommand.class);
     private final ReportService service;
+
     public ReportCommand(ReportService service) {
         this.service = service;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("report", "Erstelle einen Report oder verwalte das Report-System")
@@ -38,6 +42,7 @@ public class ReportCommand extends AbstractGuildCommand {
                                 .addOption(OptionType.ROLE, "role", "Rolle, die bei neuen Reports benachrichtigt wird und Reports bearbeiten darf", false)
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         switch (subcommand) {
@@ -46,6 +51,7 @@ public class ReportCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleSend(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         ReportSettings settings = service.getSettings(guild.getId()).orElse(null);
@@ -70,6 +76,7 @@ public class ReportCommand extends AbstractGuildCommand {
                 .setEphemeral(true)
                 .queue();
     }
+
     private void handleSettings(SlashCommandInteractionEvent event) {
         if (!PermissionGuard.requireManageServer(event)) {
             return;
@@ -96,6 +103,7 @@ public class ReportCommand extends AbstractGuildCommand {
         AuditLog.record(guild.getId(), event.getUser().getId(), "REPORT_SETTINGS_UPDATE",
                 "channel=" + (updated != null ? updated.getChannelId() : null) + " role=" + (updated != null ? updated.getNotifyRoleId() : null));
     }
+
     private String describeSettings(ReportSettings settings) {
         if (settings == null || settings.getChannelId() == null) {
             return "Noch nicht konfiguriert. Nutze `/report settings channel:#kanal role:@Team`.";
@@ -105,3 +113,4 @@ public class ReportCommand extends AbstractGuildCommand {
                 "Eingereichte Reports: " + settings.getReports().size();
     }
 }
+

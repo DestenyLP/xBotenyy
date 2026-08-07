@@ -1,5 +1,7 @@
 package de.destenylp.xBotenyy.discordbot.reports;
+
 import java.util.Optional;
+
 public enum ReportCategory {
     RULE_VIOLATION("regelverstoss", "\uD83D\uDEA8", "Regelverstoß melden", "Ein Mitglied verstößt gegen die Serverregeln."),
     TECHNICAL("technisch", "\uD83D\uDEE0", "Technisches Problem", "Ein Bug, Fehler oder technisches Problem melden."),
@@ -9,12 +11,14 @@ public enum ReportCategory {
     private final String emoji;
     private final String label;
     private final String description;
+
     ReportCategory(String key, String emoji, String label, String description) {
         this.key = key;
         this.emoji = emoji;
         this.label = label;
         this.description = description;
     }
+
     public static Optional<ReportCategory> fromKey(String key) {
         if (key == null) {
             return Optional.empty();
@@ -26,16 +30,21 @@ public enum ReportCategory {
         }
         return Optional.empty();
     }
+
     public String getKey() {
         return key;
     }
+
     public String getEmoji() {
         return emoji;
     }
+
     public String getLabel() {
         return label;
     }
+
     public String getDescription() {
         return description;
     }
 }
+

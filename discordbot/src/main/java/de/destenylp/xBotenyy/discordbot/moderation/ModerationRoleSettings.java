@@ -1,5 +1,7 @@
 package de.destenylp.xBotenyy.discordbot.moderation;
+
 import java.util.List;
+
 public record ModerationRoleSettings(
         String guildId,
         String warnRoleId,
@@ -15,3 +17,4 @@ public record ModerationRoleSettings(
         return new ModerationRoleSettings(guildId, null, null, null, List.of(), List.of(), null, null, null, null);
     }
 }
+

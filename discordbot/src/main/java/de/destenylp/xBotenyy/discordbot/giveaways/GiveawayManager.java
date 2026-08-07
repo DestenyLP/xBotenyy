@@ -1,7 +1,9 @@
 package de.destenylp.xBotenyy.discordbot.giveaways;
+
 import de.destenylp.xBotenyy.common.persistence.sql.AbstractSqlManager;
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
 import de.destenylp.xBotenyy.common.persistence.sql.Jdbc;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -9,10 +11,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
 public class GiveawayManager extends AbstractSqlManager implements GiveawayRepository {
     public GiveawayManager(Database database) {
         super(database);
     }
+
     @Override
     public Giveaway createGiveaway(Giveaway draft) {
         return database.inTransaction(connection -> {
@@ -31,6 +35,7 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
             return draft;
         });
     }
+
     @Override
     public void save(Giveaway giveaway) {
         database.runInTransaction(connection -> {
@@ -50,6 +55,7 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
             }
         });
     }
+
     @Override
     public void persistParticipant(String guildId, String giveawayId, String memberId, boolean joined) {
         database.runInTransaction(connection -> {
@@ -65,18 +71,21 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
             }
         });
     }
+
     @Override
     public void attachMessage(String guildId, String giveawayId, String channelId, String messageId) {
         database.runInTransaction(connection -> Jdbc.update(connection,
                 "UPDATE giveaways SET channel_id = ?, message_id = ? WHERE guild_id = ? AND giveaway_id = ?",
                 channelId, messageId, guildId, giveawayId));
     }
+
     @Override
     public Optional<Giveaway> getGiveaway(String guildId, String id) {
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM giveaways WHERE guild_id = ? AND giveaway_id = ? COLLATE NOCASE",
                 this::mapGiveaway, guildId, id));
     }
+
     @Override
     public Optional<Giveaway> getGiveawayByMessage(String guildId, String messageId) {
         if (messageId == null) {
@@ -85,17 +94,20 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
         return database.withConnection(connection -> Jdbc.queryOne(connection,
                 "SELECT * FROM giveaways WHERE guild_id = ? AND message_id = ?", this::mapGiveaway, guildId, messageId));
     }
+
     @Override
     public List<Giveaway> getGiveaways(String guildId) {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM giveaways WHERE guild_id = ? ORDER BY created_at", this::mapGiveaway, guildId));
     }
+
     @Override
     public List<Giveaway> getRunningGiveaways(String guildId) {
         return database.withConnection(connection -> Jdbc.query(connection,
                 "SELECT * FROM giveaways WHERE guild_id = ? AND status = ? ORDER BY end_at",
                 this::mapGiveaway, guildId, GiveawayStatus.RUNNING));
     }
+
     @Override
     public Map<String, List<Giveaway>> getAllRunningGiveawaysByGuild() {
         List<Giveaway> running = database.withConnection(connection -> Jdbc.query(connection,
@@ -107,6 +119,7 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
         }
         return result;
     }
+
     @Override
     public int pruneFinishedGiveaways(Duration retention) {
         long threshold = Instant.now().minus(retention).toEpochMilli();
@@ -114,6 +127,7 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
                 "DELETE FROM giveaways WHERE status != ? AND ended_at > 0 AND ended_at < ?",
                 GiveawayStatus.RUNNING, threshold));
     }
+
     private Giveaway mapGiveaway(ResultSet resultSet) throws SQLException {
         String guildId = resultSet.getString("guild_id");
         String giveawayId = resultSet.getString("giveaway_id");
@@ -132,3 +146,4 @@ public class GiveawayManager extends AbstractSqlManager implements GiveawayRepos
                 participants, winners);
     }
 }
+

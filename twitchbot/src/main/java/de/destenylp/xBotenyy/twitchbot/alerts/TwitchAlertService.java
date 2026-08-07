@@ -1,11 +1,14 @@
 package de.destenylp.xBotenyy.twitchbot.alerts;
+
 import com.google.gson.JsonObject;
 import de.destenylp.xBotenyy.common.discord.DiscordWebhookClient;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchChatClient;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchFollowEvent;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchRaidEvent;
 import de.destenylp.xBotenyy.twitchbot.chat.TwitchSubscribeEvent;
+
 import java.time.Instant;
+
 public class TwitchAlertService {
     private static final int COLOR_FOLLOW = 0x9146FF;
     private static final int COLOR_SUBSCRIBE = 0xF4A62A;
@@ -14,13 +17,15 @@ public class TwitchAlertService {
     private final DiscordWebhookClient discordWebhookClient;
     private final String discordWebhookUrl;
     private final TwitchAlertSettings settings;
+
     public TwitchAlertService(TwitchChatClient chatClient, DiscordWebhookClient discordWebhookClient,
-                               String discordWebhookUrl, TwitchAlertSettings settings) {
+                              String discordWebhookUrl, TwitchAlertSettings settings) {
         this.chatClient = chatClient;
         this.discordWebhookClient = discordWebhookClient;
         this.discordWebhookUrl = discordWebhookUrl;
         this.settings = settings;
     }
+
     public void handleFollow(TwitchFollowEvent event) {
         if (settings.followChatEnabled()) {
             chatClient.sendMessage(event.channelLogin(),
@@ -32,6 +37,7 @@ public class TwitchAlertService {
             discordWebhookClient.sendEmbedAsync(discordWebhookUrl, embed);
         }
     }
+
     public void handleSubscribe(TwitchSubscribeEvent event) {
         String tierLabel = formatTier(event.tier());
         if (settings.subscribeChatEnabled()) {
@@ -45,6 +51,7 @@ public class TwitchAlertService {
             discordWebhookClient.sendEmbedAsync(discordWebhookUrl, embed);
         }
     }
+
     public void handleRaid(TwitchRaidEvent event) {
         String viewers = String.valueOf(event.viewers());
         if (settings.raidChatEnabled()) {
@@ -58,9 +65,11 @@ public class TwitchAlertService {
             discordWebhookClient.sendEmbedAsync(discordWebhookUrl, embed);
         }
     }
+
     private boolean discordConfigured() {
         return discordWebhookUrl != null && !discordWebhookUrl.isBlank();
     }
+
     private String render(String template, String user, String channel, String tier, String viewers) {
         String result = template.replace("{user}", user).replace("{channel}", channel);
         if (tier != null) {
@@ -71,6 +80,7 @@ public class TwitchAlertService {
         }
         return result;
     }
+
     private String formatTier(String rawTier) {
         return switch (rawTier == null ? "" : rawTier) {
             case "2000" -> "Tier 2";
@@ -78,6 +88,7 @@ public class TwitchAlertService {
             default -> "Tier 1";
         };
     }
+
     private JsonObject baseEmbed(int color, String title) {
         JsonObject embed = new JsonObject();
         embed.addProperty("title", title);
@@ -86,3 +97,4 @@ public class TwitchAlertService {
         return embed;
     }
 }
+

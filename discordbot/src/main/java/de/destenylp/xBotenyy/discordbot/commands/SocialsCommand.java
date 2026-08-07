@@ -1,11 +1,12 @@
 package de.destenylp.xBotenyy.discordbot.commands;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.messaging.RenderedMessage;
 import de.destenylp.xBotenyy.discordbot.socials.*;
+import de.destenylp.xBotenyy.discordbot.socials.tiktok.TikTokFeedClient;
 import de.destenylp.xBotenyy.discordbot.socials.twitch.TwitchApiClient;
 import de.destenylp.xBotenyy.discordbot.socials.twitch.TwitchStream;
-import de.destenylp.xBotenyy.discordbot.socials.tiktok.TikTokFeedClient;
 import de.destenylp.xBotenyy.discordbot.socials.youtube.YoutubeFeedClient;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import de.destenylp.xBotenyy.discordbot.util.FieldEdit;
@@ -26,11 +27,13 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageCreateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+
 public class SocialsCommand extends AbstractGuildCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger(SocialsCommand.class);
     private final SocialService service;
@@ -40,6 +43,7 @@ public class SocialsCommand extends AbstractGuildCommand {
     private final YoutubeFeedClient youtubeFeedClient;
     private final TwitchApiClient twitchApiClient;
     private final TikTokFeedClient tiktokFeedClient;
+
     public SocialsCommand(SocialService service, String defaultYoutubeMessage, String defaultTwitchMessage,
                           String defaultTiktokMessage, YoutubeFeedClient youtubeFeedClient,
                           TwitchApiClient twitchApiClient, TikTokFeedClient tiktokFeedClient) {
@@ -51,6 +55,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         this.twitchApiClient = twitchApiClient;
         this.tiktokFeedClient = tiktokFeedClient;
     }
+
     @Override
     public CommandData getCommandData() {
         OptionData platformOption = new OptionData(OptionType.STRING, "platform", "Plattform", true)
@@ -96,6 +101,7 @@ public class SocialsCommand extends AbstractGuildCommand {
                         new SubcommandData("placeholders", "Zeigt alle verfuegbaren Platzhalter")
                 );
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         if (!PermissionGuard.requireManageServer(event)) {
@@ -113,6 +119,7 @@ public class SocialsCommand extends AbstractGuildCommand {
             default -> replyUnknownSubcommand(event);
         }
     }
+
     private void handleAdd(SlashCommandInteractionEvent event, Guild guild) {
         if (service.isAtCapacity(guild.getId())) {
             event.reply("Es koennen maximal " + service.getMaxAccountsPerGuild()
@@ -160,6 +167,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         LOGGER.info("Added social account {} for guild {}", created.getId(), guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "SOCIALS_ACCOUNT_ADD", "accountId=" + created.getId());
     }
+
     private void handleEdit(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("id").getAsString();
         Optional<SocialAccount> accountOpt = service.getAccount(guild.getId(), id);
@@ -232,6 +240,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         LOGGER.info("Edited social account {} for guild {}", id, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "SOCIALS_ACCOUNT_EDIT", "accountId=" + id);
     }
+
     private void handleMessage(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("id").getAsString();
         String platform = event.getOption("platform").getAsString();
@@ -289,6 +298,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         LOGGER.info("Edited {} message template for social account {} in guild {}", platform, id, guild.getId());
         AuditLog.record(guild.getId(), event.getUser().getId(), "SOCIALS_MESSAGE_EDIT", "accountId=" + id + " platform=" + platform);
     }
+
     private FieldEdit<String> fieldEditFrom(OptionMapping option) {
         if (option == null) {
             return FieldEdit.notProvided();
@@ -296,9 +306,11 @@ public class SocialsCommand extends AbstractGuildCommand {
         String value = option.getAsString();
         return isClearValue(value) ? FieldEdit.clear() : FieldEdit.value(value);
     }
+
     private boolean isClearValue(String value) {
         return value != null && (value.equalsIgnoreCase("none") || value.equals("-"));
     }
+
     private void handleRemove(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("id").getAsString();
         boolean removed = service.removeAccount(guild.getId(), id);
@@ -310,6 +322,7 @@ public class SocialsCommand extends AbstractGuildCommand {
             event.reply("Es wurde kein Account mit dieser ID gefunden.").setEphemeral(true).queue();
         }
     }
+
     private void handleList(SlashCommandInteractionEvent event, Guild guild) {
         List<SocialAccount> accounts = service.getAccounts(guild.getId());
         if (accounts.isEmpty()) {
@@ -330,6 +343,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         }
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
+
     private void handleTest(SlashCommandInteractionEvent event, Guild guild) {
         String id = event.getOption("id").getAsString();
         String platform = event.getOption("platform").getAsString();
@@ -414,6 +428,7 @@ public class SocialsCommand extends AbstractGuildCommand {
                     });
         }
     }
+
     private void sendPreview(SlashCommandInteractionEvent event, String platform, String id, RenderedMessage built) {
         String prefix = "**Vorschau** (`" + platform + "`, Account `" + id + "`, echte Daten):\n";
         String body = built.content() != null ? built.content() : "";
@@ -423,6 +438,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         }
         action.queue();
     }
+
     private void handleStatus(SlashCommandInteractionEvent event, Guild guild) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Socials Status");
@@ -473,6 +489,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         }
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
+
     private String formatRelative(Instant instant) {
         if (instant == null) {
             return "Noch kein Durchlauf";
@@ -488,6 +505,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         long hours = minutes / 60;
         return "vor " + hours + "h";
     }
+
     private void handlePlaceholders(SlashCommandInteractionEvent event) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Verfuegbare Platzhalter fuer /socials message");
@@ -507,3 +525,4 @@ public class SocialsCommand extends AbstractGuildCommand {
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
 }
+

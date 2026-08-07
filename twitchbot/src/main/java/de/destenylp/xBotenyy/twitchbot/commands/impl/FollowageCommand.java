@@ -1,14 +1,18 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
+
 public class FollowageCommand extends AbstractTwitchCommand {
     public FollowageCommand() {
         super("followage", "Zeigt, wie lange du diesem Kanal bereits folgst.");
     }
+
     private static String formatDuration(Duration duration) {
         long totalDays = duration.toDays();
         long years = totalDays / 365;
@@ -24,6 +28,7 @@ public class FollowageCommand extends AbstractTwitchCommand {
         builder.append(days).append(" Tag(en)");
         return builder.toString();
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         String channelLogin = context.message().channelLogin();
@@ -58,3 +63,4 @@ public class FollowageCommand extends AbstractTwitchCommand {
         context.reply(targetDisplay + " folgt " + channelLogin + " seit " + formatDuration(duration) + ".");
     }
 }
+

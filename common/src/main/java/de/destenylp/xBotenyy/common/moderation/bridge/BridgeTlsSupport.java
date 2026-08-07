@@ -1,10 +1,6 @@
 package de.destenylp.xBotenyy.common.moderation.bridge;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
+
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,10 +9,13 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+
 public final class BridgeTlsSupport {
     public static final String[] ALLOWED_PROTOCOLS = {"TLSv1.3", "TLSv1.2"};
+
     private BridgeTlsSupport() {
     }
+
     public static SSLContext buildServerContext(BridgeSettings settings) throws GeneralSecurityException, IOException {
         if (settings.keystorePath() == null || settings.keystorePath().isBlank()) {
             throw new IllegalStateException(
@@ -31,6 +30,7 @@ public final class BridgeTlsSupport {
         context.init(keyManagers, trustManagers, new SecureRandom());
         return context;
     }
+
     public static SSLContext buildClientContext(BridgeSettings settings) throws GeneralSecurityException, IOException {
         KeyManager[] keyManagers = settings.mutualTlsEnabled()
                 ? loadKeyManagers(settings.keystorePath(), settings.keystorePassword(), settings.keyPassword())
@@ -43,11 +43,13 @@ public final class BridgeTlsSupport {
         context.init(keyManagers, trustManagers, new SecureRandom());
         return context;
     }
+
     public static SSLParameters hardenedParameters(SSLContext context) {
         SSLParameters params = context.getDefaultSSLParameters();
         params.setProtocols(ALLOWED_PROTOCOLS);
         return params;
     }
+
     private static KeyManager[] loadKeyManagers(String path, String storePassword, String keyPassword)
             throws GeneralSecurityException, IOException {
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
@@ -60,6 +62,7 @@ public final class BridgeTlsSupport {
         factory.init(keyStore, keyPass);
         return factory.getKeyManagers();
     }
+
     private static TrustManager[] loadTrustManagers(String path, String password)
             throws GeneralSecurityException, IOException {
         if (path == null || path.isBlank()) {
@@ -75,6 +78,7 @@ public final class BridgeTlsSupport {
         factory.init(trustStore);
         return factory.getTrustManagers();
     }
+
     private static InputStream openStrict(String path) throws IOException {
         Path resolved = Path.of(path);
         if (!Files.exists(resolved)) {
@@ -82,7 +86,9 @@ public final class BridgeTlsSupport {
         }
         return new FileInputStream(resolved.toFile());
     }
+
     private static char[] toCharArray(String value) {
         return value != null ? value.toCharArray() : new char[0];
     }
 }
+

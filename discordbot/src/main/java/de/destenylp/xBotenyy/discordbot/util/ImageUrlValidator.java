@@ -1,13 +1,17 @@
 package de.destenylp.xBotenyy.discordbot.util;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
+
 public final class ImageUrlValidator {
     private static final List<String> ALLOWED_SCHEMES = List.of("http", "https");
     private static final List<String> ALLOWED_EXTENSIONS = List.of(".png", ".jpg", ".jpeg", ".gif", ".webp");
+
     private ImageUrlValidator() {
     }
+
     public static boolean isValid(String url) {
         if (url == null || url.isBlank()) {
             return true;
@@ -29,3 +33,4 @@ public final class ImageUrlValidator {
         return ALLOWED_EXTENSIONS.stream().anyMatch(path::endsWith);
     }
 }
+

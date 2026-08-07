@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.common.moderation;
+
 public enum ModerationAction {
     WARN,
     TIMEOUT,
@@ -7,3 +8,4 @@ public enum ModerationAction {
     UNTIMEOUT,
     UNBAN
 }
+

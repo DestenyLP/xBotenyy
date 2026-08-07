@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.commands.report;
+
 import de.destenylp.xBotenyy.discordbot.core.AbstractGuildCommand;
 import de.destenylp.xBotenyy.discordbot.reports.Report;
 import de.destenylp.xBotenyy.discordbot.reports.ReportEmbedFactory;
@@ -9,23 +10,29 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+
 public class MyReportsCommand extends AbstractGuildCommand {
     private final ReportService service;
+
     public MyReportsCommand(ReportService service) {
         this.service = service;
     }
+
     @Override
     public CommandData getCommandData() {
         return Commands.slash("reports", "Zeigt deine eingereichten Reports und deren Status")
                 .addOption(OptionType.STRING, "id", "ID eines bestimmten Reports für die Detailansicht", false);
     }
+
     @Override
     protected boolean hasSubcommands() {
         return false;
     }
+
     @Override
     protected void executeInGuild(SlashCommandInteractionEvent event, Guild guild, String subcommand) {
         OptionMapping idOption = event.getOption("id");
@@ -44,3 +51,4 @@ public class MyReportsCommand extends AbstractGuildCommand {
         event.replyEmbeds(ReportEmbedFactory.buildMemberOverviewEmbed(reports)).setEphemeral(true).queue();
     }
 }
+

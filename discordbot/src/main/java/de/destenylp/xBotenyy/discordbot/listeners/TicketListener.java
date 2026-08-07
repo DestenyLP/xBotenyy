@@ -1,4 +1,5 @@
 package de.destenylp.xBotenyy.discordbot.listeners;
+
 import de.destenylp.xBotenyy.common.util.AuditLog;
 import de.destenylp.xBotenyy.discordbot.observability.BotMetrics;
 import de.destenylp.xBotenyy.discordbot.tickets.*;
@@ -19,8 +20,10 @@ import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 import net.dv8tion.jda.api.modals.Modal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.EnumSet;
 import java.util.Optional;
+
 public class TicketListener extends ListenerAdapter {
     private static final Logger LOGGER = LoggerFactory.getLogger(TicketListener.class);
     private final TicketService service;
@@ -28,6 +31,7 @@ public class TicketListener extends ListenerAdapter {
     private final int subjectMaxLength;
     private final int descriptionMaxLength;
     private final int closeReasonMaxLength;
+
     public TicketListener(TicketService service, TicketCloseCoordinator closeCoordinator,
                           int subjectMaxLength, int descriptionMaxLength, int closeReasonMaxLength) {
         this.service = service;
@@ -36,6 +40,7 @@ public class TicketListener extends ListenerAdapter {
         this.descriptionMaxLength = descriptionMaxLength;
         this.closeReasonMaxLength = closeReasonMaxLength;
     }
+
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (!event.isFromGuild() || event.getAuthor().isBot()) {
@@ -48,6 +53,7 @@ public class TicketListener extends ListenerAdapter {
                     event.getGuild().getId(), event.getChannel().getId(), e);
         }
     }
+
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         try {
@@ -57,6 +63,7 @@ public class TicketListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
+
     private void handleStringSelect(StringSelectInteractionEvent event) {
         String componentId = event.getComponentId();
         if ("ticket:panel:category".equals(componentId)) {
@@ -65,6 +72,7 @@ public class TicketListener extends ListenerAdapter {
             handlePrioritySelect(event, componentId.substring("ticket:priority:".length()));
         }
     }
+
     private void handleCategorySelect(StringSelectInteractionEvent event) {
         String key = event.getValues().isEmpty() ? null : event.getValues().get(0);
         Optional<TicketCategory> categoryOpt = TicketCategory.fromKey(key);
@@ -89,6 +97,7 @@ public class TicketListener extends ListenerAdapter {
                 .build();
         event.replyModal(modal).queue();
     }
+
     private void handlePrioritySelect(StringSelectInteractionEvent event, String ticketId) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -117,6 +126,7 @@ public class TicketListener extends ListenerAdapter {
                 .queue();
         AuditLog.record(guild.getId(), member.getId(), "TICKET_PRIORITY", "ticketId=" + ticketId + " priority=" + priorityOpt.get().getKey());
     }
+
     @Override
     public void onModalInteraction(ModalInteractionEvent event) {
         try {
@@ -126,6 +136,7 @@ public class TicketListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
+
     private void handleModal(ModalInteractionEvent event) {
         String modalId = event.getModalId();
         if (modalId.startsWith("ticket:createmodal:")) {
@@ -134,6 +145,7 @@ public class TicketListener extends ListenerAdapter {
             handleCloseSubmission(event, modalId.substring("ticket:closemodal:".length()));
         }
     }
+
     private void handleCreateSubmission(ModalInteractionEvent event, String categoryKey) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -195,6 +207,7 @@ public class TicketListener extends ListenerAdapter {
                             .setEphemeral(true).queue();
                 });
     }
+
     private void handleCloseSubmission(ModalInteractionEvent event, String ticketId) {
         Guild guild = event.getGuild();
         Member member = event.getMember();
@@ -218,6 +231,7 @@ public class TicketListener extends ListenerAdapter {
         Ticket closedTicket = service.getTicket(guild.getId(), ticketId).orElseThrow();
         closeCoordinator.finalizeClose(event.getChannel().asTextChannel(), closedTicket);
     }
+
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         try {
@@ -227,6 +241,7 @@ public class TicketListener extends ListenerAdapter {
             replyGenericError(event);
         }
     }
+
     private void handleButton(ButtonInteractionEvent event) {
         String componentId = event.getComponentId();
         if (!componentId.startsWith("ticket:")) {
@@ -262,6 +277,7 @@ public class TicketListener extends ListenerAdapter {
             }
         }
     }
+
     private void handleClaim(ButtonInteractionEvent event, Guild guild, Member member, TicketSettings settings, Ticket ticket) {
         if (!TicketService.isStaff(member, settings)) {
             event.reply("Nur das Support-Team kann Tickets übernehmen.").setEphemeral(true).queue();
@@ -283,6 +299,7 @@ public class TicketListener extends ListenerAdapter {
         LOGGER.info("Ticket {} claimed by {} in guild {}", ticket.getId(), member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "TICKET_CLAIM", "ticketId=" + ticket.getId());
     }
+
     private void handleUnclaim(ButtonInteractionEvent event, Guild guild, Member member, TicketSettings settings, Ticket ticket) {
         if (!TicketService.isStaff(member, settings)) {
             event.reply("Nur das Support-Team kann Tickets freigeben.").setEphemeral(true).queue();
@@ -304,6 +321,7 @@ public class TicketListener extends ListenerAdapter {
         LOGGER.info("Ticket {} unclaimed by {} in guild {}", ticket.getId(), member.getId(), guild.getId());
         AuditLog.record(guild.getId(), member.getId(), "TICKET_UNCLAIM", "ticketId=" + ticket.getId());
     }
+
     private void handleClosePrompt(ButtonInteractionEvent event, Guild guild, Member member, TicketSettings settings, Ticket ticket) {
         boolean isOwner = ticket.getAuthorId().equals(member.getId());
         if (!isOwner && !TicketService.isStaff(member, settings)) {
@@ -324,6 +342,7 @@ public class TicketListener extends ListenerAdapter {
                 .build();
         event.replyModal(modal).queue();
     }
+
     private void handleRating(ButtonInteractionEvent event, String guildId, String ticketId, int score) {
         boolean success = service.rate(guildId, ticketId, score, null);
         if (!success) {
@@ -338,10 +357,12 @@ public class TicketListener extends ListenerAdapter {
         LOGGER.info("Ticket {} rated {}/5 by {}", ticketId, score, event.getUser().getId());
         AuditLog.record(guildId, event.getUser().getId(), "TICKET_RATE", "ticketId=" + ticketId + " score=" + score);
     }
+
     private String getValue(ModalInteractionEvent event, String id) {
         ModalMapping mapping = event.getValue(id);
         return mapping != null ? mapping.getAsString() : null;
     }
+
     private void replyGenericError(IReplyCallback event) {
         if (event.isAcknowledged()) {
             event.getHook().sendMessage("Es ist ein unerwarteter Fehler aufgetreten. Bitte versuche es erneut.").queue();
@@ -350,3 +371,4 @@ public class TicketListener extends ListenerAdapter {
         }
     }
 }
+

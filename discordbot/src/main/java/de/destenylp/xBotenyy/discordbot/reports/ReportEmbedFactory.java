@@ -1,14 +1,18 @@
 package de.destenylp.xBotenyy.discordbot.reports;
+
 import de.destenylp.xBotenyy.discordbot.core.AbstractEmbedFactory;
 import de.destenylp.xBotenyy.discordbot.util.DiscordColors;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+
 import java.util.List;
+
 public final class ReportEmbedFactory extends AbstractEmbedFactory {
     private ReportEmbedFactory() {
     }
+
     public static MessageEmbed buildChannelEmbed(Report report) {
         EmbedBuilder eb = statusEmbed(report.getStatus());
         eb.setTitle(report.getCategory().getEmoji() + " Report #" + report.getId() + " – " + report.getSubject());
@@ -34,6 +38,7 @@ public final class ReportEmbedFactory extends AbstractEmbedFactory {
         appendCreatedIdFooter(eb, report.getCreatedAt(), report.getId());
         return eb.build();
     }
+
     public static List<ActionRow> buildChannelComponents(Report report) {
         boolean closed = report.getStatus().isClosed();
         boolean claimed = report.getStatus() == ReportStatus.IN_PROGRESS;
@@ -45,6 +50,7 @@ public final class ReportEmbedFactory extends AbstractEmbedFactory {
         Button reject = Button.danger("report:reject:" + report.getId(), "Ablehnen").withDisabled(closed);
         return List.of(ActionRow.of(claim, resolve, reject));
     }
+
     public static MessageEmbed buildMemberDetailEmbed(Report report) {
         EmbedBuilder eb = statusEmbed(report.getStatus());
         eb.setTitle(report.getCategory().getEmoji() + " Report #" + report.getId());
@@ -64,6 +70,7 @@ public final class ReportEmbedFactory extends AbstractEmbedFactory {
         appendSubmittedFooter(eb, report.getCreatedAt());
         return eb.build();
     }
+
     public static MessageEmbed buildMemberOverviewEmbed(List<Report> reports) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(DiscordColors.brand());
@@ -81,6 +88,7 @@ public final class ReportEmbedFactory extends AbstractEmbedFactory {
         }
         return eb.build();
     }
+
     public static MessageEmbed buildRejectionDmEmbed(Report report) {
         EmbedBuilder eb = statusEmbed(ReportStatus.REJECTED);
         eb.setTitle("\u26AB Dein Report wurde abgelehnt");
@@ -90,6 +98,7 @@ public final class ReportEmbedFactory extends AbstractEmbedFactory {
         eb.setFooter("Bei Rückfragen wende dich bitte an das Moderationsteam.");
         return eb.build();
     }
+
     public static MessageEmbed buildResolutionDmEmbed(Report report) {
         EmbedBuilder eb = statusEmbed(ReportStatus.RESOLVED);
         eb.setTitle("\uD83D\uDFE2 Dein Report wurde bearbeitet");
@@ -102,3 +111,4 @@ public final class ReportEmbedFactory extends AbstractEmbedFactory {
         return eb.build();
     }
 }
+

@@ -1,5 +1,7 @@
 package de.destenylp.xBotenyy.common.moderation;
+
 import de.destenylp.xBotenyy.common.persistence.sql.Database;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,14 +9,17 @@ import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
 public class ModerationCaseRepository {
     private final Database database;
+
     public ModerationCaseRepository(Database database) {
         this.database = database;
     }
+
     public long insert(ModerationPlatform platform, String scopeId, String targetId, String targetName,
-                        String moderatorId, String moderatorName, ModerationAction action, String reason,
-                        long durationSeconds, boolean synced) {
+                       String moderatorId, String moderatorName, ModerationAction action, String reason,
+                       long durationSeconds, boolean synced) {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO moderation_cases (platform, scope_id, target_id, target_name, moderator_id, "
@@ -39,6 +44,7 @@ public class ModerationCaseRepository {
             }
         });
     }
+
     public void deactivate(ModerationPlatform platform, String scopeId, String targetId, ModerationAction action) {
         database.useConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -52,6 +58,7 @@ public class ModerationCaseRepository {
             }
         });
     }
+
     public List<ModerationCase> findByTarget(ModerationPlatform platform, String scopeId, String targetId, int limit) {
         return database.withConnection(connection -> {
             List<ModerationCase> cases = new ArrayList<>();
@@ -71,6 +78,7 @@ public class ModerationCaseRepository {
             return cases;
         });
     }
+
     public int countActiveWarnings(ModerationPlatform platform, String scopeId, String targetId) {
         return database.withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
@@ -85,6 +93,7 @@ public class ModerationCaseRepository {
             }
         });
     }
+
     private ModerationCase map(ResultSet resultSet) throws SQLException {
         return new ModerationCase(
                 resultSet.getLong("id"),
@@ -102,3 +111,4 @@ public class ModerationCaseRepository {
                 resultSet.getInt("synced") == 1);
     }
 }
+

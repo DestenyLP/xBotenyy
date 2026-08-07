@@ -1,12 +1,16 @@
 package de.destenylp.xBotenyy.twitchbot.commands.impl;
+
 import de.destenylp.xBotenyy.twitchbot.commands.AbstractTwitchCommand;
 import de.destenylp.xBotenyy.twitchbot.commands.TwitchCommandContext;
+
 import java.time.Duration;
 import java.time.Instant;
+
 public class UptimeCommand extends AbstractTwitchCommand {
     public UptimeCommand() {
         super("uptime", "Zeigt, wie lange der Bot schon laeuft.");
     }
+
     private static String format(Duration duration) {
         long days = duration.toDays();
         long hours = duration.toHoursPart();
@@ -21,9 +25,11 @@ public class UptimeCommand extends AbstractTwitchCommand {
         builder.append(minutes).append("m");
         return builder.toString();
     }
+
     @Override
     public void execute(TwitchCommandContext context) {
         Duration uptime = Duration.between(context.services().startedAt(), Instant.now());
         context.reply("Ich laufe seit " + format(uptime) + ".");
     }
 }
+
