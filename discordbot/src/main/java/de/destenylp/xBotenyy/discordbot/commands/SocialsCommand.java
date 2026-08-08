@@ -87,7 +87,8 @@ public class SocialsCommand extends AbstractGuildCommand {
                                 .addOption(OptionType.STRING, "title", "Titel ('none' zum Entfernen, nur bei Embed)", false)
                                 .addOption(OptionType.STRING, "color", "Hex Farbe ('none' zum Entfernen, nur bei Embed)", false)
                                 .addOption(OptionType.STRING, "image", "Bild-URL ('none' zum Entfernen, nur bei Embed)", false)
-                                .addOption(OptionType.STRING, "footer", "Footer-Text ('none' zum Entfernen, nur bei Embed)", false),
+                                .addOption(OptionType.STRING, "footer", "Footer-Text ('none' zum Entfernen, nur bei Embed)", false)
+                                .addOption(OptionType.STRING, "ping", "Ping vor der Nachricht: 'everyone', 'here', Rollen-ID/-Erwaehnung oder 'none' zum Entfernen", false),
                         new SubcommandData("remove", "Entfernt einen Account")
                                 .addOption(OptionType.STRING, "id", "ID des Accounts", true),
                         new SubcommandData("list", "Zeigt alle konfigurierten Accounts"),
@@ -268,6 +269,22 @@ public class SocialsCommand extends AbstractGuildCommand {
         OptionMapping colorOption = event.getOption("color");
         OptionMapping imageOption = event.getOption("image");
         OptionMapping footerOption = event.getOption("footer");
+        OptionMapping pingOption = event.getOption("ping");
+        FieldEdit<String> pingEdit = FieldEdit.notProvided();
+        if (pingOption != null) {
+            String rawPing = pingOption.getAsString();
+            if (isClearValue(rawPing)) {
+                pingEdit = FieldEdit.clear();
+            } else {
+                Optional<String> normalizedPing = normalizePing(rawPing);
+                if (normalizedPing.isEmpty()) {
+                    event.reply("Der Ping ist ungueltig. Nutze `everyone`, `here`, eine Rollen-ID/-Erwaehnung oder `none` zum Entfernen.")
+                            .setEphemeral(true).queue();
+                    return;
+                }
+                pingEdit = FieldEdit.value(normalizedPing.get());
+            }
+        }
         if (colorOption != null && !isClearValue(colorOption.getAsString())
                 && DiscordColors.parse(colorOption.getAsString()).isEmpty()) {
             event.reply("Die angegebene Farbe ist ungueltig. Bitte nutze das Format #RRGGBB.").setEphemeral(true).queue();
@@ -293,6 +310,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         fieldEditFrom(colorOption).applyTo(template::setColor);
         fieldEditFrom(imageOption).applyTo(template::setImageUrl);
         fieldEditFrom(footerOption).applyTo(template::setFooter);
+        pingEdit.applyTo(template::setPing);
         service.saveAccount(guild.getId(), account);
         event.reply("Nachricht fuer `" + platform + "` bei Account `" + id + "` wurde aktualisiert.").setEphemeral(true).queue();
         LOGGER.info("Edited {} message template for social account {} in guild {}", platform, id, guild.getId());
@@ -309,6 +327,23 @@ public class SocialsCommand extends AbstractGuildCommand {
 
     private boolean isClearValue(String value) {
         return value != null && (value.equalsIgnoreCase("none") || value.equals("-"));
+    }
+
+    private Optional<String> normalizePing(String rawValue) {
+        String trimmed = rawValue.trim();
+        if (trimmed.equalsIgnoreCase("everyone")) {
+            return Optional.of("@everyone");
+        }
+        if (trimmed.equalsIgnoreCase("here")) {
+            return Optional.of("@here");
+        }
+        if (trimmed.matches("\\d{15,25}")) {
+            return Optional.of("<@&" + trimmed + ">");
+        }
+        if (trimmed.matches("<@&\\d{15,25}>")) {
+            return Optional.of(trimmed);
+        }
+        return Optional.empty();
     }
 
     private void handleRemove(SlashCommandInteractionEvent event, Guild guild) {
@@ -522,6 +557,7 @@ public class SocialsCommand extends AbstractGuildCommand {
         eb.addField("{tiktok.title}", "Titel des Videos (nur TikTok)", true);
         eb.addField("{tiktok.url}", "Link zum Video (nur TikTok)", true);
         eb.addField("{tiktok.thumbnail}", "Vorschaubild-URL (nur TikTok)", true);
+        eb.addField("Ping anpassen", "Mit `/socials message ping:<wert>` festlegen: `everyone`, `here`, eine Rollen-ID/-Erwaehnung oder `none` zum Entfernen.", false);
         event.replyEmbeds(eb.build()).setEphemeral(true).queue();
     }
 }

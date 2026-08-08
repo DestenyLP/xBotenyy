@@ -21,6 +21,7 @@ public class SocialAccount {
     private static final String TIKTOK_IMAGE = "{tiktok.thumbnail}";
     private static final String TIKTOK_FOOTER = "Veroeffentlicht auf TikTok:";
     private static final String TIKTOK_COLOR = "#000000";
+    private static final String DEFAULT_PING = "@everyone";
     private final MessageTemplate youtubeTemplate;
     private final MessageTemplate twitchTemplate;
     private final MessageTemplate tiktokTemplate;
@@ -51,6 +52,7 @@ public class SocialAccount {
                 .timestamp(true)
                 .color(YOUTUBE_COLOR)
                 .content(builder.youtubeMessage)
+                .ping(DEFAULT_PING)
                 .build();
         this.twitchLogin = builder.twitchLogin;
         this.twitchTemplate = MessageTemplate.builder()
@@ -63,6 +65,7 @@ public class SocialAccount {
                 .timestamp(true)
                 .color(TWITCH_COLOR)
                 .content(builder.twitchMessage)
+                .ping(DEFAULT_PING)
                 .build();
         this.tiktokUsername = builder.tiktokUsername;
         this.tiktokTemplate = MessageTemplate.builder()
@@ -75,6 +78,7 @@ public class SocialAccount {
                 .timestamp(true)
                 .color(TIKTOK_COLOR)
                 .content(builder.tiktokMessage)
+                .ping(DEFAULT_PING)
                 .build();
     }
 

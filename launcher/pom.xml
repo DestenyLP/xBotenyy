@@ -7,18 +7,11 @@
     <parent>
         <groupId>de.destenylp</groupId>
         <artifactId>xBotenyy-parent</artifactId>
-        <version>1.2.1-RELEASE</version>
+        <version>1.2.2-RELEASE</version>
     </parent>
 
     <artifactId>xBotenyyLauncher</artifactId>
     <packaging>jar</packaging>
-
-    <description>
-        Startet xBotenyyDiscordBot und xBotenyyTwitchBot gemeinsam in einem Prozess. Enthaelt keine eigene
-        Bot-Logik, sondern instanziiert und startet lediglich die bestehenden Bot-Klassen der beiden Module,
-        stellt ein je Modul getrenntes Logging-Setup bereit und bietet zusaetzlich eine interaktive Konsole
-        (start/stop/restart/set/status/exit) zur Laufzeitsteuerung beider Bots.
-    </description>
 
     <dependencies>
         <dependency>

@@ -72,7 +72,7 @@ public class Bot extends AbstractBot {
             case "WATCHING" -> Activity.watching(text);
             case "LISTENING" -> Activity.listening(text);
             case "COMPETING" -> Activity.competing(text);
-            case "STREAMING" -> Activity.streaming("Made by Desteny", "https://www.twitch.tv/xdestenyyy");
+            case "STREAMING" -> Activity.streaming(text, "https://www.twitch.tv/xdestenyyy");
             default -> Activity.playing(text);
         };
     }

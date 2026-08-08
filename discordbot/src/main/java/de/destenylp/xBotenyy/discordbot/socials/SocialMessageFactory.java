@@ -9,8 +9,6 @@ import de.destenylp.xBotenyy.discordbot.socials.youtube.YoutubeVideo;
 import net.dv8tion.jda.api.entities.Guild;
 
 public final class SocialMessageFactory {
-    private static final String EVERYONE_PING = "@everyone";
-
     private SocialMessageFactory() {
     }
 
@@ -20,7 +18,7 @@ public final class SocialMessageFactory {
                 .with("video.title", video.title())
                 .with("video.url", video.url())
                 .with("video.thumbnail", video.thumbnailUrl());
-        return withEveryonePing(MessageRenderer.render(account.getYoutubeTemplate(), context));
+        return withPing(MessageRenderer.render(account.getYoutubeTemplate(), context), account.getYoutubeTemplate().getPing());
     }
 
     public static RenderedMessage buildTwitchMessage(SocialAccount account, TwitchStream stream, Guild guild) {
@@ -31,7 +29,7 @@ public final class SocialMessageFactory {
                 .with("stream.url", stream.url())
                 .with("stream.thumbnail", stream.thumbnailUrl() != null ? stream.thumbnailUrl() : "")
                 .with("twitch.login", account.getTwitchLogin());
-        return withEveryonePing(MessageRenderer.render(account.getTwitchTemplate(), context));
+        return withPing(MessageRenderer.render(account.getTwitchTemplate(), context), account.getTwitchTemplate().getPing());
     }
 
     public static RenderedMessage buildTiktokMessage(SocialAccount account, TikTokVideo video, Guild guild) {
@@ -40,14 +38,17 @@ public final class SocialMessageFactory {
                 .with("tiktok.title", video.title())
                 .with("tiktok.url", video.url())
                 .with("tiktok.thumbnail", video.thumbnailUrl() != null ? video.thumbnailUrl() : "");
-        return withEveryonePing(MessageRenderer.render(account.getTiktokTemplate(), context));
+        return withPing(MessageRenderer.render(account.getTiktokTemplate(), context), account.getTiktokTemplate().getPing());
     }
 
-    private static RenderedMessage withEveryonePing(RenderedMessage rendered) {
+    private static RenderedMessage withPing(RenderedMessage rendered, String ping) {
+        if (ping == null || ping.isBlank()) {
+            return rendered;
+        }
         String existingContent = rendered.content();
         String content = (existingContent != null && !existingContent.isBlank())
-                ? EVERYONE_PING + " " + existingContent
-                : EVERYONE_PING;
+                ? ping + " " + existingContent
+                : ping;
         return new RenderedMessage(content, rendered.embed());
     }
 }

@@ -7,16 +7,11 @@
     <parent>
         <groupId>de.destenylp</groupId>
         <artifactId>xBotenyy-parent</artifactId>
-        <version>1.2.1-RELEASE</version>
+        <version>1.2.2-RELEASE</version>
     </parent>
 
     <artifactId>xBotenyyCommon</artifactId>
     <packaging>jar</packaging>
-
-    <description>
-        Plattformunabhängiger Kern (AutoMod-Engine, Groq-KI-Client, HTTP-Basisklasse, Config-Loading),
-        der sowohl vom Discord-Bot (xBotenyyDiscordBot) als auch vom Twitch-Bot (xBotenyyTwitchBot) genutzt wird.
-    </description>
 
     <dependencies>
         <dependency>

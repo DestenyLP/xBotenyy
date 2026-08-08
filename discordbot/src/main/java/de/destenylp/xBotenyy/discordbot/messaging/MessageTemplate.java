@@ -10,6 +10,7 @@ public class MessageTemplate {
     private String imageUrl;
     private String footer;
     private boolean timestamp;
+    private String ping;
 
     private MessageTemplate(Builder builder) {
         this.embed = builder.embed;
@@ -21,6 +22,7 @@ public class MessageTemplate {
         this.imageUrl = builder.imageUrl;
         this.footer = builder.footer;
         this.timestamp = builder.timestamp;
+        this.ping = builder.ping;
     }
 
     public static Builder builder() {
@@ -99,6 +101,14 @@ public class MessageTemplate {
         this.footer = footer;
     }
 
+    public String getPing() {
+        return ping;
+    }
+
+    public void setPing(String ping) {
+        this.ping = ping;
+    }
+
     public static final class Builder {
         private boolean embed;
         private String title;
@@ -109,6 +119,7 @@ public class MessageTemplate {
         private String imageUrl;
         private String footer;
         private boolean timestamp;
+        private String ping;
 
         private Builder() {
         }
@@ -155,6 +166,11 @@ public class MessageTemplate {
 
         public Builder footer(String footer) {
             this.footer = footer;
+            return this;
+        }
+
+        public Builder ping(String ping) {
+            this.ping = ping;
             return this;
         }
 

@@ -12,6 +12,13 @@ import java.time.Duration;
 public abstract class AbstractHttpApiClient {
     private static final int DEFAULT_MAX_ATTEMPTS = 3;
     private static final Duration DEFAULT_BASE_RETRY_DELAY = Duration.ofSeconds(2);
+
+    static {
+        java.security.Security.setProperty("networkaddress.cache.ttl", "30");
+        java.security.Security.setProperty("networkaddress.cache.negative.ttl", "5");
+        System.setProperty("jdk.httpclient.keepalive.timeout", "120");
+    }
+
     protected final Duration requestTimeout;
     protected final HttpClient httpClient;
     private final int maxAttempts;
@@ -34,7 +41,9 @@ public abstract class AbstractHttpApiClient {
     }
 
     protected HttpRequest.Builder requestBuilder(URI uri) {
-        return HttpRequest.newBuilder(uri).timeout(requestTimeout);
+        return HttpRequest.newBuilder(uri)
+                .timeout(requestTimeout)
+                .header("User-Agent", "Mozilla/5.0 (compatible; xBotenyy/1.0; +https://github.com/xDestenyy/xBotenyy)");
     }
 
     protected <T> HttpResponse<T> sendWithRetry(HttpRequest request, HttpResponse.BodyHandler<T> bodyHandler,

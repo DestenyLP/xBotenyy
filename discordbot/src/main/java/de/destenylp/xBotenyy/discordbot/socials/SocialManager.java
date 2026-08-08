@@ -52,43 +52,44 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
             Jdbc.update(connection, """
                             INSERT INTO social_accounts (guild_id, account_id, name, channel_id, enabled,
                                 youtube_channel_id, last_youtube_video_id, yt_embed, yt_title, yt_title_url, yt_author,
-                                yt_content, yt_color, yt_image_url, yt_footer, yt_timestamp,
+                                yt_content, yt_color, yt_image_url, yt_footer, yt_timestamp, yt_ping,
                                 twitch_login, last_twitch_stream_id, twitch_currently_live, tw_embed, tw_title,
                                 tw_title_url, tw_author, tw_content, tw_color, tw_image_url, tw_footer, tw_timestamp,
-                                tiktok_username, last_tiktok_video_id, tt_embed, tt_title, tt_title_url, tt_author,
-                                tt_content, tt_color, tt_image_url, tt_footer, tt_timestamp)
+                                tw_ping, tiktok_username, last_tiktok_video_id, tt_embed, tt_title, tt_title_url,
+                                tt_author, tt_content, tt_color, tt_image_url, tt_footer, tt_timestamp, tt_ping)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """,
                     guildId, account.getId(), account.getName(), account.getChannelId(), account.isEnabled(),
                     account.getYoutubeChannelId(), account.getLastYoutubeVideoId(), yt.isEmbed(), yt.getTitle(),
                     yt.getTitleUrl(), yt.getAuthor(), yt.getContent(), yt.getColor(), yt.getImageUrl(),
-                    yt.getFooter(), yt.isTimestamp(), account.getTwitchLogin(), account.getLastTwitchStreamId(),
-                    account.isTwitchCurrentlyLive(), tw.isEmbed(), tw.getTitle(), tw.getTitleUrl(), tw.getAuthor(),
-                    tw.getContent(), tw.getColor(), tw.getImageUrl(), tw.getFooter(), tw.isTimestamp(),
-                    account.getTiktokUsername(), account.getLastTiktokVideoId(), tt.isEmbed(), tt.getTitle(),
-                    tt.getTitleUrl(), tt.getAuthor(), tt.getContent(), tt.getColor(), tt.getImageUrl(),
-                    tt.getFooter(), tt.isTimestamp());
+                    yt.getFooter(), yt.isTimestamp(), yt.getPing(), account.getTwitchLogin(),
+                    account.getLastTwitchStreamId(), account.isTwitchCurrentlyLive(), tw.isEmbed(), tw.getTitle(),
+                    tw.getTitleUrl(), tw.getAuthor(), tw.getContent(), tw.getColor(), tw.getImageUrl(),
+                    tw.getFooter(), tw.isTimestamp(), tw.getPing(), account.getTiktokUsername(),
+                    account.getLastTiktokVideoId(), tt.isEmbed(), tt.getTitle(), tt.getTitleUrl(), tt.getAuthor(),
+                    tt.getContent(), tt.getColor(), tt.getImageUrl(), tt.getFooter(), tt.isTimestamp(), tt.getPing());
         } else {
             Jdbc.update(connection, """
                             UPDATE social_accounts SET name = ?, channel_id = ?, enabled = ?, youtube_channel_id = ?,
                                 last_youtube_video_id = ?, yt_embed = ?, yt_title = ?, yt_title_url = ?, yt_author = ?,
                                 yt_content = ?, yt_color = ?, yt_image_url = ?, yt_footer = ?, yt_timestamp = ?,
-                                twitch_login = ?, last_twitch_stream_id = ?, twitch_currently_live = ?, tw_embed = ?,
-                                tw_title = ?, tw_title_url = ?, tw_author = ?, tw_content = ?, tw_color = ?,
-                                tw_image_url = ?, tw_footer = ?, tw_timestamp = ?, tiktok_username = ?,
-                                last_tiktok_video_id = ?, tt_embed = ?, tt_title = ?, tt_title_url = ?, tt_author = ?,
-                                tt_content = ?, tt_color = ?, tt_image_url = ?, tt_footer = ?, tt_timestamp = ?
+                                yt_ping = ?, twitch_login = ?, last_twitch_stream_id = ?, twitch_currently_live = ?,
+                                tw_embed = ?, tw_title = ?, tw_title_url = ?, tw_author = ?, tw_content = ?,
+                                tw_color = ?, tw_image_url = ?, tw_footer = ?, tw_timestamp = ?, tw_ping = ?,
+                                tiktok_username = ?, last_tiktok_video_id = ?, tt_embed = ?, tt_title = ?,
+                                tt_title_url = ?, tt_author = ?, tt_content = ?, tt_color = ?, tt_image_url = ?,
+                                tt_footer = ?, tt_timestamp = ?, tt_ping = ?
                             WHERE guild_id = ? AND account_id = ?
                             """,
                     account.getName(), account.getChannelId(), account.isEnabled(), account.getYoutubeChannelId(),
                     account.getLastYoutubeVideoId(), yt.isEmbed(), yt.getTitle(), yt.getTitleUrl(), yt.getAuthor(),
-                    yt.getContent(), yt.getColor(), yt.getImageUrl(), yt.getFooter(), yt.isTimestamp(),
+                    yt.getContent(), yt.getColor(), yt.getImageUrl(), yt.getFooter(), yt.isTimestamp(), yt.getPing(),
                     account.getTwitchLogin(), account.getLastTwitchStreamId(), account.isTwitchCurrentlyLive(),
                     tw.isEmbed(), tw.getTitle(), tw.getTitleUrl(), tw.getAuthor(), tw.getContent(), tw.getColor(),
-                    tw.getImageUrl(), tw.getFooter(), tw.isTimestamp(), account.getTiktokUsername(),
+                    tw.getImageUrl(), tw.getFooter(), tw.isTimestamp(), tw.getPing(), account.getTiktokUsername(),
                     account.getLastTiktokVideoId(), tt.isEmbed(), tt.getTitle(), tt.getTitleUrl(), tt.getAuthor(),
-                    tt.getContent(), tt.getColor(), tt.getImageUrl(), tt.getFooter(), tt.isTimestamp(),
+                    tt.getContent(), tt.getColor(), tt.getImageUrl(), tt.getFooter(), tt.isTimestamp(), tt.getPing(),
                     guildId, account.getId());
         }
     }
@@ -161,6 +162,7 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         yt.setImageUrl(resultSet.getString("yt_image_url"));
         yt.setFooter(resultSet.getString("yt_footer"));
         yt.setTimestamp(Jdbc.getBoolean(resultSet, "yt_timestamp"));
+        yt.setPing(resultSet.getString("yt_ping"));
         MessageTemplate tw = account.getTwitchTemplate();
         tw.setEmbed(Jdbc.getBoolean(resultSet, "tw_embed"));
         tw.setTitle(resultSet.getString("tw_title"));
@@ -170,6 +172,7 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         tw.setImageUrl(resultSet.getString("tw_image_url"));
         tw.setFooter(resultSet.getString("tw_footer"));
         tw.setTimestamp(Jdbc.getBoolean(resultSet, "tw_timestamp"));
+        tw.setPing(resultSet.getString("tw_ping"));
         MessageTemplate tt = account.getTiktokTemplate();
         tt.setEmbed(Jdbc.getBoolean(resultSet, "tt_embed"));
         tt.setTitle(resultSet.getString("tt_title"));
@@ -179,6 +182,7 @@ public class SocialManager extends AbstractSqlManager implements SocialRepositor
         tt.setImageUrl(resultSet.getString("tt_image_url"));
         tt.setFooter(resultSet.getString("tt_footer"));
         tt.setTimestamp(Jdbc.getBoolean(resultSet, "tt_timestamp"));
+        tt.setPing(resultSet.getString("tt_ping"));
         return account;
     }
 
