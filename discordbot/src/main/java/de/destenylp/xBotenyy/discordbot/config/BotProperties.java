@@ -124,6 +124,18 @@ public final class BotProperties {
         values.put("bridge.tls.truststore.password", "");
         values.put("bridge.tls.mutual-auth", "false");
         values.put("moderation.sync.guild.id", "");
+        values.put("raidprotection.join.window.seconds", "10");
+        values.put("raidprotection.join.threshold", "10");
+        values.put("raidprotection.raidmode.duration.seconds", "300");
+        values.put("raidprotection.raidmode.action", "KICK");
+        values.put("raidprotection.raidmode.reason", "Anti-Raid: Massenbeitritt erkannt");
+        values.put("raidprotection.account.min-age.minutes", "30");
+        values.put("raidprotection.account.min-age.action", "KICK");
+        values.put("raidprotection.account.min-age.reason", "Anti-Raid: Account zu neu");
+        values.put("raidprotection.bot.autokick.enabled", "true");
+        values.put("raidprotection.bot.whitelist.ids", "");
+        values.put("raidprotection.bot.reason", "Anti-Bot: Nicht autorisierter Bot-Account");
+        values.put("raidprotection.alert.enabled", "true");
         values.putAll(AutomodSettingsFactory.defaultValues());
         values.putAll(de.destenylp.xBotenyy.common.persistence.BackupSettings.defaultValues());
         return values;
@@ -237,6 +249,26 @@ public final class BotProperties {
             return resolved;
         }
         return rawValue;
+    }
+
+    public de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionConfig getRaidProtectionConfig() {
+        return new de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionConfig(
+                getInt("raidprotection.join.window.seconds", 10, 1),
+                getInt("raidprotection.join.threshold", 10, 1),
+                getLong("raidprotection.raidmode.duration.seconds", 300, 1),
+                de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionAction.fromString(
+                        getString("raidprotection.raidmode.action", "KICK"),
+                        de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionAction.KICK),
+                getString("raidprotection.raidmode.reason", "Anti-Raid: Massenbeitritt erkannt"),
+                getInt("raidprotection.account.min-age.minutes", 30, 0),
+                de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionAction.fromString(
+                        getString("raidprotection.account.min-age.action", "KICK"),
+                        de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionAction.KICK),
+                getString("raidprotection.account.min-age.reason", "Anti-Raid: Account zu neu"),
+                getBoolean("raidprotection.bot.autokick.enabled", true),
+                getStringSet("raidprotection.bot.whitelist.ids"),
+                getString("raidprotection.bot.reason", "Anti-Bot: Nicht autorisierter Bot-Account"),
+                getBoolean("raidprotection.alert.enabled", true));
     }
 
     public String getModerationSyncGuildId() {

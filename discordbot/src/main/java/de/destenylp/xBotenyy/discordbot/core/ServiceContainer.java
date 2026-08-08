@@ -21,6 +21,8 @@ import de.destenylp.xBotenyy.discordbot.moderation.AccountLinkService;
 import de.destenylp.xBotenyy.discordbot.moderation.DiscordModerationService;
 import de.destenylp.xBotenyy.discordbot.moderation.DiscordModerationSyncTrigger;
 import de.destenylp.xBotenyy.discordbot.moderation.ModerationRoleSettingsRepository;
+import de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionRepository;
+import de.destenylp.xBotenyy.discordbot.raidprotection.RaidProtectionService;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleManager;
 import de.destenylp.xBotenyy.discordbot.reactionroles.ReactionRoleService;
 import de.destenylp.xBotenyy.discordbot.reports.ReportManager;
@@ -57,6 +59,8 @@ public class ServiceContainer implements AutoCloseable {
     private final AccountLinkService accountLinkService;
     private final ModerationBridgeClient moderationBridgeClient;
     private final DiscordModerationSyncTrigger moderationSyncTrigger;
+    private final RaidProtectionRepository raidProtectionRepository;
+    private final RaidProtectionService raidProtectionService;
     private final BotProperties properties;
 
     public ServiceContainer() {
@@ -109,6 +113,8 @@ public class ServiceContainer implements AutoCloseable {
         this.moderationBridgeClient = new ModerationBridgeClient();
         this.moderationSyncTrigger = new DiscordModerationSyncTrigger(accountLinkRepository, moderationBridgeClient,
                 properties::getBridgeSettings);
+        this.raidProtectionRepository = new RaidProtectionRepository(database);
+        this.raidProtectionService = new RaidProtectionService(raidProtectionRepository, properties.getRaidProtectionConfig());
         this.properties = properties;
     }
 
@@ -125,7 +131,7 @@ public class ServiceContainer implements AutoCloseable {
 
     public List<GuildService> getAllServices() {
         return List.of(reactionRoleService, welcomeService, reportService, ticketService, giveawayService,
-                eventLogService, socialService, automodService);
+                eventLogService, socialService, automodService, raidProtectionService);
     }
 
     public List<PrunableGuildService> getPrunableServices() {
@@ -206,6 +212,14 @@ public class ServiceContainer implements AutoCloseable {
 
     public DiscordModerationSyncTrigger getModerationSyncTrigger() {
         return moderationSyncTrigger;
+    }
+
+    public RaidProtectionRepository getRaidProtectionRepository() {
+        return raidProtectionRepository;
+    }
+
+    public RaidProtectionService getRaidProtectionService() {
+        return raidProtectionService;
     }
 
     public BotProperties getProperties() {

@@ -124,7 +124,8 @@ public class Bot extends AbstractBot {
                                 properties.getEventLogMessageCacheMaxSize(),
                                 properties.getEventLogMessageDeleteContentMaxLength()),
                         new AutomodListener(services.getAutomodService()),
-                        new AccountLinkListener(services.getAccountLinkService()))
+                        new AccountLinkListener(services.getAccountLinkService()),
+                        new RaidProtectionListener(services.getRaidProtectionService()))
                 .build();
         registerShutdownHook();
         jda.awaitReady();
@@ -251,6 +252,7 @@ public class Bot extends AbstractBot {
         commandManager.register(new AccountLinkCommand(services.getAccountLinkService(),
                 services.getModerationBridgeClient(), services.getProperties()::getBridgeSettings,
                 services.getModerationRoleSettingsRepository()));
+        commandManager.register(new RaidProtectionCommand(services.getRaidProtectionService()));
     }
 
     private void registerSlashCommands() {

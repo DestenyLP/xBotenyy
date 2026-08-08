@@ -11,6 +11,7 @@ optionally talk to each other via a built-in bridge (moderation sync, role sync,
 - [Discord Bot](#discord-bot)
     - [Command reference](#discord-command-reference)
     - [AutoMod](#discord-automod)
+    - [Raid & Bot Protection (`/raidprotection`)](#raid--bot-protection-raidprotection)
     - [Event logging (`/serverlog`)](#event-logging-serverlog)
     - [Internal systems](#internal-systems)
 - [Twitch Bot](#twitch-bot)
@@ -156,6 +157,7 @@ Discord ↔ Twitch linking.
 | `/modroles` | `warn-role`, `mute-role`, `ban-role`, `add-moderator`, `remove-moderator`, `add-admin`, `remove-admin`, `sync-role`, `status` | Configures punishment roles, who may use `/mod`, and the Twitch role sync |
 | `/link` | `twitch`, `verify`, `status`, `unlink`, `panel` | Discord ↔ Twitch account linking (optional, see [Linking accounts](#linking-accounts)) |
 | `/automod` | `status`, `test` | AutoMod diagnostics (configuration exclusively via `discordbot.properties`) |
+| `/raidprotection` | `toggle`, `alertchannel`, `status` | Enables/disables raid & bot protection and configures the alert channel (see [Raid & Bot Protection](#raid--bot-protection-raidprotection)) |
 | `/serverlog` | `setup`, `channel`, `toggle`, `event-channel`, `status` | Configures event logging (see [Event logging](#event-logging-serverlog)) |
 
 #### Utility
@@ -166,7 +168,7 @@ Discord ↔ Twitch linking.
 | `/ping` | Bot latency |
 
 *Permissions: `/mod` is available to members with `ADMINISTRATOR`/`Moderate Members` as well as any
-role granted via `/modroles add-moderator`. `/modroles`, `/serverlog`, `/automod` and the
+role granted via `/modroles add-moderator`. `/modroles`, `/serverlog`, `/automod`, `/raidprotection` and the
 team subcommands of `/ticket`/`/report` require `ADMINISTRATOR`/`Manage Server` (or, in the case of `/modroles`,
 also roles granted via `add-admin`).*
 
@@ -175,6 +177,43 @@ also roles granted via `add-admin`).*
 Word filter, invite/link detection, mention spam, caps filter, spam/duplicate detection, AI moderation (Groq,
 `gpt-oss-safeguard-20b`), strike escalation (warn → timeout → kick → ban). Configuration exclusively via
 `automod.*` in `discordbot.properties`. Diagnostics and testing of individual texts via `/automod status` / `/automod test`.
+
+### Raid & Bot Protection (`/raidprotection`)
+
+Protects the server against mass-join raids and unauthorized bot accounts. Reacts to every member join in
+real time:
+
+- **Bot protection:** any bot account that joins is kicked immediately, unless its ID is listed in
+`raidprotection.bot.whitelist.ids`.
+- **Raid protection:** if the number of joins within `raidprotection.join.window.seconds` reaches
+`raidprotection.join.threshold`, raid mode is activated automatically for
+`raidprotection.raidmode.duration.seconds`. While raid mode is active, every further member who joins is
+kicked or banned (`raidprotection.raidmode.action`).
+- **Account age check:** independent of raid mode, accounts younger than
+`raidprotection.account.min-age.minutes` are kicked or banned (`raidprotection.account.min-age.action`).
+
+The feature is **disabled by default per server** and must be turned on with `/raidprotection toggle enabled:true`.
+Optionally set an alert channel with `/raidprotection alertchannel channel:#kanal` to receive an embed for every
+action taken (bot kicked, raid mode activated, member removed). `/raidprotection status` shows the current
+configuration, including whether raid mode is currently active.
+
+All thresholds, durations, actions and reasons are configured exclusively via `raidprotection.*` in
+`discordbot.properties`:
+
+| Property | Default | Meaning |
+|---|---|---|
+| `raidprotection.join.window.seconds` | `10` | Time window in which joins are counted for raid detection |
+| `raidprotection.join.threshold` | `10` | Number of joins within the window that triggers raid mode |
+| `raidprotection.raidmode.duration.seconds` | `300` | How long raid mode stays active once triggered |
+| `raidprotection.raidmode.action` | `KICK` | Action taken against members who join while raid mode is active (`KICK` or `BAN`) |
+| `raidprotection.raidmode.reason` | `Anti-Raid: Massenbeitritt erkannt` | Audit log/kick/ban reason used during raid mode |
+| `raidprotection.account.min-age.minutes` | `30` | Minimum Discord account age required to join without action (`0` disables the check) |
+| `raidprotection.account.min-age.action` | `KICK` | Action taken against accounts that are too new (`KICK` or `BAN`) |
+| `raidprotection.account.min-age.reason` | `Anti-Raid: Account zu neu` | Reason used for the account age check |
+| `raidprotection.bot.autokick.enabled` | `true` | Automatically kicks bot accounts that are not whitelisted |
+| `raidprotection.bot.whitelist.ids` | *(empty)* | Comma-separated list of bot user IDs exempt from the bot autokick |
+| `raidprotection.bot.reason` | `Anti-Bot: Nicht autorisierter Bot-Account` | Reason used for the bot autokick |
+| `raidprotection.alert.enabled` | `true` | Sends an alert embed to the configured alert channel for every action |
 
 ### Event logging (`/serverlog`)
 
